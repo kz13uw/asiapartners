@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История Участия | Портал Закупок</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Наследование структуры */
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 280px; background-color: #1a1b1e; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
+        .sidebar-logo { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-logo span { color: var(--pk-primary); }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active { background-color: var(--pk-primary); color: #fff; border-left-color: #fff; font-weight: 500; }
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--pk-bg-main);}
+        .top-header { height: 72px; background-color: var(--pk-bg-surface); border-bottom: 1px solid var(--pk-border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; }
+        .header-title { font-size: 1.25rem; font-weight: 600; color: var(--pk-text-main); }
+        .header-user { display: flex; align-items: center; gap: 1rem; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--pk-primary-light); color: var(--pk-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        
+        /* Stats Header for History */
+        .history-stats { display: flex; gap: 2rem; margin-bottom: 2rem; }
+        .h-stat { flex: 1; background: var(--pk-bg-surface); padding: 1.5rem; border-radius: var(--pk-radius-md); border: 1px solid var(--pk-border); display: flex; justify-content: space-between; align-items: center; }
+        .h-stat-val { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .h-stat-label { font-size: 0.875rem; color: var(--pk-text-secondary); margin-top: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-building-4-line" style="font-size: 1.5rem;"></i> Портал <span>Фирма Азия</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase;">Ваш Кабинет</div>
+                <a href="dashboard.html" class="nav-item"><i class="ri-building-line"></i> Сводка: Контрагент</a>
+                <a href="tenders_search.html" class="nav-item"><i class="ri-search-line"></i> Поиск лотов</a>
+                <a href="history.html" class="nav-item active"><i class="ri-history-line"></i> История участия</a>
+                
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; margin-top: 1.5rem; margin-bottom: 0.5rem;">Управление</div>
+                <a href="profile.html" class="nav-item"><i class="ri-user-settings-line"></i> Профиль ТОО</a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <div class="header-title">История и итоги тендеров</div>
+                <div class="header-user">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">ТОО "СнабИнвестПром"</div>
+                        <div style="font-size: 0.75rem; color: var(--pk-text-secondary);">БИН 123456789012</div>
+                    </div>
+                    <div class="avatar">СИП</div>
+                </div>
+            </header>
+
+            <section class="content-area">
+                
+                <!-- Статистика успехов -->
+                <div class="history-stats">
+                    <div class="h-stat" style="border-bottom: 4px solid var(--pk-success);">
+                        <div>
+                            <div class="h-stat-val" style="color: var(--pk-success);">14</div>
+                            <div class="h-stat-label">Выигранных тендеров</div>
+                        </div>
+                        <i class="ri-trophy-line" style="font-size: 3rem; color: #defbe6;"></i>
+                    </div>
+                    <div class="h-stat" style="border-bottom: 4px solid var(--pk-primary);">
+                        <div>
+                            <div class="h-stat-val" style="color: var(--pk-primary);">32</div>
+                            <div class="h-stat-label">Всего заявок подано</div>
+                        </div>
+                        <i class="ri-stack-line" style="font-size: 3rem; color: var(--pk-primary-light);"></i>
+                    </div>
+                    <div class="h-stat" style="border-bottom: 4px solid var(--pk-danger);">
+                        <div>
+                            <div class="h-stat-val" style="color: var(--pk-danger);">18</div>
+                            <div class="h-stat-label">Проигранных или не допущенных</div>
+                        </div>
+                        <i class="ri-close-circle-line" style="font-size: 3rem; color: #ffe5e5;"></i>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-header" style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+                        <h3 class="mb-0">Архив завершенных закупок</h3>
+                        <div class="search-box">
+                            <i class="ri-search-line"></i>
+                            <input type="text" placeholder="Поиск в истории...">
+                        </div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>№ Закупки</th>
+                                    <th>Наименование тендера</th>
+                                    <th>Итоговая сумма (тнг)</th>
+                                    <th>Ваш результат</th>
+                                    <th>Дата итогов</th>
+                                    <th>Документы / Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-medium">T-2022-990</td>
+                                    <td>Монтаж систем вентиляции и кондиционирования</td>
+                                    <td class="font-semibold">2,100,000</td>
+                                    <td><span class="badge" style="background:#defbe6; color:#198038"><i class="ri-check-line"></i> Победитель</span></td>
+                                    <td>10.12.2023</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm"><i class="ri-file-text-line"></i> Договор</button>
+                                        <button class="btn btn-outline btn-sm"><i class="ri-list-check-2"></i> Протокол</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">T-2022-871</td>
+                                    <td>Капитальный ремонт логистического склада</td>
+                                    <td class="font-semibold">10,500,000</td>
+                                    <td><span class="badge badge-warning"><i class="ri-error-warning-line"></i> Второе место (Резерв)</span></td>
+                                    <td>28.11.2023</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-sm"><i class="ri-list-check-2"></i> Протокол итогов</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">T-2022-540</td>
+                                    <td>Строительство Дата-Центра "под ключ"</td>
+                                    <td class="font-semibold">150,000,000</td>
+                                    <td><span class="badge" style="background:#ffe5e5; color:#da1e28"><i class="ri-close-line"></i> Не допущен по тех.спец.</span></td>
+                                    <td>05.09.2023</td>
+                                    <td>
+                                        <button class="btn btn-outline btn-sm"><i class="ri-file-info-line"></i> Причина отказа</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Пагинация (Заглушка) -->
+                    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;">
+                        <button class="btn btn-outline btn-sm"><i class="ri-arrow-left-s-line"></i></button>
+                        <button class="btn btn-primary btn-sm">1</button>
+                        <button class="btn btn-outline btn-sm">2</button>
+                        <button class="btn btn-outline btn-sm">3</button>
+                        <button class="btn btn-outline btn-sm"><i class="ri-arrow-right-s-line"></i></button>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+</body>
+</html>

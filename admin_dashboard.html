@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Администратора | Фирма Азия</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Темный сайдбар админа */
+        .sidebar { width: 280px; background-color: #161616; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-logo { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 0.75rem; color: #f4f4f4;}
+        .sidebar-logo i { color: #fa4d56; }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: #fff; }
+        .nav-item.active { background-color: #fa4d56; color: #fff; border-left-color: #fff; font-weight: 500; }
+        
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: #f4f7f9;}
+        .top-header { height: 72px; background-color: #ffffff; border-bottom: 1px solid var(--pk-border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; }
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        
+        /* Графики */
+        .chart-container { background: #fff; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--pk-border); margin-bottom: 2rem;}
+        
+        /* Сетка для дашборда */
+        .admin-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+        
+        .sys-log { font-family: monospace; font-size: 0.85rem; background: #262626; color: #f4f4f4; padding: 1rem; border-radius: 8px; height: 300px; overflow-y: auto;}
+        .log-line { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .log-time { color: #8a3ffc; }
+        .log-info { color: #08bdba; }
+        .log-warn { color: #f1c21b; }
+        .log-err { color: #fa4d56; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-server-line"></i> Root Admin
+            </div>
+            <nav class="sidebar-nav">
+                <a href="admin_dashboard.html" class="nav-item active"><i class="ri-dashboard-2-line"></i> Мониторинг Портала</a>
+                <a href="#" class="nav-item"><i class="ri-group-line"></i> Управление доступом</a>
+                <a href="#" class="nav-item"><i class="ri-shield-check-line"></i> Аудит и Логи</a>
+            </nav>
+            <div style="padding: 1.5rem;">
+                <button class="btn btn-outline" style="width: 100%; border-color: rgba(255,255,255,0.2); color: #fff;" onclick="window.location.href='index.html'">Выйти</button>
+            </div>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <h2 style="font-size: 1.25rem;">Аналитика Системы Закупок</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <span class="badge badge-success"><i class="ri-base-station-line" style="animation: pulse 2s infinite;"></i> Серверы: OK</span>
+                    <button class="btn btn-outline btn-sm"><i class="ri-refresh-line"></i> Обновить</button>
+                </div>
+            </header>
+
+            <section class="content-area">
+                
+                <div class="admin-grid">
+                    <!-- Колонка графиков -->
+                    <div>
+                        <div class="chart-container">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <h3>Объем заключенных контрактов (млн ₸)</h3>
+                                <select style="border: none; outline: none; background: #f4f7f9; border-radius: 4px; padding: 0.25rem 0.5rem;"><option>2024</option></select>
+                            </div>
+                            <canvas id="contractsChart" height="100"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h3>Активность поставщиков (Уникальные входы)</h3>
+                            <canvas id="usersChart" height="80"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Колонка системных логов -->
+                    <div>
+                        <div class="chart-container" style="height: 100%;">
+                            <h3 class="mb-3">Live Log: Безопасность</h3>
+                            <div class="sys-log" id="terminal">
+                                <div class="log-line"><span class="log-time">[14:32:01]</span> <span class="log-info">INFO:</span> Пользователь ТОО СнабИнвестПром успешно авторизован.</div>
+                                <div class="log-line"><span class="log-time">[14:35:12]</span> <span class="log-warn">WARN:</span> Неверная подпись ЭЦП (Attempt 1) от IP 2.134.xx.xx.</div>
+                                <div class="log-line"><span class="log-time">[14:36:00]</span> <span class="log-info">INFO:</span> Тендер T-2023-890 переведен в статус "Вскрытие".</div>
+                                <div class="log-line"><span class="log-time">[14:40:22]</span> <span class="log-err">ERROR:</span> 500 Gateway Timeout (DocServer at 192.168.1.5). Retrying...</div>
+                                <div class="log-line"><span class="log-time">[14:40:25]</span> <span class="log-info">INFO:</span> DocServer restored.</div>
+                            </div>
+                            
+                            <button class="btn btn-outline" style="width: 100%; margin-top: 1rem;" onclick="addFakeLog()">Сгенерировать событие</button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Инициализация красивых графиков -->
+    <script>
+        // График 1: Объем контрактов (Bar)
+        const ctx1 = document.getElementById('contractsChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'],
+                datasets: [{
+                    label: 'Сумма договоров (млн)',
+                    data: [120, 190, 80, 250, 150, 310],
+                    backgroundColor: '#e50000',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#e0e0e0' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // График 2: Активность (Line)
+        const ctx2 = document.getElementById('usersChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                datasets: [{
+                    label: 'Уникальные входы (ЭЦП)',
+                    data: [450, 520, 600, 580, 490, 120, 95],
+                    borderColor: '#24a148',
+                    backgroundColor: 'rgba(36, 161, 72, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Фишка с бегущим логом
+        const logs = [
+            '<span class="log-info">INFO:</span> Создан новый лот T-2024-900',
+            '<span class="log-info">INFO:</span> Загружен договор (2.4MB)',
+            '<span class="log-warn">WARN:</span> Превышен лимит подключений к API НУЦ РК',
+            '<span class="log-err">AUTH:</span> Блокировка УЗ: ТОО Актобе-Строй'
+        ];
+        
+        function addFakeLog() {
+            const terminal = document.getElementById('terminal');
+            const now = new Date();
+            const timeStr = `[${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            
+            const newLine = document.createElement('div');
+            newLine.className = 'log-line';
+            newLine.style.animation = 'fadeIn 0.5s ease';
+            newLine.innerHTML = `<span class="log-time">${timeStr}</span> ${randomLog}`;
+            
+            terminal.appendChild(newLine);
+            terminal.scrollTop = terminal.scrollHeight; // Автоматический скролл вниз
+        }
+        
+        // Автоматически добавляем логи раз в 5 секунд
+        setInterval(addFakeLog, 5000);
+    </script>
+</body>
+</html>

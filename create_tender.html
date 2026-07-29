@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать Тендер | Фирма Азия</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 280px; background-color: #1a1b1e; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
+        .sidebar-logo { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: #fff; }
+        .nav-item.active { background-color: var(--pk-primary); color: #fff; border-left-color: #fff; font-weight: 500; }
+        
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--pk-bg-main);}
+        .top-header { height: 72px; background-color: var(--pk-bg-surface); border-bottom: 1px solid var(--pk-border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; }
+        .header-user { display: flex; align-items: center; gap: 1rem; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--pk-primary-light); color: var(--pk-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        
+        .form-section { background: var(--pk-bg-surface); padding: 2.5rem; border-radius: var(--pk-radius-lg); border: 1px solid var(--pk-border); box-shadow: var(--pk-shadow-sm); max-width: 900px; margin: 0 auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .form-label { font-size: 0.875rem; font-weight: 600; color: var(--pk-text-main); }
+        .form-control { padding: 0.875rem 1rem; border: 1px solid var(--pk-border); border-radius: var(--pk-radius-sm); outline: none; transition: 0.2s; font-family: inherit; font-size: 1rem; }
+        .form-control:focus { border-color: var(--pk-primary); box-shadow: 0 0 0 2px var(--pk-primary-light); }
+        
+        .upload-area { border: 2px dashed var(--pk-border); border-radius: var(--pk-radius-md); padding: 2rem; text-align: center; cursor: pointer; transition: 0.2s; background: #fafafa; }
+        .upload-area:hover { border-color: var(--pk-primary); background: var(--pk-primary-light); }
+        
+        .divider { height: 1px; background: var(--pk-border); margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-building-4-line"></i> Закупки <span>Фирма Азия</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase;">Мониторинг</div>
+                <a href="dashboard_org.html" class="nav-item"><i class="ri-dashboard-line"></i> Реестр моих закупок</a>
+                <a href="create_tender.html" class="nav-item active"><i class="ri-add-box-line"></i> Создать новый лот</a>
+                
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; margin-top: 1.5rem;">Администрирование</div>
+                <a href="org_protocols.html" class="nav-item"><i class="ri-article-line"></i> Протоколы итогов</a>
+                <a href="org_contracts.html" class="nav-item"><i class="ri-file-list-3-line"></i> Управление договорами</a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <div>Конструктор Закупки</div>
+                <div class="header-user">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">Отдел Снабжения</div>
+                        <div style="font-size: 0.75rem; color: var(--pk-text-secondary);">Менеджер</div>
+                    </div>
+                    <div class="avatar">АС</div>
+                </div>
+            </header>
+
+            <section class="content-area">
+                <div class="form-section">
+                    <h2 class="mb-1">Добавление нового тендера</h2>
+                    <p class="text-secondary mb-3">Внимательно заполните все поля спецификации для публикации новой строительной закупки в портале.</p>
+                    
+                    <form id="createLotForm" onsubmit="event.preventDefault(); document.getElementById('publishModal').style.display='flex';">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Полное наименование и предмет закупки</label>
+                            <input type="text" class="form-control" placeholder="Например: Монтаж вентилируемого фасада Блока Б" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">Детальное описание (Краткое ТЗ)</label>
+                            <textarea class="form-control" rows="4" placeholder="Краткое описание требований..." required></textarea>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Метод осуществления закупки</label>
+                                <select class="form-control" required>
+                                    <option value="">Выберите метод...</option>
+                                    <option>Открытый конкурс (2-этапный)</option>
+                                    <option>Одноэтапный тендер на понижение</option>
+                                    <option>Запрос ценовых предложений</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Сумма лота (тнг с НДС)</label>
+                                <input type="number" class="form-control" placeholder="10000000" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid" style="margin-bottom: 0;">
+                            <div class="form-group">
+                                <label class="form-label">Окончание приема заявок (Срок)</label>
+                                <input type="datetime-local" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Место выполнения работ / поставки</label>
+                                <input type="text" class="form-control" placeholder="Регион, город..." required>
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <h3 class="mb-3">Документация организатора</h3>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label text-secondary">Смета, Чертежи, Проектно-сметная документация (ПСД)</label>
+                                <div class="upload-area" id="psdUpload" onclick="mockFileUpload(this, 'Смета_и_Чертежи_v2.pdf');">
+                                    <i class="ri-file-add-line ri-2x text-primary" style="display:block; margin-bottom: 0.5rem;"></i>
+                                    Загрузить PDF/ZIP архивы
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label text-secondary">Проект договора подряда</label>
+                                <div class="upload-area" id="dogUpload" onclick="mockFileUpload(this, 'Проект_Договора_СМР.docx');">
+                                    <i class="ri-article-line ri-2x text-primary" style="display:block; margin-bottom: 0.5rem;"></i>
+                                    Загрузить DOCX файл
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right; margin-top: 3rem;">
+                            <button type="button" class="btn btn-outline mr-2" onclick="window.location.href='dashboard_org.html'">Отмена</button>
+                            <button type="submit" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1rem;"><i class="ri-global-line"></i> Опубликовать закупку</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно подписания организатором -->
+    <div id="publishModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Подписание ЭЦП (Фирма Азия)</h3>
+                <button class="close-btn" onclick="document.getElementById('publishModal').style.display='none'"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary mb-3">Для публикации тендера в систему, он должен быть подписан ЭЦП уполномоченного лица.</p>
+                <div class="file-upload-box" onclick="simulatePublish()">
+                    <i class="ri-shield-keyhole-fill"></i>
+                    <strong id="pubText">Выбрать ЭЦП (Ключ GOST)</strong>
+                    <div id="pubLoader" class="loader-spinner" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function simulatePublish() {
+            document.getElementById('pubText').style.display = 'none';
+            document.getElementById('pubLoader').style.display = 'inline-block';
+            
+            setTimeout(() => {
+                showToast('Тендер опубликован', 'Тендер успешно подписан ЭЦП руководителя и опубликован! Лоту присвоен номер T-2024-900.', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard_org.html';
+                }, 2000);
+            }, 1500);
+        }
+    </script>
+    <script src="demo.js"></script>
+</body>
+</html>

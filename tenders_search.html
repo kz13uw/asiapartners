@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск Лотов | Портал Закупок</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Наследование структуры */
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 280px; background-color: #1a1b1e; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
+        .sidebar-logo { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-logo span { color: var(--pk-primary); }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active { background-color: var(--pk-primary); color: #fff; border-left-color: #fff; font-weight: 500; }
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--pk-bg-main);}
+        .top-header { height: 72px; background-color: var(--pk-bg-surface); border-bottom: 1px solid var(--pk-border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; }
+        .header-title { font-size: 1.25rem; font-weight: 600; color: var(--pk-text-main); }
+        .header-user { display: flex; align-items: center; gap: 1rem; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--pk-primary-light); color: var(--pk-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+
+        /* Поиск и Фильтры */
+        .search-panel { background: var(--pk-bg-surface); padding: 1.5rem; border-radius: var(--pk-radius-md); box-shadow: var(--pk-shadow-sm); border: 1px solid var(--pk-border); margin-bottom: 2rem; }
+        .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1rem; }
+        .filter-item { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-label { font-size: 0.875rem; font-weight: 500; color: var(--pk-text-secondary); }
+        .filter-input { padding: 0.625rem 1rem; border: 1px solid var(--pk-border); border-radius: var(--pk-radius-sm); outline: none; transition: border-color 0.2s; font-family: inherit; }
+        .filter-input:focus { border-color: var(--pk-primary); }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-building-4-line" style="font-size: 1.5rem;"></i> Портал <span>Фирма Азия</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase;">Ваш Кабинет</div>
+                <a href="dashboard.html" class="nav-item"><i class="ri-building-line"></i> Сводка: Контрагент</a>
+                <a href="tenders_search.html" class="nav-item active"><i class="ri-search-line"></i> Поиск лотов</a>
+                <a href="history.html" class="nav-item"><i class="ri-history-line"></i> История участия</a>
+                
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; margin-top: 1.5rem; margin-bottom: 0.5rem;">Управление</div>
+                <a href="profile.html" class="nav-item"><i class="ri-user-settings-line"></i> Профиль ТОО</a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <div class="header-title">Реестр открытых закупок</div>
+                <div class="header-user">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">ТОО "СнабИнвестПром"</div>
+                        <div style="font-size: 0.75rem; color: var(--pk-text-secondary);">БИН 123456789012</div>
+                    </div>
+                    <div class="avatar">СИП</div>
+                </div>
+            </header>
+
+            <section class="content-area">
+                <div class="search-panel">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" class="filter-input table-search-input" data-table=".table-wrapper table" style="flex: 1;" placeholder="Поиск по наименованию, описанию или номеру закупки...">
+                        <button class="btn btn-primary"><i class="ri-search-line"></i> Найти</button>
+                    </div>
+                    
+                    <div class="filter-grid">
+                        <div class="filter-item">
+                            <label class="filter-label">Метод закупок</label>
+                            <select class="filter-input">
+                                <option>Все методы</option>
+                                <option>Одноэтапный (Конкурс)</option>
+                                <option>Двухэтапный</option>
+                                <option>На понижение</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">Организатор (Заказчик)</label>
+                            <input type="text" class="filter-input" placeholder="БИН или название">
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">Регион поставки</label>
+                            <select class="filter-input">
+                                <option>Весь Казахстан</option>
+                                <option>г. Астана</option>
+                                <option>г. Алматы</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">Сумма (тнг)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="number" class="filter-input" placeholder="От" style="width: 50%;">
+                                <input type="number" class="filter-input" placeholder="До" style="width: 50%;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 1.5rem;">
+                        <button class="btn btn-outline" style="font-size: 0.8rem;"><i class="ri-filter-off-line"></i> Сбросить фильтры</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="mb-3">Результаты поиска <span class="text-secondary text-sm" style="font-weight: normal;">(Найдено: 124)</span></h3>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>№ Закупки</th>
+                                    <th>Наименование и Описание</th>
+                                    <th>Метод</th>
+                                    <th>Сумма (тнг)</th>
+                                    <th>Статус</th>
+                                    <th>Конец приема</th>
+                                    <th>Действие</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="font-medium">T-2023-084</td>
+                                    <td>
+                                        <strong>Строительство ангара (2 этап)</strong><br>
+                                        <span class="text-sm text-secondary">ТОО "Фирма Азия"</span>
+                                    </td>
+                                    <td>Конкурс (2-этапа)</td>
+                                    <td class="font-semibold">80,000,000</td>
+                                    <td><span class="badge badge-success">Прием заявок</span></td>
+                                    <td><span class="text-secondary">10.04.2024</span></td>
+                                    <td><button class="btn btn-outline btn-sm" onclick="window.location.href='tender_details.html'">Изучить лот</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">T-2023-091</td>
+                                    <td>
+                                        <strong>Поставка арматуры А500С и швеллеров</strong><br>
+                                        <span class="text-sm text-secondary">ТОО "Фирма Азия"</span>
+                                    </td>
+                                    <td>На понижение</td>
+                                    <td class="font-semibold">45,500,000</td>
+                                    <td><span class="badge badge-success">Прием заявок</span></td>
+                                    <td><span class="text-secondary">15.04.2024</span></td>
+                                    <td><button class="btn btn-outline btn-sm" onclick="window.location.href='tender_details.html'">Изучить лот</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">T-2023-055</td>
+                                    <td>
+                                        <strong>Отделочные работы внутренних помещений</strong><br>
+                                        <span class="text-sm text-secondary">ТОО "Фирма Азия"</span>
+                                    </td>
+                                    <td>На понижение</td>
+                                    <td class="font-semibold">22,000,000</td>
+                                    <td><span class="badge badge-warning">Обсуждение</span></td>
+                                    <td><span class="text-secondary">11.04.2024</span></td>
+                                    <td><button class="btn btn-outline btn-sm" onclick="window.location.href='tender_details.html'">Изучить лот</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="font-medium">T-2023-010</td>
+                                    <td>
+                                        <strong>Рытье котлована и укладка фундамента</strong><br>
+                                        <span class="text-sm text-secondary">ТОО "Фирма Азия"</span>
+                                    </td>
+                                    <td>Одноэтапный</td>
+                                    <td class="font-semibold">120,000,000</td>
+                                    <td><span class="badge" style="background:#e0e0e0; color:#525252">Приостановлен</span></td>
+                                    <td><span class="text-secondary">01.04.2024</span></td>
+                                    <td><button disabled class="btn btn-outline btn-sm" style="opacity:0.5;">Недоступен</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+    <script src="demo.js"></script>
+</body>
+</html>

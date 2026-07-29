@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оценка Заявок | Фирма Азия</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 280px; background-color: #1a1b1e; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
+        .sidebar-logo { padding: 1.5rem; font-size: 1.25rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 0.75rem; }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s; border-left: 3px solid transparent; }
+        .nav-item:hover { background-color: rgba(255,255,255,0.1); color: #fff; }
+        .nav-item.active { background-color: var(--pk-primary); color: #fff; border-left-color: #fff; font-weight: 500; }
+        
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--pk-bg-main);}
+        .top-header { height: 72px; background-color: var(--pk-bg-surface); border-bottom: 1px solid var(--pk-border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0; }
+        .header-user { display: flex; align-items: center; gap: 1rem; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--pk-primary-light); color: var(--pk-primary); display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        
+        .breadcrumbs { font-size: 0.875rem; color: var(--pk-text-secondary); margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: center; }
+        .breadcrumbs a { color: var(--pk-primary); text-decoration: none; }
+        .breadcrumbs a:hover { text-decoration: underline; }
+        
+        .eval-grid { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-building-4-line"></i> Закупки <span>Фирма Азия</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase;">Мониторинг</div>
+                <a href="dashboard_org.html" class="nav-item"><i class="ri-dashboard-line"></i> Реестр моих закупок</a>
+                <a href="create_tender.html" class="nav-item"><i class="ri-add-box-line"></i> Создать новый лот</a>
+                
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; margin-top: 1.5rem;">Администрирование</div>
+                <a href="#" class="nav-item active"><i class="ri-article-line"></i> Протоколы итогов</a>
+                <a href="dashboard_admin.html" class="nav-item"><i class="ri-settings-4-line"></i> Панель Администратора</a>
+            </nav>
+        </aside>
+
+        <main class="main-wrapper">
+            <header class="top-header">
+                <div>Вскрытие и Оценка Заявок</div>
+                <div class="header-user">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">Отдел Снабжения</div>
+                        <div style="font-size: 0.75rem; color: var(--pk-text-secondary);">Менеджер проектов</div>
+                    </div>
+                    <div class="avatar">АС</div>
+                </div>
+            </header>
+
+            <section class="content-area">
+                <div class="breadcrumbs">
+                    <a href="dashboard_org.html">Реестр активных лотов</a>
+                    <i class="ri-arrow-right-s-line"></i>
+                    <span>Лот T-2023-890 (Вскрытие)</span>
+                </div>
+
+                <div class="card mb-3" style="border-left: 4px solid var(--pk-primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Бетонные и земельные работы на Участке А</h2>
+                            <div class="text-secondary">Номер: T-2023-890 • Метод: Двухэтапный • Плановая сумма: 4,200,000 тнг</div>
+                        </div>
+                        <span class="badge badge-warning" style="font-size: 1rem; padding: 0.5rem 1rem;">Идет оценка заявок</span>
+                    </div>
+                </div>
+
+                <div class="eval-grid">
+                    <!-- Заявки участников -->
+                    <div class="card">
+                        <h3 class="mb-3">Реестр поступивших заявок <span class="badge badge-primary">2 заявки</span></h3>
+                        
+                        <div style="border: 1px solid var(--pk-border); border-radius: var(--pk-radius-md); margin-bottom: 1rem; padding: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <div>
+                                    <h4 style="font-size: 1.1rem; color: var(--pk-text-main);">ТОО "СнабИнвестПром"</h4>
+                                    <span class="text-sm text-secondary">БИН: 123456789012 • Дата подачи: 14.04.2024 10:15</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="text-sm text-secondary">Ценовое предложение</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--pk-success);">3,950,000 тнг</div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                                <button class="btn btn-outline btn-sm"><i class="ri-file-zip-line"></i> Квалиф_Документы.zip</button>
+                                <button class="btn btn-outline btn-sm"><i class="ri-bank-card-line"></i> Подтверждение обеспечения</button>
+                            </div>
+                            
+                            <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--pk-border); padding-top: 1rem;">
+                                <button class="btn btn-success" style="background: var(--pk-success); color: white;" onclick="this.innerHTML='<i class=&quot;ri-check-line&quot;></i> Допущен';"><i class="ri-check-line"></i> Допустить к итогам</button>
+                                <button class="btn btn-outline text-danger" style="color: var(--pk-danger); border-color: var(--pk-danger);"><i class="ri-close-line"></i> Отклонить (Причина)</button>
+                            </div>
+                        </div>
+
+                        <div style="border: 1px solid var(--pk-border); border-radius: var(--pk-radius-md); padding: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <div>
+                                    <h4 style="font-size: 1.1rem; color: var(--pk-text-main);">АО "КазСтройМонтаж"</h4>
+                                    <span class="text-sm text-secondary">БИН: 987654321098 • Дата подачи: 14.04.2024 16:45</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="text-sm text-secondary">Ценовое предложение</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--pk-primary);">4,100,000 тнг</div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                                <button class="btn btn-outline btn-sm"><i class="ri-file-zip-line"></i> КСМ_Архив.zip</button>
+                            </div>
+                            
+                            <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--pk-border); padding-top: 1rem;">
+                                <button class="btn btn-success" style="background: var(--pk-success); color: white;" onclick="this.innerHTML='<i class=&quot;ri-check-line&quot;></i> Допущен';"><i class="ri-check-line"></i> Допустить к итогам</button>
+                                <button class="btn btn-outline text-danger" style="color: var(--pk-danger); border-color: var(--pk-danger);"><i class="ri-close-line"></i> Отклонить (Причина)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Формирование протокола -->
+                    <div>
+                        <div class="card" style="position: sticky; top: 2rem;">
+                            <h3 class="mb-3">Публикация Итогов</h3>
+                            <p class="text-sm text-secondary mb-3">После оценки всех допущенных заявок, система автоматически определит победителя с наименьшей ценой (или баллами).</p>
+                            
+                            <div style="background: #fdf5d2; color: #8a6d00; padding: 1rem; border-radius: 6px; font-size: 0.875rem; margin-bottom: 1.5rem;">
+                                <i class="ri-information-line"></i> Требуется оценка 2 из 2 заявок
+                            </div>
+                            
+                            <button class="btn btn-primary" style="width: 100%; padding: 1rem; justify-content: center;" onclick="generateProtocol()">
+                                <i class="ri-file-list-3-line"></i> Сформировать Протокол
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Модалка ЭЦП -->
+    <div id="protocolModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Подписание Протокола Итогов</h3>
+                <button class="close-btn" onclick="document.getElementById('protocolModal').style.display='none'"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #defbe6; border: 1px solid var(--pk-success); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: left;">
+                    <div style="font-weight: 600; color: #198038; margin-bottom: 0.5rem;">Черновик протокола готов!</div>
+                    <div style="font-size: 0.875rem;">Согласно наименьшей цене, <strong>ТОО "СнабИнвестПром"</strong> (3,950,000 тнг) определен победителем.<br> Подпишите протокол, чтобы опубликовать его в общий доступ.</div>
+                </div>
+
+                <div class="file-upload-box" onclick="signProtocol()">
+                    <i class="ri-quill-pen-line"></i>
+                    <strong id="protText">Подписать ключом Организатора</strong>
+                    <div id="protLoader" class="loader-spinner" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateProtocol() {
+            document.getElementById('protocolModal').style.display = 'flex';
+        }
+
+        function signProtocol() {
+            document.getElementById('protText').style.display = 'none';
+            document.getElementById('protLoader').style.display = 'inline-block';
+            
+            setTimeout(() => {
+                alert("Протокол итогов T-2023-890 успешно подписан и опубликован! Уведомления участникам разосланы.");
+                window.location.href = 'dashboard_org.html';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

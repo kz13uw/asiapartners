@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  # ==============================
+  # PostgreSQL
+  # ==============================
+  db:
+    image: postgres:16-alpine
+    container_name: asia_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: asia_procurement
+      POSTGRES_USER: asia
+      POSTGRES_PASSWORD: asia_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U asia -d asia_procurement"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==============================
+  # Redis
+  # ==============================
+  redis:
+    image: redis:7-alpine
+    container_name: asia_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==============================
+  # FastAPI Backend
+  # ==============================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: asia_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ==============================
+  # React Frontend (dev mode)
+  # ==============================
+  frontend:
+    image: node:20-alpine
+    container_name: asia_frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:

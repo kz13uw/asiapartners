@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный Кабинет | Портал Закупок</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Стили для структуры дашборда */
+        body { margin: 0; background-color: var(--pk-bg-main); overflow: hidden; }
+        .app-layout { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px; background-color: #1a1b1e; color: #fff;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10;
+        }
+        .sidebar-logo {
+            padding: 1.5rem; font-size: 1.25rem; font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 0.75rem;
+        }
+        .sidebar-logo span { color: var(--pk-primary); }
+        .sidebar-nav { padding: 1.5rem 0; flex-grow: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem;
+            color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.2s;
+            cursor: pointer; border-left: 3px solid transparent;
+        }
+        .nav-item:hover { background-color: rgba(255,255,255,0.05); color: #fff; }
+        .nav-item.active {
+            background-color: var(--pk-primary); color: #fff;
+            border-left-color: #fff; font-weight: 500;
+        }
+        
+        /* Main Content */
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--pk-bg-main);}
+        .top-header {
+            height: 72px; background-color: var(--pk-bg-surface); border-bottom: 1px solid var(--pk-border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; flex-shrink: 0;
+        }
+        .header-title { font-size: 1.25rem; font-weight: 600; color: var(--pk-text-main); }
+        .header-user { display: flex; align-items: center; gap: 1rem; }
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%; background-color: var(--pk-primary-light);
+            color: var(--pk-primary); display: flex; align-items: center; justify-content: center; font-weight: 600;
+        }
+        
+        /* Content Area */
+        .content-area { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+        
+        /* Grid Widgets */
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: var(--pk-bg-surface); padding: 1.5rem; border-radius: var(--pk-radius-md);
+            border: 1px solid var(--pk-border); box-shadow: var(--pk-shadow-sm);
+        }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem; }
+        .icon-blue { background: var(--pk-primary-light); color: var(--pk-primary); }
+        .icon-yellow { background: #fdf5d2; color: #8a6d00; }
+        .icon-green { background: #defbe6; color: var(--pk-success); }
+        
+        .stat-val { font-size: 2rem; font-weight: 700; color: var(--pk-text-main); line-height: 1; margin-bottom: 0.5rem; }
+        .stat-title { font-size: 0.875rem; color: var(--pk-text-secondary); font-weight: 500; }
+        
+        /* Tabs Navbar (In-Page) */
+        .tabs { display: flex; gap: 2rem; border-bottom: 1px solid var(--pk-border); margin-bottom: 1.5rem; }
+        .tab-btn {
+            background: none; border: none; padding: 1rem 0; font-size: 1rem; font-weight: 500;
+            color: var(--pk-text-secondary); cursor: pointer; border-bottom: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .tab-btn:hover { color: var(--pk-text-main); }
+        .tab-btn.active { color: var(--pk-primary); border-bottom-color: var(--pk-primary); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeInContent 0.3s ease; }
+        @keyframes fadeInContent { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Action header */
+        .action-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;}
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- Боковая панель -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="ri-building-4-line" style="font-size: 1.5rem;"></i> Портал <span>Фирма Азия</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Ваш Кабинет</div>
+                <a href="dashboard.html" class="nav-item active"><i class="ri-building-line"></i> Сводка: Контрагент</a>
+                <a href="tenders_search.html" class="nav-item"><i class="ri-search-line"></i> Поиск лотов</a>
+                <a href="history.html" class="nav-item"><i class="ri-history-line"></i> История участия</a>
+                
+                <div class="text-secondary" style="padding: 0 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 1.5rem; margin-bottom: 0.5rem;">Управление</div>
+                <a href="contracts.html" class="nav-item"><i class="ri-file-list-3-line"></i> Договоры</a>
+                <a href="profile.html" class="nav-item"><i class="ri-user-settings-line"></i> Профиль ТОО</a>
+            </nav>
+            <div style="padding: 1.5rem;">
+                <button class="btn btn-outline" style="width: 100%; border-color: rgba(255,255,255,0.2); color: #fff;" onclick="window.location.href='index.html'">
+                    <i class="ri-logout-box-r-line"></i> Выйти из системы
+                </button>
+            </div>
+        </aside>
+
+        <!-- Основная часть -->
+        <main class="main-wrapper">
+            <!-- Верхняя шапка -->
+            <header class="top-header">
+                <div class="header-title">Личный кабинет Контрагента</div>
+                <div class="header-user">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">ТОО "СнабИнвестПром"</div>
+                        <div style="font-size: 0.75rem; color: var(--pk-text-secondary);">БИН 123456789012</div>
+                    </div>
+                    <div class="avatar">СИП</div>
+                </div>
+            </header>
+
+            <!-- Контент -->
+            <section class="content-area">
+                
+                <!-- Статистика -->
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><i class="ri-file-list-2-line"></i></div>
+                        <div class="stat-val animate-number" data-target="4">0</div>
+                        <div class="stat-title">Активные заявки в тендерах</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-yellow"><i class="ri-notification-3-line"></i></div>
+                        <div class="stat-val animate-number" data-target="12">0</div>
+                        <div class="stat-title">Новые системные уведомления</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="ri-shield-check-line"></i></div>
+                        <div class="stat-val">Активен</div>
+                        <div class="stat-title">Статус аккредитации</div>
+                    </div>
+                </div>
+
+                <!-- Основная рабочая область (Таб-панель) -->
+                <div class="card">
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('tenders')">Мои заявки</button>
+                        <button class="tab-btn" onclick="switchTab('documents')">Мои Документы</button>
+                        <button class="tab-btn" onclick="switchTab('notifications')">Уведомления <span class="badge badge-warning">12</span></button>
+                    </div>
+
+                    <!-- Таб 1: Тендеры -->
+                    <div id="tenders" class="tab-content active">
+                        <div class="action-header">
+                            <h3 style="font-weight: 600; font-size: 1.1rem;">Текущее участие в закупках</h3>
+                            <div class="search-box" style="width: 250px;">
+                                <i class="ri-search-line"></i>
+                                <input type="text" class="table-search-input" data-table=".table-wrapper table" placeholder="Поиск лота...">
+                            </div>
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>№ Тендера</th>
+                                        <th>Наименование лота</th>
+                                        <th>Метод закупки</th>
+                                        <th>Ваша ставка (тнг)</th>
+                                        <th>Статус участия</th>
+                                        <th>Действие</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-medium">T-2023-001</td>
+                                        <td>Поставка строительных материалов (Цемент М500)</td>
+                                        <td>Одноэтапный</td>
+                                        <td class="font-semibold">3,450,000</td>
+                                        <td><span class="badge badge-warning">На рассмотрении</span></td>
+                                        <td><button class="btn btn-outline btn-sm" onclick="window.location.href='tender_details.html'">Детали</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">T-2023-084</td>
+                                        <td>Строительство ангара (2 этап)</td>
+                                        <td>Двухэтапный</td>
+                                        <td class="font-semibold">-</td>
+                                        <td><span class="badge badge-success">Допущен (1 этап)</span></td>
+                                        <td><button class="btn btn-primary btn-sm" onclick="window.location.href='tender_details.html'">Сделать ставку</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-medium">T-2023-102</td>
+                                        <td>Монтаж кровли складского помещения</td>
+                                        <td>На понижение</td>
+                                        <td class="font-semibold">1,200,000</td>
+                                        <td><span class="badge" style="background:#e0e0e0; color:#525252">Уклонился</span></td>
+                                        <td><button class="btn btn-outline btn-sm">Протокол</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Таб 2: Документы (Заглушка) -->
+                    <div id="documents" class="tab-content">
+                        <h3 style="font-weight: 600; font-size: 1.1rem; margin-bottom: 1rem;">Архив документации контрагента</h3>
+                        <div id="uploadDocsArea" style="border: 2px dashed var(--pk-border); border-radius: var(--pk-radius-md); padding: 3rem; text-align: center; color: var(--pk-text-secondary); cursor: pointer;" onclick="mockFileUpload(this, 'Устав_и_Справки.zip');">
+                            <i class="ri-folder-upload-line" style="font-size: 3rem; color: var(--pk-primary); margin-bottom: 1rem; display: block;"></i>
+                            <h4 style="color: var(--pk-text-main); margin-bottom: 0.5rem;">Раздел загрузки документов</h4>
+                            <p>Перетащите сюда уставные документы (Устав, справка egov) для прохождения квалификации.</p>
+                            <button class="btn btn-outline mt-2"><i class="ri-upload-2-line"></i> Выбрать файлы</button>
+                        </div>
+                    </div>
+
+                    <!-- Таб 3: Уведомления (Заглушка) -->
+                    <div id="notifications" class="tab-content">
+                         <h3 style="font-weight: 600; font-size: 1.1rem; margin-bottom: 1rem;">Системные уведомления</h3>
+                         <div style="border: 1px solid var(--pk-border); border-left: 4px solid var(--pk-primary); padding: 1.25rem; border-radius: var(--pk-radius-sm); margin-bottom: 1rem; background: var(--pk-bg-surface);">
+                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                 <strong style="font-size: 1rem;"><i class="ri-error-warning-line text-secondary mr-2"></i> Протокол вскрытия T-2023-084</strong>
+                                 <span class="text-secondary" style="font-size: 0.8rem;">Сегодня, 14:30</span>
+                             </div>
+                             <p class="text-secondary text-sm">Организатор загрузил протокол вскрытия (предварительный допуск). Вы были допущены ко второму этапу.</p>
+                         </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Фишка: Виджет чат-поддержки -->
+    <div id="chatWidget" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; font-family: 'Inter', sans-serif;">
+        <!-- Кнопка открытия -->
+        <button id="chatBtn" style="width: 60px; height: 60px; border-radius: 50%; background: var(--pk-primary); color: white; border: none; box-shadow: 0 4px 15px rgba(15,98,254,0.4); cursor: pointer; font-size: 1.5rem; transition: transform 0.2s; display: flex; align-items: center; justify-content: center;" onclick="toggleChat()">
+            <i class="ri-customer-service-2-line"></i>
+        </button>
+        
+        <!-- Окно чата -->
+        <div id="chatWindow" style="display: none; position: absolute; bottom: 80px; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid var(--pk-border); overflow: hidden; animation: slideUp 0.3s ease;">
+            <div style="background: var(--pk-primary); color: white; padding: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 10px; height: 10px; background: #24a148; border-radius: 50%;"></div>
+                <div style="font-weight: 600; font-size: 0.9rem;">Служба поддержки портала</div>
+            </div>
+            <div id="chatMessages" style="height: 300px; padding: 1rem; background: #fdfdfd; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; font-size: 0.875rem;">
+                <div style="align-self: flex-start; background: #f4f7f9; padding: 0.75rem 1rem; border-radius: 12px 12px 12px 0; max-width: 85%;">
+                    Здравствуйте! Чем могу помочь с подачей заявки?
+                </div>
+            </div>
+            <div style="padding: 1rem; border-top: 1px solid var(--pk-border); display: flex; gap: 0.5rem;">
+                <input type="text" id="chatInput" placeholder="Введите сообщение..." style="flex: 1; border: none; outline: none; background: #f4f7f9; padding: 0.5rem 1rem; border-radius: 20px; font-family: inherit; font-size: 0.875rem;" onkeypress="if(event.key === 'Enter') sendMsg()">
+                <button style="background: none; border: none; color: var(--pk-primary); font-size: 1.25rem; cursor: pointer;" onclick="sendMsg()"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const w = document.getElementById('chatWindow');
+            if(w.style.display === 'none') {
+                w.style.display = 'block';
+                document.getElementById('chatBtn').style.transform = 'scale(0.9)';
+            } else {
+                w.style.display = 'none';
+                document.getElementById('chatBtn').style.transform = 'scale(1)';
+            }
+        }
+        
+        function sendMsg() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if(!msg) return;
+            
+            const area = document.getElementById('chatMessages');
+            
+            // Сообщение пользователя
+            const userDiv = document.createElement('div');
+            userDiv.style = "align-self: flex-end; background: var(--pk-primary); color: white; padding: 0.75rem 1rem; border-radius: 12px 12px 0 12px; max-width: 85%; animation: fadeIn 0.3s ease;";
+            userDiv.innerText = msg;
+            area.appendChild(userDiv);
+            
+            input.value = '';
+            area.scrollTop = area.scrollHeight;
+            
+            // Авто-ответ бота (Фишка)
+            setTimeout(() => {
+                const botDiv = document.createElement('div');
+                botDiv.style = "align-self: flex-start; background: #f4f7f9; padding: 0.75rem 1rem; border-radius: 12px 12px 12px 0; max-width: 85%; animation: fadeIn 0.3s ease;";
+                botDiv.innerText = "Оператор сейчас занят. Ваша сессия и лог ошибок отправлены тех.отделу. Мы свяжемся с вами!";
+                area.appendChild(botDiv);
+                area.scrollTop = area.scrollHeight;
+            }, 1000);
+        }
+
+        function switchTab(tabId) {
+            // Убираем класс active у всех кнопок
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            // Убираем класс active у всех вкладок контента
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Получаем кнопку, на которую кликнули (по событию) и таб
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+    <script src="demo.js"></script>
+</body>
+</html>

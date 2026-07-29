@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- Обеспечиваем корректное отображение на всех устройствах -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная | Портал Закупок Фирма Азия</title>
+    
+    <!-- Подключение шрифта Inter и Иконок (работает всегда) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Навигационная панель -->
+    <nav class="navbar">
+        <div class="container nav-content">
+            <div class="logo">
+                <i class="ri-building-4-line"></i> Портал Закупок <span>Фирма Азия</span>
+            </div>
+            <div class="nav-actions">
+                <a href="login_org.html" class="btn btn-outline" style="border: none; font-weight: 500;">Вход для Заказчика</a>
+                <button class="btn btn-outline" onclick="openModal('регистрация')">Регистрация (ЭЦП)</button>
+                <button class="btn btn-primary" onclick="openModal('вход')">Войти (ЭЦП)</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главный баннер (Hero) -->
+    <header class="hero">
+        <div class="container hero-content">
+            <h1>Открытые закупки и тендеры</h1>
+            <p>Платформа для прозрачного взаимодействия заказчиков и подрядчиков. Участвуйте в электронных торгах с использованием надежной системы авторизации.</p>
+        </div>
+    </header>
+
+    <!-- Секция активных тендеров -->
+    <main class="container py-4">
+        <div class="table-header">
+            <h2>Текущие активные тендеры</h2>
+            <div class="table-filters">
+                <div class="search-box">
+                    <i class="ri-search-line"></i>
+                    <input type="text" class="table-search-input" data-table=".table-wrapper table" placeholder="Поиск по номеру или названию...">
+                </div>
+                <button class="btn btn-primary"><i class="ri-filter-3-line"></i> Фильтр</button>
+            </div>
+        </div>
+
+        <div class="card table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>№ Закупки</th>
+                        <th>Наименование тендера</th>
+                        <th>Организатор</th>
+                        <th>Сумма (тнг)</th>
+                        <th>Статус</th>
+                        <th>Прием заявок (до)</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-medium">T-2023-881</td>
+                        <td>Муровочные и кладочные работы стен административного корпуса</td>
+                        <td>ТОО "Фирма Азия"</td>
+                        <td class="font-semibold">12,500,000</td>
+                        <td><span class="badge badge-success">Прием заявок</span></td>
+                        <td>15.04.2024</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openModal('вход')">Подать заявку</button></td>
+                    </tr>
+                    <tr>
+                        <td class="font-medium">T-2023-890</td>
+                        <td>Бетонные и земельные работы на Участке А</td>
+                        <td>ТОО "Фирма Азия"</td>
+                        <td class="font-semibold">4,200,000</td>
+                        <td><span class="badge badge-success">Прием заявок</span></td>
+                        <td>18.04.2024</td>
+                        <td><button class="btn btn-outline btn-sm action-btn" onclick="submitBidDemo(this)">Подать заявку</button></td>
+                    </tr>
+                    <tr>
+                        <td class="font-medium">T-2023-855</td>
+                        <td>Капитальный ремонт фасада и реконструкция офисного помещения</td>
+                        <td>ТОО "Фирма Азия"</td>
+                        <td class="font-semibold">45,000,000</td>
+                        <td><span class="badge badge-warning">Завершается</span></td>
+                        <td>02.04.2024</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openModal('вход')">Подать заявку</button></td>
+                    </tr>
+                    <tr>
+                        <td class="font-medium">T-2023-840</td>
+                        <td>Строительство модульного ангара и прокладка инженерных сетей</td>
+                        <td>ТОО "Фирма Азия"</td>
+                        <td class="font-semibold">80,000,000</td>
+                        <td><span class="badge badge-primary">Обсуждение</span></td>
+                        <td>10.04.2024</td>
+                        <td><button class="btn btn-outline btn-sm" onclick="openModal('вход')">Изучить док.</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Модальное окно ЭЦП -->
+    <div id="edsModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitle">Считывание ЭЦП</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-secondary mb-3">Для безопасности платформы мы используем сертификаты НУЦ РК (ключи AUTH или GOST).</p>
+                
+                <div class="file-upload-box" id="uploadBox" onclick="simulateEdsProcess()">
+                    <i class="ri-usb-drive-line"></i>
+                    <strong id="uploadText">Выбрать хранилище (Ваш компьютер)</strong>
+                    <div id="loader" class="loader-spinner" style="display: none;"></div>
+                </div>
+
+                <div class="sim-notice text-secondary">
+                    (Нажмите на блок выше для имитации успешного входа/регистрации)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Логика модального окна -->
+    <script>
+        const modal = document.getElementById('edsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const uploadBox = document.getElementById('uploadBox');
+        const uploadText = document.getElementById('uploadText');
+        const loader = document.getElementById('loader');
+
+        let currentAction = 'вход';
+
+        function openModal(actionType) {
+            currentAction = actionType;
+            if (actionType === 'регистрация') {
+                modalTitle.innerText = "Регистрация Нового Контрагента (ЭЦП)";
+            } else {
+                modalTitle.innerText = "Вход в Кабинет (ЭЦП)";
+            }
+            // Сброс состояния
+            uploadText.innerText = "Выбрать сертификат ЭЦП";
+            uploadText.style.display = "block";
+            loader.style.display = "none";
+            uploadBox.style.borderColor = "var(--pk-border)";
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        function simulateEdsProcess() {
+            // Прячем текст, показываем спиннер
+            uploadText.style.display = "none";
+            loader.style.display = "inline-block";
+            
+            setTimeout(() => {
+                loader.style.display = "none";
+                uploadText.style.display = "block";
+                
+                // Имитация успеха
+                uploadText.innerHTML = '<span style="color: var(--pk-success)"><i class="ri-check-line"></i> Данные ключа считаны успешно!</span>';
+                uploadBox.style.borderColor = "var(--pk-success)";
+                
+                setTimeout(() => {
+                    closeModal();
+                    if(currentAction === 'вход') {
+                        showToast('Успешная авторизация', 'Добро пожаловать в систему!', 'success');
+                        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+                    } else {
+                        showToast('Регистрация завершена', 'Данные ЭЦП сохранены. Добро пожаловать!', 'success');
+                        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+                    }
+                }, 1000);
+            }, 1500);
+        }
+
+        // Закрытие при клике по фону
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Демо-отправка заявки без входа
+        function submitBidDemo(btn) {
+            showToast('Обработка', 'Идет формирование заявки...', 'info');
+            btn.innerHTML = '<span class="loader-spinner" style="width: 16px; height: 16px; border-width: 2px;"></span>';
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ri-check-double-line"></i> Заявка подана';
+                btn.className = 'btn btn-primary btn-sm';
+                btn.style.backgroundColor = 'var(--pk-success)';
+                btn.style.borderColor = 'var(--pk-success)';
+                btn.onclick = null;
+                showToast('Успех', 'Ваша конкурсная заявка успешно отправлена организатору.', 'success');
+            }, 1500);
+        }
+    </script>
+    <script src="demo.js"></script>
+</body>
+</html>

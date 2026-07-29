@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход для Заказчика | Фирма Азия</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        body { margin: 0; background-color: var(--pk-bg-sidebar); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--pk-bg-surface); padding: 3rem; border-radius: var(--pk-radius-lg); box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; }
+        .login-logo { font-size: 1.5rem; font-weight: 700; color: var(--pk-text-main); display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 2rem;}
+        .login-logo i { color: var(--pk-primary); font-size: 1.8rem; }
+        .login-logo span { color: var(--pk-primary); }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--pk-text-secondary); }
+        .form-control { width: 100%; padding: 0.875rem 1rem; border: 1px solid var(--pk-border); border-radius: var(--pk-radius-sm); font-size: 1rem; transition: 0.2s; outline: none; font-family: inherit; }
+        .form-control:focus { border-color: var(--pk-primary); box-shadow: 0 0 0 2px var(--pk-primary-light); }
+        .btn-full { width: 100%; padding: 1rem; font-size: 1rem; margin-top: 1rem; }
+        
+        .divider { display: flex; align-items: center; margin: 1.5rem 0; color: var(--pk-text-secondary); text-transform: uppercase; font-size: 0.75rem; }
+        .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid var(--pk-border); }
+        .divider span { padding: 0 1rem; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="ri-building-4-line"></i> Закупки <span>Фирма Азия</span>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Вход для Закупщика</h2>
+            <p class="text-secondary text-sm">Авторизация для сотрудников ТОО "Фирма Азия"</p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); window.location.href='dashboard_org.html';">
+            <div class="form-group">
+                <label class="form-label">Корпоративный Email</label>
+                <input type="email" class="form-control" placeholder="example@asia.kz" value="zakuptender@asia.kz" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" style="display: flex; justify-content: space-between;">
+                    Пароль <a href="#" style="color: var(--pk-primary); text-decoration: none;">Забыли?</a>
+                </label>
+                <input type="password" class="form-control" placeholder="••••••••" value="password123" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-full"><i class="ri-login-box-line"></i> Войти в Систему</button>
+        </form>
+
+        <div class="divider"><span>ИЛИ</span></div>
+        
+        <button class="btn btn-outline btn-full" onclick="window.location.href='dashboard_org.html'"><i class="ri-shield-keyhole-line text-primary"></i> Войти по ЭЦП Сотрудника</button>
+        
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="index.html" style="color: var(--pk-text-secondary); text-decoration: none; font-size: 0.875rem;"><i class="ri-arrow-left-line"></i> Вернуться на главную портала</a>
+        </div>
+    </div>
+
+</body>
+</html>

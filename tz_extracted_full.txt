@@ -1,0 +1,165 @@
+====================
+<USER_REQUEST>
+фронт пиши на ReactJS back на FASTapi, остальное пока без изменений
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T12:28:22+05:00.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from Claude Sonnet 4.6 (Thinking) to Gemini 3.1 Pro (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
+====================
+<USER_REQUEST>
+далее продолжай
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:02:34+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+продолжай
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:10:39+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+https://www.asiapartners.kz/#home делай дизайн портала такой же как и этот сайт
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:16:38+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+proceed
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:20:10+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+вставь это на логотип
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:34:24+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+увеличь его слишком муленький
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:35:32+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+увеличь еще 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:36:10+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+запусти сайт в js
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:40:21+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+не могу залогинится
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:42:35+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+увеличь логотип в 1 раза он слишком маленькй
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T13:56:00+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+сделай кабинеты адмнистратора, кабинеты компании заказчика
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T14:01:27+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+сделай отдельно кнопку вход для заказчика страница /company
+и также /admin
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T14:11:04+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+создай кнопку регистрации для поставщиков
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T14:13:37+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+и форму регистрации
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T14:13:56+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+сделай дизайн адаптивный, также выпрями все компннеты меню и названий, сдела дизайн идентичный основному сайту
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T16:16:59+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+продолжай
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T16:20:00+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+добавь футер  с главного сайте с контактами компании 
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T16:20:50+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+не открывается портал
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T16:22:44+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+логины теперь не работают
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T16:24:11+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+главная страница не отображается
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T17:04:59+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T17:24:51+05:00.
+</ADDITIONAL_METADATA>
+====================
+<USER_REQUEST>
+проверь на соответствие ТЗ которое я отправил ранее, на сколько сейчас оно реализовано в нашем портале
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-06-24T17:34:16+05:00.
+</ADDITIONAL_METADATA>
