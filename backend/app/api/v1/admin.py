@@ -69,9 +69,11 @@ async def create_internal_user(
         )
         db.add(comp)
 
-    user.company_address = body.company_address
+    await db.commit()
+    await db.refresh(user)
     log = AuditLog(user_id=current_user.id, action="CREATE_USER", entity_type="user", entity_id=user.id)
     db.add(log)
+    await db.commit()
     return user
 
 
