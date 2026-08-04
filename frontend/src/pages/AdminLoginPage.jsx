@@ -7,15 +7,15 @@ import { useAuthStore } from '../store/authStore';
 const AdminLoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const [email, setEmail] = useState('admin@asia.kz');
-  const [password, setPassword] = useState('admin_pass');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
+      const userObj = await login(email, password);
       toast.success('Успешный вход в панель администратора');
       navigate('/admin/dashboard');
     } catch (e) {
@@ -36,13 +36,13 @@ const AdminLoginPage = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Email администратора</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>Логин / Email администратора</label>
             <input 
-              type="email" 
+              type="text" 
               className="form-control" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@asia.kz" 
+              placeholder="admin" 
               required
             />
           </div>

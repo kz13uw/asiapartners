@@ -55,25 +55,26 @@ html, body {
 
 /* Glassmorphism Utilities */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: var(--pk-shadow-glass);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
 }
 
 .glass-header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--pk-border);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
 }
 
 .glass-sidebar {
-  background: rgba(22, 58, 84, 0.95); /* Match header color (#163A54) */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(180deg, #163A54 0%, #0f2738 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   color: white;
 }
 
@@ -83,24 +84,31 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.15); }
 }
 
 /* Components */
 .card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
   border-radius: var(--pk-radius-lg);
-  box-shadow: var(--pk-shadow-sm);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover {
-  box-shadow: var(--pk-shadow-md);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.09);
+  border-color: rgba(43, 138, 196, 0.3);
 }
 
 .btn {
@@ -323,7 +331,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 768px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  .card { padding: 1rem; margin-bottom: 1rem; }
+  .card { padding: 1rem; margin-bottom: 1rem; border-radius: var(--pk-radius-md); }
   
   .glass-panel {
     margin-left: 0 !important;
@@ -336,13 +344,34 @@ h1, h2, h3, h4, h5, h6 {
   .hidden-mobile { display: none !important; }
   .mobile-block { display: block !important; }
   
-  .table-wrapper { border-radius: var(--pk-radius-sm); }
-  th, td { padding: 0.75rem 0.5rem; font-size: 0.875rem; }
+  .table-wrapper { 
+    border-radius: var(--pk-radius-sm);
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  th, td { padding: 0.75rem 0.5rem; font-size: 0.85rem; }
   
-  .btn { padding: 0.6rem 1.25rem; }
-  .stat-val { font-size: 2rem; }
+  .btn { 
+    padding: 0.65rem 1.25rem; 
+    min-height: 44px; /* Optimal touch target */
+    font-size: 0.9rem;
+  }
+  .stat-val { font-size: 1.85rem; }
   
   /* Reset layout for mobile */
-  .app-layout { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
-  .app-layout main { flex-grow: 1; overflow: visible; }
+  .app-layout { flex-direction: column; overflow-y: auto; overflow-x: hidden; height: auto; min-height: 100vh; }
+  .app-layout main { flex-grow: 1; overflow: visible; width: 100%; }
+
+  /* Mobile Modal Scaling */
+  .modal-card {
+    max-width: 94vw !important;
+    margin: 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Form controls touch optimization */
+  .form-control {
+    min-height: 44px;
+    font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+  }
 }

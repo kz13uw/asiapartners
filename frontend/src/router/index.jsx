@@ -17,6 +17,7 @@ import OrganizerDashboard from '../pages/organizer/OrganizerDashboard';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import TenderSearch from '../pages/shared/TenderSearch';
 import TenderDetails from '../pages/shared/TenderDetails';
+import AuctionRoom from '../pages/shared/AuctionRoom';
 import ProfileSettings from '../pages/shared/ProfileSettings';
 import Notifications from '../pages/shared/Notifications';
 import CreateTender from '../pages/organizer/CreateTender';
@@ -25,17 +26,26 @@ import OrgContracts from '../pages/organizer/OrgContracts';
 import OrgProtocols from '../pages/organizer/OrgProtocols';
 import SupplierHistory from '../pages/supplier/SupplierHistory';
 import SupplierProfile from '../pages/supplier/SupplierProfile';
+import MonitoringDashboard from '../pages/monitoring/MonitoringDashboard';
 import { AdminSettings, AdminSecurity, AdminReports } from '../pages/admin/AdminPlaceholders';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsOfUse from '../pages/TermsOfUse';
+import DocumentsPage from '../pages/DocumentsPage';
+
+import ReportsPage from '../pages/shared/ReportsPage';
 
 // Защита роутов по ролям
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useAuthStore();
   
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  const userRole = (user?.role || '').toLowerCase();
+
+  if (allowedRoles) {
+    const rolesLower = allowedRoles.map(r => r.toLowerCase());
+    if (!rolesLower.includes(userRole)) {
+      return <Navigate to="/" replace />;
+    }
   }
   
   return children;
@@ -49,6 +59,7 @@ const AppRouter = () => {
         <Route path="/" element={<IndexPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/public-tenders" element={<PublicTenders />} />
+        <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -58,6 +69,20 @@ const AppRouter = () => {
       {/* Роуты с авторизацией */}
       <Route element={<MainLayout />}>
         
+        {/* Общий реестр тендеров для всех ролей */}
+        <Route path="/tenders" element={
+          <ProtectedRoute allowedRoles={['supplier', 'organizer', 'monitoring', 'admin', 'commission']}>
+            <TenderSearch />
+          </ProtectedRoute>
+        } />
+
+        {/* Отчеты */}
+        <Route path="/reports" element={
+          <ProtectedRoute allowedRoles={['supplier', 'organizer', 'monitoring', 'admin', 'commission']}>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+
         {/* Контрагент */}
         <Route path="/supplier/dashboard" element={
           <ProtectedRoute allowedRoles={['supplier']}>
@@ -72,11 +97,6 @@ const AppRouter = () => {
         <Route path="/supplier/profile" element={
           <ProtectedRoute allowedRoles={['supplier']}>
             <SupplierProfile />
-          </ProtectedRoute>
-        } />
-        <Route path="/tenders" element={
-          <ProtectedRoute allowedRoles={['supplier']}>
-            <TenderSearch />
           </ProtectedRoute>
         } />
         
@@ -107,10 +127,15 @@ const AppRouter = () => {
           </ProtectedRoute>
         } />
 
-        {/* Общие для авторизованных */}
+        {/* Детали тендеров */}
         <Route path="/tenders/:id" element={
           <ProtectedRoute>
             <TenderDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/tenders/:id/auction" element={
+          <ProtectedRoute>
+            <AuctionRoom />
           </ProtectedRoute>
         } />
         <Route path="/profile/settings" element={
@@ -121,6 +146,13 @@ const AppRouter = () => {
         <Route path="/profile/notifications" element={
           <ProtectedRoute>
             <Notifications />
+          </ProtectedRoute>
+        } />
+
+        {/* Мониторинг */}
+        <Route path="/monitoring/dashboard" element={
+          <ProtectedRoute allowedRoles={['monitoring', 'admin']}>
+            <MonitoringDashboard />
           </ProtectedRoute>
         } />
 
@@ -142,7 +174,7 @@ const AppRouter = () => {
         } />
         <Route path="/admin/reports" element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <AdminReports />
+            <ReportsPage />
           </ProtectedRoute>
         } />
       </Route>

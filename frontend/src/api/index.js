@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   withCredentials: true,
 });
 
@@ -12,15 +12,18 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Автоматическое обновление токена при 401
+// Автоматическое обновление токена при 401 (исключая маршруты входа/рефреша)
 API.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
       original._retry = true;
       try {
         const refresh = localStorage.getItem('refresh_token');
+        if (!refresh) throw new Error('No refresh token');
         const res = await axios.post(`${API.defaults.baseURL}/auth/refresh`, { refresh_token: refresh });
         const { access_token, refresh_token } = res.data;
         localStorage.setItem('access_token', access_token);
@@ -57,6 +60,7 @@ export const tendersAPI = {
   create: (data) => API.post('/tenders', data),
   update: (id, data) => API.patch(`/tenders/${id}`, data),
   publish: (id, edsHash) => API.post(`/tenders/${id}/publish`, null, { params: { eds_hash: edsHash } }),
+  delete: (id) => API.delete(`/tenders/${id}`),
 };
 
 // ===== BIDS =====
@@ -88,9 +92,17 @@ export const adminAPI = {
   createUser: (data) => API.post('/admin/users', data),
   blockUser: (id) => API.patch(`/admin/users/${id}/block`),
   unblockUser: (id) => API.patch(`/admin/users/${id}/unblock`),
+  deleteUser: (id) => API.delete(`/admin/users/${id}`),
   resetPassword: (id) => API.post(`/admin/users/${id}/reset-password`),
   auditLog: (limit = 100) => API.get('/admin/audit-log', { params: { limit } }),
   stats: () => API.get('/admin/stats'),
+};
+
+// ===== CATEGORIES =====
+export const categoriesAPI = {
+  list: () => API.get('/categories'),
+  create: (data) => API.post('/categories', data),
+  delete: (id) => API.delete(`/categories/${id}`),
 };
 
 export default API;

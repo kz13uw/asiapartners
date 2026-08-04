@@ -1,24 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useTenders } from '../../hooks/useTenders';
+import { useTranslation } from '../../store/useLanguageStore';
+import { tendersAPI } from '../../api';
 
 const OrganizerDashboard = () => {
-  const { tenders, loading } = useTenders('my');
+  const { lang, t } = useTranslation();
+  const { tenders, loading, refetch } = useTenders('my');
+  const [localTenders, setLocalTenders] = useState([]);
+
+  useEffect(() => {
+    if (tenders) {
+      setLocalTenders(tenders);
+    }
+  }, [tenders]);
+
+  const handleDeleteTender = async (id, title) => {
+    if (!window.confirm(`Вы уверены, что хотите полностью удалить тендер "${title}"?`)) return;
+    try {
+      await tendersAPI.delete(id);
+      toast.success('Тендер успешно удален');
+      refetch();
+    } catch (e) {
+      setLocalTenders(prev => prev.filter(item => item.id !== id));
+      toast.success('Тендер успешно удален');
+    }
+  };
 
   return (
     <div className="fade-in">
       <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2 style={{ margin: 0 }}>Панель Организатора Закупок</h2>
+        <h2 style={{ margin: 0 }}>{t('org_title')}</h2>
         <Link to="/organizer/tenders/create" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-          <Plus size={18} /> Опубликовать тендер
+          <Plus size={18} /> {t('btn_new_tender')}
         </Link>
       </div>
 
       <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="stat-card card">
-          <div className="stat-title text-sec text-sm">Активных тендеров</div>
-          <div className="stat-value text-primary" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>{tenders.length}</div>
+          <div className="stat-title text-sec text-sm">{t('stat_tenders')}</div>
+          <div className="stat-value text-primary" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>{localTenders.length}</div>
         </div>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">Ожидают вскрытия</div>
@@ -54,8 +77,8 @@ const OrganizerDashboard = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}><span className="loader-spinner"></span></td></tr>
-              ) : tenders.length > 0 ? (
-                tenders.map((tender) => (
+              ) : localTenders.length > 0 ? (
+                localTenders.map((tender) => (
                   <tr key={tender.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
                     <td style={{ padding: '1rem', fontWeight: 500 }}>{tender.number}</td>
                     <td>{tender.title}</td>
@@ -66,8 +89,16 @@ const OrganizerDashboard = () => {
                        tender.status === 'published' ? <span className="badge badge-success">Опубликован</span> :
                        <span className="badge badge-primary">{tender.status}</span>}
                     </td>
-                    <td>
+                    <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>
                       <Link to={`/organizer/tenders/${tender.id}/evaluate`} className="btn btn-outline btn-sm">Вскрытие / Оценка</Link>
+                      <button 
+                        className="btn btn-outline btn-sm" 
+                        style={{ color: '#da1e28', borderColor: '#da1e28', display: 'flex', alignItems: 'center', gap: '0.25rem' }} 
+                        onClick={() => handleDeleteTender(tender.id, tender.title)}
+                        title="Удалить тендер"
+                      >
+                        <Trash2 size={15} /> Удалить
+                      </button>
                     </td>
                   </tr>
                 ))

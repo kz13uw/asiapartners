@@ -2,38 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Clock, Building2, Package, ArrowRight } from 'lucide-react';
 import { tendersAPI } from '../api';
-
-const mockTenders = [
-  {
-    id: 1,
-    title: 'Поставка строительных материалов (Цемент М500)',
-    organizer_name: 'ТОО "Азия Строй"',
-    budget: 15000000,
-    status: 'published',
-    end_date: '2026-07-01T15:00:00Z',
-    type: 'request_for_quotation'
-  },
-  {
-    id: 2,
-    title: 'Услуги по аренде спецтехники (Экскаваторы, Погрузчики)',
-    organizer_name: 'АО "Холдинг Азия"',
-    budget: 45000000,
-    status: 'published',
-    end_date: '2026-07-10T12:00:00Z',
-    type: 'open_tender'
-  },
-  {
-    id: 3,
-    title: 'Поставка спецодежды и СИЗ для рабочих',
-    organizer_name: 'ТОО "Азия Безопасность"',
-    budget: 8500000,
-    status: 'published',
-    end_date: '2026-06-30T18:00:00Z',
-    type: 'request_for_quotation'
-  }
-];
+import { useTranslation } from '../store/useLanguageStore';
 
 const PublicTenders = () => {
+  const { lang, t } = useTranslation();
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,10 +14,11 @@ const PublicTenders = () => {
     const fetchTenders = async () => {
       try {
         const res = await tendersAPI.list({ status: 'published' });
-        setTenders(res.data || []);
+        const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        setTenders(items);
       } catch (err) {
-        console.warn('API error, using mock data for public tenders');
-        setTenders(mockTenders);
+        console.warn('API fetch notice:', err);
+        setTenders([]);
       } finally {
         setLoading(false);
       }
@@ -54,92 +27,93 @@ const PublicTenders = () => {
   }, []);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('ru-KZ', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('ru-KZ', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 }).format(amount || 0);
   };
 
-  const filteredTenders = tenders.filter(t => 
-    t.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.organizer_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTenders = tenders.filter(tender =>
+    tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    tender.organizer_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="fade-in" style={{ padding: '4rem 2rem', minHeight: 'calc(100vh - 200px)', backgroundColor: '#f8fafc' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
-          <div>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0, color: 'var(--pk-text-main)' }}>Реестр закупок</h1>
-            <p style={{ color: 'var(--pk-text-sec)', marginTop: '0.5rem', fontSize: '1.1rem' }}>Открытые тендеры группы компаний Asia Partners</p>
-          </div>
-          <Link to="/login" className="btn btn-primary">Подать заявку (Войти)</Link>
-        </div>
+    <div className="container" style={{ padding: '2rem 1rem' }}>
+      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '2.25rem', marginBottom: '0.75rem', color: 'var(--pk-primary)' }}>
+          {t('public_tenders_title')}
+        </h1>
+        <p className="text-sec" style={{ maxWidth: '650px', margin: '0 auto', fontSize: '1.05rem' }}>
+          Официальный открытый реестр закупок компании Asia Partners.
+        </p>
+      </div>
 
-        {/* Filters */}
-        <div className="card" style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', padding: '1.5rem' }}>
-          <div style={{ flexGrow: 1, position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={20} />
+      {/* Фильтры и Поиск */}
+      <div className="card" style={{ marginBottom: '2rem', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '280px', position: 'relative' }}>
+            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--pk-text-secondary)' }} />
             <input 
               type="text" 
               className="form-control" 
-              placeholder="Поиск по названию или заказчику..." 
+              style={{ paddingLeft: '2.5rem' }} 
+              placeholder={t('search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: '3rem' }}
             />
           </div>
-          <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Filter size={18} /> Фильтры
-          </button>
         </div>
+      </div>
 
-        {/* Tender List */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--pk-text-sec)' }}>Загрузка закупок...</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {filteredTenders.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
-                <Package size={48} color="#cbd5e1" style={{ margin: '0 auto 1rem auto' }} />
-                <h3 style={{ margin: 0, color: 'var(--pk-text-main)' }}>Ничего не найдено</h3>
-                <p style={{ color: 'var(--pk-text-sec)', marginTop: '0.5rem' }}>Попробуйте изменить параметры поиска</p>
+      {/* Список тендеров */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <div className="loader-spinner" style={{ margin: '0 auto 1rem' }}></div>
+          <p className="text-sec">Загрузка актуального реестра закупок...</p>
+        </div>
+      ) : filteredTenders.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
+          {filteredTenders.map((tender) => (
+            <div key={tender.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                  <span className="badge badge-success">Опубликован</span>
+                  <span className="text-sm text-sec" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={14} /> До {new Date(tender.deadline_at || tender.end_date).toLocaleDateString()}
+                  </span>
+                </div>
+                
+                <h3 style={{ fontSize: '1.15rem', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                  {tender.title}
+                </h3>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--pk-text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  <Building2 size={16} />
+                  <span>{tender.company_name || tender.organizer_name || 'ТОО "Asia Partners"'}</span>
+                </div>
               </div>
-            ) : (
-              filteredTenders.map(tender => (
-                <div key={tender.id} className="card hover-scale" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'transform 0.2s, box-shadow 0.2s' }}>
-                  <div style={{ flexGrow: 1, paddingRight: '2rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
-                      <span className="badge badge-success">Прием заявок</span>
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Лот №{tender.id}</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.25rem', margin: '0 0 1rem 0', color: 'var(--pk-text-main)' }}>{tender.title}</h3>
-                    
-                    <div style={{ display: 'flex', gap: '2rem', color: 'var(--pk-text-sec)', fontSize: '0.9rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Building2 size={16} color="var(--pk-primary)" />
-                        {tender.organizer_name}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Clock size={16} color="var(--pk-accent)" />
-                        Окончание: {new Date(tender.end_date).toLocaleDateString('ru-RU')}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div style={{ textAlign: 'right', minWidth: '200px', borderLeft: '1px solid #f1f5f9', paddingLeft: '2rem' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--pk-text-sec)', marginBottom: '0.25rem' }}>Бюджет лота</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--pk-text-main)', marginBottom: '1.5rem' }}>
-                      {formatCurrency(tender.budget)}
-                    </div>
-                    <Link to="/login" className="btn btn-outline" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                      Участвовать <ArrowRight size={16} />
-                    </Link>
+
+              <div style={{ borderTop: '1px solid var(--pk-border)', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="text-sm text-sec">{t('start_price')}</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
+                    {formatCurrency(tender.start_price || tender.budget)}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
+                <Link to={`/tenders/${tender.id}`} className="btn btn-outline btn-sm">
+                  {t('view_details')} <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+          <Package size={48} color="var(--pk-text-secondary)" style={{ margin: '0 auto 1rem' }} />
+          <h3>Активные тендеры отсутствуют</h3>
+          <p className="text-sec" style={{ maxWidth: '480px', margin: '0.5rem auto 1.5rem' }}>
+            В настоящее время опубликованные закупки отсутствуют. Новые лоты будут отображаться здесь по мере их публикации Организатором.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

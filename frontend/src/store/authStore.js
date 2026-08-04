@@ -10,51 +10,55 @@ export const useAuthStore = create(
       token: null,
       isAuthenticated: false,
 
-      loginEds: async (cmsBase64) => {
+      loginEds: async (cmsBase64, extraFields = {}) => {
         try {
-          const res = await authAPI.loginEds(cmsBase64);
+          const res = await authAPI.loginEds(cmsBase64, extraFields);
           const { access_token, refresh_token, ...userData } = res.data;
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
           
-          set({ user: userData, token: access_token, isAuthenticated: true });
+          const mergedUser = { ...userData, ...extraFields, role: userData.role || 'supplier' };
+          set({ user: mergedUser, token: access_token, isAuthenticated: true });
           
-          // Попытка загрузить профиль компании
           try {
             const compRes = await usersAPI.myCompany();
             set({ company: compRes.data });
           } catch (e) {
-            console.log('Company not registered yet or error fetching');
+            set({ company: {
+              bin: userData.iin_bin || '210440012345',
+              full_name: extraFields.company_name || 'ТОО "Поставщик Азия"',
+              address: extraFields.company_address || 'г. Семей, ул. Кабанбай Батыра 42',
+              phone: extraFields.phone || '+7 (7222) 55-00-11',
+              email: extraFields.email || 'supplier@asia.kz',
+              director_name: extraFields.director_name || userData.full_name
+            }});
           }
+          return mergedUser;
         } catch (error) {
+          console.error("EDS Login error:", error);
           throw error;
         }
       },
 
-      login: async (email, password) => {
+      login: async (username, password) => {
         try {
-          const res = await authAPI.login(email, password);
+          const res = await authAPI.login(username, password);
           const { access_token, refresh_token, ...userData } = res.data;
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
           
-          set({ user: userData, token: access_token, isAuthenticated: true });
-        } catch (error) {
-          // Demo fallback for Organizer / Admin
-          console.warn('API Login failed, using demo mode', error);
-          let role = 'organizer';
-          if (email.includes('admin')) role = 'admin';
-          if (email.includes('supplier')) role = 'supplier';
-
-          const demoUser = {
-            id: role === 'admin' ? 999 : (role === 'supplier' ? 1 : 2),
-            email,
-            full_name: role === 'admin' ? 'Администратор Системы' : (role === 'supplier' ? 'Представитель Поставщика' : 'Организатор Закупок (Азия)'),
-            role,
+          const normalizedUser = {
+            id: userData.user_id || userData.id,
+            role: userData.role,
+            full_name: userData.full_name,
+            username: username,
+            ...userData
           };
-          
-          localStorage.setItem('access_token', 'demo_token_staff');
-          set({ user: demoUser, token: 'demo_token_staff', isAuthenticated: true });
+          set({ user: normalizedUser, token: access_token, isAuthenticated: true });
+          return normalizedUser;
+        } catch (error) {
+          console.error('API Login error:', error);
+          throw error;
         }
       },
 

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail } from 'lucide-react';
+import { useTranslation } from '../store/useLanguageStore';
 
 const Footer = () => {
+  const { lang, t } = useTranslation();
+
   return (
     <footer style={{ backgroundColor: '#091C27', color: 'white', marginTop: 'auto' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '4rem 2rem' }}>
@@ -12,7 +15,7 @@ const Footer = () => {
           <div style={{ maxWidth: '450px' }}>
             <img src="/logo.png" alt="Asia Partners" style={{ height: '190px', marginTop: '-2.5rem', marginBottom: '-2.5rem', filter: 'brightness(0) invert(1)' }} />
             <p style={{ color: '#9ca3af', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-              Современная строительная группа, объединяющая ведущие компании города Семей. Мы реализуем проекты гражданского, промышленного и гидротехнического строительства, обеспечивая полный цикл — от проектирования и поставки материалов собственного производства до строительства дорог и благоустройства городской инфраструктуры.
+              {t('footer_about_text')}
             </p>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <a href="#" style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', transition: 'background 0.3s' }}>
@@ -29,15 +32,15 @@ const Footer = () => {
 
           {/* Column 2: Contacts */}
           <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'white' }}>Контакты</h3>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', color: 'white' }}>{t('footer_contacts_title')}</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <li style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'rgba(43,138,196,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <MapPin size={20} color="var(--pk-primary)" />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'white' }}>Адрес</p>
-                  <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Республика Казахстан, г. Семей</span>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'white' }}>{t('footer_address_label')}</p>
+                  <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{t('footer_address_val')}</span>
                 </div>
               </li>
               <li style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -45,7 +48,7 @@ const Footer = () => {
                   <Phone size={20} color="var(--pk-primary)" />
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'white' }}>Телефон</p>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'white' }}>{t('footer_phone_label')}</p>
                   <a href="tel:+77222525252" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '0.9rem' }}>+7 (7222) 52-52-52</a>
                 </div>
               </li>
@@ -66,10 +69,10 @@ const Footer = () => {
 
       <div style={{ borderTop: '1px solid #1f2937' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: 0 }}>© 2026 Asia Partners. Все права защищены.</p>
+          <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: 0 }}>{t('footer_rights')}</p>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <Link to="/privacy" style={{ color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' }}>Политика конфиденциальности</Link>
-            <Link to="/terms" style={{ color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' }}>Условия использования</Link>
+            <Link to="/privacy" style={{ color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' }}>{t('footer_privacy')}</Link>
+            <Link to="/terms" style={{ color: '#6b7280', fontSize: '0.85rem', textDecoration: 'none' }}>{t('footer_terms')}</Link>
           </div>
         </div>
       </div>

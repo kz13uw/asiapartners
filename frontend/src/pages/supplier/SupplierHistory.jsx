@@ -94,10 +94,7 @@ const SupplierHistory = () => {
                   <td>{item.date}</td>
                   <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>
                     {item.result === 'winner' && (
-                      <>
-                        <button className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={16} /> Договор</button>
-                        <button className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={16} /> Протокол</button>
-                      </>
+                      <button className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={16} /> Протокол итогов</button>
                     )}
                     {item.result === 'reserve' && (
                       <button className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileText size={16} /> Протокол итогов</button>

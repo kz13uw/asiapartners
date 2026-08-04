@@ -3,7 +3,11 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Building2, Settings, Scale, ShieldCheck, LogOut, History, UserSquare2, FileSignature, FileText, Menu, X, Users, Lock, Activity } from 'lucide-react';
 
+import LanguageSelector from '../components/LanguageSelector';
+import { useTranslation } from '../store/useLanguageStore';
+
 const MainLayout = () => {
+  const { lang, t } = useTranslation();
   const { user, logout } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -42,28 +46,36 @@ const MainLayout = () => {
     
     if (user.role === 'supplier') {
       return [
-        { path: '/supplier/dashboard', icon: Building2, label: 'Личный кабинет' },
-        { path: '/tenders', icon: Scale, label: 'Поиск тендеров' },
-        { path: '/supplier/history', icon: History, label: 'История участия' },
-        { path: '/supplier/profile', icon: UserSquare2, label: 'Профиль ТОО' },
+        { path: '/supplier/dashboard', icon: Building2, label: t('dashboard_supplier') },
+        { path: '/tenders', icon: Scale, label: t('nav_tenders') },
+        { path: '/supplier/history', icon: History, label: t('history') },
+        { path: '/supplier/profile', icon: UserSquare2, label: t('nav_profile') },
       ];
     }
     
     if (user.role === 'organizer') {
       return [
-        { path: '/organizer/dashboard', icon: Settings, label: 'Мониторинг' },
-        { path: '/organizer/tenders/create', icon: Scale, label: 'Создать лот' },
-        { path: '/organizer/protocols', icon: FileSignature, label: 'Протоколы итогов' },
-        { path: '/organizer/contracts', icon: FileText, label: 'Управление договорами' },
+        { path: '/organizer/dashboard', icon: Settings, label: t('dashboard_organizer') },
+        { path: '/organizer/tenders/create', icon: Scale, label: t('nav_create_tender') },
+        { path: '/tenders', icon: Scale, label: t('nav_tenders') },
+        { path: '/reports', icon: FileText, label: t('nav_reports') },
+      ];
+    }
+    
+    if (user.role === 'monitoring') {
+      return [
+        { path: '/monitoring/dashboard', icon: Activity, label: t('dashboard_monitoring') },
+        { path: '/tenders', icon: Scale, label: t('nav_tenders') },
+        { path: '/reports', icon: FileText, label: t('nav_reports') },
       ];
     }
     
     if (user.role === 'admin') {
       return [
-        { path: '/admin/dashboard', icon: Users, label: 'Пользователи' },
-        { path: '/admin/settings', icon: Settings, label: 'Настройки' },
-        { path: '/admin/security', icon: Lock, label: 'Безопасность' },
-        { path: '/admin/reports', icon: Activity, label: 'Отчеты' },
+        { path: '/admin/dashboard', icon: Users, label: t('dashboard_admin') },
+        { path: '/monitoring/dashboard', icon: Activity, label: t('dashboard_monitoring') },
+        { path: '/tenders', icon: Scale, label: t('nav_tenders') },
+        { path: '/reports', icon: FileText, label: t('nav_reports') },
       ];
     }
     return [];
@@ -131,7 +143,7 @@ const MainLayout = () => {
         </nav>
         <div style={{ padding: '1rem' }}>
           <button onClick={handleLogout} className="nav-item" style={{ width: '100%', background: 'none', border: 'none', color: '#ff8389', cursor: 'pointer', textAlign: 'left', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 500 }}>
-            <LogOut size={20} /> Выйти
+            <LogOut size={20} /> {t('logout')}
           </button>
         </div>
       </aside>
@@ -147,9 +159,10 @@ const MainLayout = () => {
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <h3 className="text-sec hidden-mobile" style={{ fontWeight: 600, margin: 0, textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em' }}>Портал Электронных Закупок</h3>
+            <h3 className="text-sec hidden-mobile" style={{ fontWeight: 600, margin: 0, textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em' }}>{t('portal_title')}</h3>
           </div>
           <div className="header-user" style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }} ref={menuRef}>
+            <LanguageSelector />
             <div className="hidden-mobile" style={{ textAlign: 'right' }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pk-text-main)' }}>{user?.full_name}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--pk-text-secondary)' }}>{user?.role}</div>

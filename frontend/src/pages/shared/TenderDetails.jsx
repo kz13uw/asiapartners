@@ -83,19 +83,21 @@ const TenderDetails = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div>
                 <div className="text-sec text-sm">Метод закупок</div>
-                <div style={{ fontWeight: 500 }}>{tender.method === 'one_stage' ? 'Одноэтапный на понижение' : 'Двухэтапный на понижение'}</div>
+                <div style={{ fontWeight: 600, color: 'var(--pk-primary)' }}>
+                  📄 Открытый электронный тендер
+                </div>
               </div>
               <div>
-                <div className="text-sec text-sm">Начальная сумма лота</div>
+                <div className="text-sec text-sm">Начальная максимальная сумма</div>
                 <div style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--pk-primary)' }}>{tender.start_price.toLocaleString('ru-RU')} ₸</div>
               </div>
               <div>
                 <div className="text-sec text-sm">Организатор</div>
-                <div style={{ fontWeight: 500 }}>ТОО "Фирма Азия"</div>
+                <div style={{ fontWeight: 500 }}>ТОО "Asia Partners"</div>
               </div>
               <div>
-                <div className="text-sec text-sm">Прием заявок (до)</div>
-                <div style={{ fontWeight: 500 }}>{new Date(tender.deadline_at).toLocaleDateString('ru-RU')}</div>
+                <div className="text-sec text-sm">Окончание приема предложений</div>
+                <div style={{ fontWeight: 500 }}>{new Date(tender.deadline_at).toLocaleString('ru-RU')}</div>
               </div>
             </div>
           </div>

@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Globe } from 'lucide-react';
+import LanguageSelector from './LanguageSelector';
+import { useTranslation } from '../store/useLanguageStore';
 
 const PublicHeader = () => {
   const location = useLocation();
+  const { lang, t } = useTranslation();
 
   const navItemStyle = (path) => ({
     color: location.pathname === path ? 'white' : 'rgba(255,255,255,0.7)',
@@ -26,23 +28,17 @@ const PublicHeader = () => {
 
         {/* Navigation Menu */}
         <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          <Link to="/" style={navItemStyle('/')} className="hover:text-white">Главная</Link>
-          <Link to="/faq" style={navItemStyle('/faq')} className="hover:text-white">Инструкции</Link>
-          <Link to="/public-tenders" style={navItemStyle('/public-tenders')} className="hover:text-white">Закупки</Link>
+          <Link to="/" style={navItemStyle('/')} className="hover:text-white">{t('home')}</Link>
+          <Link to="/faq" style={navItemStyle('/faq')} className="hover:text-white">{t('faq')}</Link>
+          <Link to="/public-tenders" style={navItemStyle('/public-tenders')} className="hover:text-white">{t('tenders')}</Link>
+          <Link to="/documents" style={navItemStyle('/documents')} className="hover:text-white">{t('nav_documents')}</Link>
         </nav>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', fontWeight: 500, padding: '0.3rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)' }}>
-            <Globe size={16} />
-            <select style={{ background: 'transparent', color: 'white', border: 'none', outline: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, padding: 0 }}>
-              <option value="ru" style={{ color: 'black' }}>RU</option>
-              <option value="kz" style={{ color: 'black' }}>KZ</option>
-              <option value="en" style={{ color: 'black' }}>EN</option>
-            </select>
-          </div>
+          <LanguageSelector />
           <Link to="/login" className="btn" style={{ borderRadius: '99px', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, color: 'white', border: '1px solid rgba(255,255,255,0.4)', background: 'transparent', textDecoration: 'none' }}>
-            Вход для Поставщиков
+            {t('login')}
           </Link>
         </div>
 

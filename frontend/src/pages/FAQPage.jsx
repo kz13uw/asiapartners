@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from '../store/useLanguageStore';
 
 const FAQPage = () => {
+  const { lang, t } = useTranslation();
   const [openIndex, setOpenIndex] = useState(null);
 
   const faqs = [

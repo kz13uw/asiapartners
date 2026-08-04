@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { ShieldAlert, Save, Download, Search, Filter, Activity, Users, Scale, CheckCircle2, FileText, AlertCircle, Clock } from 'lucide-react';
+import { useTranslation } from '../../store/useLanguageStore';
 
 export const AdminSettings = () => {
+  const { lang, t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [maintenance, setMaintenance] = useState(false);
 
@@ -16,11 +18,11 @@ export const AdminSettings = () => {
 
   return (
     <div className="fade-in" style={{ padding: '2rem' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--pk-text-main)', marginBottom: '1.5rem' }}>Глобальные настройки</h1>
+      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--pk-text-main)', marginBottom: '1.5rem' }}>{t('global_settings')}</h1>
       <div className="card" style={{ padding: '2rem', maxWidth: '800px' }}>
         
         <div style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>Режим работы портала</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>{t('portal_mode')}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
               <input 
@@ -42,38 +44,38 @@ export const AdminSettings = () => {
               </span>
             </label>
             <div>
-              <div style={{ fontWeight: 500, color: 'var(--pk-text-main)' }}>Режим технического обслуживания</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--pk-text-sec)' }}>При включении портал будет недоступен для поставщиков и организаторов.</div>
+              <div style={{ fontWeight: 500, color: 'var(--pk-text-main)' }}>{t('maintenance_mode')}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--pk-text-sec)' }}>{t('maintenance_desc')}</div>
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>Системные уведомления</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>{t('sys_notifications')}</h3>
           <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label className="form-label">Email адрес администратора (для оповещений)</label>
+            <label className="form-label">{t('admin_email_label')}</label>
             <input type="email" className="form-control" defaultValue="admin@asiapartners.kz" />
           </div>
           <div className="form-group">
-            <label className="form-label">Почтовый сервер (SMTP)</label>
+            <label className="form-label">{t('smtp_server_label')}</label>
             <input type="text" className="form-control" defaultValue="smtp.yandex.ru:465" />
           </div>
         </div>
 
         <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>Безопасность и Лимиты</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--pk-text-main)' }}>{t('security_limits')}</h3>
           <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label className="form-label">Максимальный размер загружаемого файла (МБ)</label>
+            <label className="form-label">{t('max_file_size_label')}</label>
             <input type="number" className="form-control" defaultValue={50} style={{ maxWidth: '200px' }} />
           </div>
           <div className="form-group">
-            <label className="form-label">Таймаут сессии (минут неактивности)</label>
-            <input type="number" className="form-control" defaultValue={60} style={{ maxWidth: '200px' }} />
+            <label className="form-label">{t('session_timeout_label')}</label>
+            <input type="number" className="form-control" defaultValue={10} style={{ maxWidth: '200px' }} />
           </div>
         </div>
 
         <button onClick={handleSave} className="btn btn-primary" disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Save size={18} /> {loading ? 'Сохранение...' : 'Сохранить настройки'}
+          <Save size={18} /> {loading ? '...' : t('btn_save_settings')}
         </button>
       </div>
     </div>
