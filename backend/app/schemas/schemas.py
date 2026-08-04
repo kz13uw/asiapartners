@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
@@ -32,18 +33,22 @@ class RefreshRequest(BaseModel):
 # ===== USERS =====
 
 class UserCreate(BaseModel):
-    iin_bin: str
+    username: Optional[str] = None
+    iin_bin: Optional[str] = None
     full_name: str
-    email: EmailStr
+    email: Optional[str] = None
     password: Optional[str] = None
+    company_address: Optional[str] = None
     role: UserRole = UserRole.SUPPLIER
 
 
 class UserOut(BaseModel):
     id: int
-    iin_bin: str
+    username: Optional[str] = None
+    iin_bin: Optional[str] = None
     full_name: str
-    email: str
+    email: Optional[str] = None
+    company_address: Optional[str] = None
     role: UserRole
     status: UserStatus
     created_at: datetime
@@ -81,9 +86,13 @@ class CompanyOut(CompanyCreate):
 class TenderCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    method: TenderMethod
+    category_id: Optional[int] = None
+    method: TenderMethod = TenderMethod.ZCP
     start_price: float
-    step_down_pct: Optional[float] = None
+    step_down_pct: Optional[float] = 1.0
+    min_step_amount: Optional[float] = None
+    auto_extend_minutes: Optional[int] = 5
+    anti_dumping_pct: Optional[float] = 20.0
     deadline_at: datetime
     delivery_place: Optional[str] = None
 
@@ -98,6 +107,7 @@ class TenderCreate(BaseModel):
 class TenderUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    category_id: Optional[int] = None
     deadline_at: Optional[datetime] = None
     delivery_place: Optional[str] = None
 
@@ -107,9 +117,14 @@ class TenderOut(BaseModel):
     number: str
     title: str
     description: Optional[str]
+    category_id: Optional[int] = None
     method: TenderMethod
     start_price: float
-    step_down_pct: Optional[float]
+    current_lowest_price: Optional[float] = None
+    step_down_pct: Optional[float] = None
+    min_step_amount: Optional[float] = None
+    auto_extend_minutes: Optional[int] = 5
+    anti_dumping_pct: Optional[float] = 20.0
     status: TenderStatus
     deadline_at: datetime
     delivery_place: Optional[str]
@@ -139,8 +154,25 @@ class BidCreate(BaseModel):
     @classmethod
     def price_must_be_positive(cls, v: float) -> float:
         if v <= 0:
-            raise ValueError("Цена должна быть больше нуля")
+            raise ValueError("Предложенная цена должна быть больше нуля")
         return v
+
+
+class BidOut(BaseModel):
+    id: int
+    tender_id: int
+    supplier_id: int
+    company_id: int
+    price: float
+    rank: Optional[int] = None
+    is_anti_dumping_flag: bool = False
+    status: BidStatus
+    rejection_reason: Optional[str] = None
+    eds_hash: str
+    submitted_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class BidStatusUpdate(BaseModel):

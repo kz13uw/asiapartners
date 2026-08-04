@@ -34,17 +34,21 @@ async def list_tenders(
     size: int = Query(20, ge=1, le=100),
     search: str = Query(None),
     method: str = Query(None),
-    status_filter: TenderStatus = Query(None, alias="status"),
+    category_id: int = Query(None),
+    status_filter: str = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Tender).where(Tender.status.in_([TenderStatus.PUBLISHED, TenderStatus.ACCEPTING, TenderStatus.AUCTION]))
+    query = select(Tender).where(Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.EVALUATION, TenderStatus.COMPLETED]))
 
     if search:
         query = query.where(Tender.title.ilike(f"%{search}%"))
     if method:
         query = query.where(Tender.method == method)
+    if category_id:
+        query = query.where(Tender.category_id == category_id)
     if status_filter:
-        query = query.where(Tender.status == status_filter)
+        target_status = TenderStatus.ACCEPTING if status_filter == "published" else status_filter
+        query = query.where(Tender.status == target_status)
 
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = total_result.scalar()
@@ -122,7 +126,7 @@ async def publish_tender(
     if tender.status != TenderStatus.DRAFT:
         raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
-    tender.status = TenderStatus.PUBLISHED
+    tender.status = TenderStatus.ACCEPTING
     tender.eds_hash = eds_hash
     tender.published_at = datetime.utcnow()
 
@@ -145,3 +149,23 @@ async def my_tenders(
     result = await db.execute(query)
     items = result.scalars().all()
     return TenderListOut(items=items, total=total, page=page, size=size)
+
+
+@router.delete("/{tender_id}", summary="Удалить тендер")
+async def delete_tender(
+    tender_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN)),
+):
+    result = await db.execute(select(Tender).where(Tender.id == tender_id))
+    tender = result.scalar_one_or_none()
+    if not tender:
+        raise HTTPException(status_code=404, detail="Тендер не найден")
+    if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Нет прав на удаление этого тендера")
+    
+    await db.delete(tender)
+    log = AuditLog(user_id=current_user.id, action="DELETE_TENDER", entity_type="tender", entity_id=tender_id)
+    db.add(log)
+    await db.commit()
+    return {"message": "Тендер успешно удален"}

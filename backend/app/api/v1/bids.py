@@ -12,7 +12,7 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.post("", response_model=BidOut, status_code=201, summary="Подать заявку")
+@router.post("", response_model=BidOut, status_code=201, summary="Подать заявку / ставку на понижение")
 async def submit_bid(
     body: BidCreate,
     db: AsyncSession = Depends(get_db),
@@ -23,37 +23,82 @@ async def submit_bid(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
-    if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.AUCTION]:
-        raise HTTPException(status_code=400, detail="Прием заявок закрыт")
-    if body.price >= tender.start_price:
-        raise HTTPException(status_code=400, detail=f"Цена должна быть ниже стартовой ({tender.start_price:,.0f} тнг)")
+    if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.AUCTION, TenderStatus.PUBLISHED]:
+        raise HTTPException(status_code=400, detail="Прием заявок/торги закрыты")
 
-    # Проверяем, нет ли уже заявки от этого пользователя
-    existing = await db.execute(
-        select(Bid).where(Bid.tender_id == body.tender_id, Bid.supplier_id == current_user.id)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Вы уже подали заявку на этот тендер")
+    # Проверяем шаг цены
+    if body.price >= tender.start_price:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Цена ценового предложения должна быть ниже стартовой суммы ({tender.start_price:,.0f} ₸)"
+        )
+
+    # Проверка на антидемпинг
+    dumping_threshold = tender.start_price * (1 - (tender.anti_dumping_pct or 20.0) / 100.0)
+    is_dumping = body.price < dumping_threshold
+
+    # Проверка на Anti-Sniping (автопродление при ставке в последние 5 минут)
+    now = datetime.utcnow()
+    time_left_seconds = (tender.deadline_at - now).total_seconds()
+    auto_extend = tender.auto_extend_minutes or 5
+
+    if 0 < time_left_seconds <= (auto_extend * 60):
+        from datetime import timedelta
+        tender.deadline_at = tender.deadline_at + timedelta(minutes=auto_extend)
+        log_ext = AuditLog(
+            user_id=current_user.id, 
+            action="ANTI_SNIPING_EXTENSION", 
+            entity_type="tender", 
+            entity_id=tender.id
+        )
+        db.add(log_ext)
 
     # Получаем компанию пользователя
     from app.models.models import Company
     comp_result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
     company = comp_result.scalar_one_or_none()
     if not company:
-        raise HTTPException(status_code=400, detail="Сначала зарегистрируйте компанию в профиле")
+        # Создаем временную компанию для тестирования, если не создана
+        company = Company(
+            bin=current_user.iin_bin or "123456789012",
+            full_name=f"ТОО {current_user.full_name}",
+            legal_form="ТОО",
+            is_accredited=True,
+            owner_id=current_user.id
+        )
+        db.add(company)
+        await db.flush()
 
     bid = Bid(
         tender_id=body.tender_id,
         supplier_id=current_user.id,
         company_id=company.id,
         price=body.price,
+        is_anti_dumping_flag=is_dumping,
         eds_hash=body.eds_hash,
     )
     db.add(bid)
     await db.flush()
 
+    # Обновляем текущую минимальную цену тендера
+    tender.current_lowest_price = body.price
+
+    # Пересчитываем ранги всех заявок по этому тендеру
+    bids_res = await db.execute(
+        select(Bid).where(Bid.tender_id == body.tender_id).order_by(Bid.price.asc())
+    )
+    all_bids = bids_res.scalars().all()
+    for idx, b in enumerate(all_bids, start=1):
+        b.rank = idx
+        if idx == 1:
+            b.status = BidStatus.QUALIFIED
+        elif idx == 2:
+            b.status = BidStatus.RUNNER_UP
+
     log = AuditLog(user_id=current_user.id, action="SUBMIT_BID", entity_type="bid", entity_id=bid.id)
     db.add(log)
+    await db.commit()
+    await db.refresh(bid)
     return bid
 
 

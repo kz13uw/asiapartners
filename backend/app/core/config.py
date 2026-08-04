@@ -1,10 +1,11 @@
 from pydantic_settings import BaseSettings
-from typing import List
-
+from typing import List, Union
+from pydantic import field_validator
+import json
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "Портал закупок Фирма Азия"
+    APP_NAME: str = "Портал закупок Asia Partners"
     DEBUG: bool = False
 
     # Database
@@ -17,15 +18,33 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_32_CHARS_MIN"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10  # 10 минут = 600 секунд
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:5173",   # Vite dev server
+        "*",
+        "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:80",
+        "http://localhost",
+        "http://127.0.0.1",
     ]
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            v_trimmed = v.strip()
+            if not v_trimmed:
+                return ["*"]
+            if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
+                try:
+                    return json.loads(v_trimmed)
+                except Exception:
+                    pass
+            return [i.strip() for i in v_trimmed.split(",") if i.strip()]
+        return v or ["*"]
 
     # File storage
     UPLOAD_DIR: str = "/app/uploads"
@@ -34,6 +53,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 settings = Settings()
