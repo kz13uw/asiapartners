@@ -34,13 +34,18 @@ async def get_current_user(
 
 @router.post("/login", response_model=TokenResponse, summary="Вход по логину/паролю")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db), request: Request = None):
-    # Поиск по username или email
-    result = await db.execute(
-        select(User).where(
-            (User.username == form_data.username) | (User.email == form_data.username)
+    user = None
+    try:
+        result = await db.execute(
+            select(User).where(
+                (User.email == form_data.username) | (User.username == form_data.username)
+            )
         )
-    )
-    user = result.scalar_one_or_none()
+        user = result.scalars().first()
+    except Exception:
+        await db.rollback()
+        result = await db.execute(select(User).where(User.email == form_data.username))
+        user = result.scalars().first()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
