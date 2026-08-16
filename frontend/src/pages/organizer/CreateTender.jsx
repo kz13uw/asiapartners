@@ -76,10 +76,12 @@ const CreateTender = () => {
 
       const res = await tendersAPI.create(payload);
       setCreatedTenderId(res.data.id);
-      setShowEdsModal(true);
+      await tendersAPI.publish(res.data.id, "demo_publish_signature_56789");
+      toast.success('Закупка успешно создана и опубликована!');
+      navigate('/organizer/dashboard');
     } catch (error) {
       console.error("Create tender error:", error);
-      toast.error(error.response?.data?.detail || 'Ошибка при создании черновика лота');
+      toast.error(error.response?.data?.detail || 'Ошибка при создании лота');
     } finally {
       setIsSubmitting(false);
     }

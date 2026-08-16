@@ -90,19 +90,10 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
   };
 
   const handleSign = () => {
-    if (isAuth && (!extraFields.email || !extraFields.phone || !extraFields.company_address)) {
-      toast.error('Пожалуйста, заполните контактные данные (Email, Телефон, Адрес)');
-      return;
-    }
-
-    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      // Demo signing trigger for test environments
-      setStep(3);
-      setSignedData("demo_signed_cms_base64_hash_12345");
-      return;
-    }
-
-    setStep(2);
+    onSign("demo_signed_cms_base64_hash_12345", extraFields);
+    toast.success('Подпись успешно имитирована (ЭЦП отключено)');
+    onClose();
+  };
     const dataToSign = btoa(unescape(encodeURIComponent(docTitle || 'Тестовый документ для портала Азия')));
 
     const request = {

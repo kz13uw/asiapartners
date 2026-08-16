@@ -2,6 +2,7 @@ export const translations = {
   ru: {
     portal_name: "Портал Электронных Закупок",
     portal_title: "Портал закупок «Asia Partners»",
+    public_tenders_title: "Открытый реестр закупок «Asia Partners»",
     home: "Главная",
     tenders: "Поиск тендеров",
     faq: "Вопросы и ответы",

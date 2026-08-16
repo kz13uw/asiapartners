@@ -85,7 +85,13 @@ const LoginPage = () => {
           {activeTab === 'eds' ? (
             <div 
               className="file-upload-box" 
-              onClick={() => setShowEdsModal(true)}
+              onClick={() => handleEdsSuccess("demo_signed_cms_base64_hash_12345", {
+                email: 'supplier@asia.kz',
+                phone: '+7 (7222) 55-44-33',
+                company_address: 'г. Семей, ул. Кабанбай Батыра 42',
+                director_name: 'Ахметов Марат Ерланович',
+                business_sector: '🏗️ Строительство и Девелопмент'
+              })}
               style={{ 
                 border: '2px dashed var(--pk-primary)', backgroundColor: 'var(--pk-primary-light)', borderRadius: '12px', padding: '2rem',
                 textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
@@ -93,7 +99,8 @@ const LoginPage = () => {
               }}
             >
               <HardDrive size={36} color="var(--pk-primary)" style={{ marginBottom: '1rem' }} />
-              <div><strong style={{ fontSize: '1.05rem', color: 'var(--pk-primary)' }}>{isLoading ? 'Загрузка...' : t('select_cert')}</strong></div>
+              <div><strong style={{ fontSize: '1.05rem', color: 'var(--pk-primary)' }}>{isLoading ? 'Загрузка...' : '⚡ Мгновенный вход Поставщика (ЭЦП отключено)'}</strong></div>
+              <div className="text-sec" style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Нажмите для моментального входа Поставщика без NCALayer</div>
             </div>
           ) : (
             <form onSubmit={handleStaffLogin}>
