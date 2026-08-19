@@ -322,49 +322,29 @@ const IndexPage = () => {
       <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#ffffff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f17»?",
-                a: "Для Товаров указываются условия поставки по Инкотермс (DDP, EXW и др.), процент авансирования и срок доставки в днях. Для Услуг и Работ указываются даты начала/завершения работ и гарантийный срок в месяцах."
-              },
-              {
-                q: "4. Как происходит процедура «Запрос ценовых предложений» (ЗЦП)?",
-                a: "Организатор публично размещает закупку. Поставщики подают 1 закрытое ценовое предложение. После срока окончания приема комиссия рассматривает заявки (Допускает / Отклоняет), и система автоматизированно выявляет победителя с наименьшей ценой."
-              },
-              {
-                q: "5. Как подписываются документы и Протоколы итогов?",
-                a: "Все юридически значимые действия подписываются ЭЦП НУЦ РК (ГОСТ 34.310-2015). Протокол итогов мгновенно сохраняется в готовом PDF-формате с проверкой штампа цифровой подписи."
-              },
-              {
-                q: "6. Можно ли изменить или отозвать поданую заявку?",
-                a: "Да. До момента наступления срока окончания приема заявок поставщик имеет право в личном кабинете отозвать свое ценовое предложение и подать новое."
-              },
-              {
-                q: "7. Где просмотреть свои сохраненные и опубликованные тендеры организатора?",
-                a: "Черновики закупок сохраняются в привязке к вашему ID пользователя в меню «Черновики тендеров». Опубликованные закупки отображаются в вашем Главном Кабинете Заказчика."
-              },
-              {
-                q: "8. Что делать при возникновении технических вопросов по NCALayer или ЭЦП?",
-                a: "Убедитесь, что приложение NCALayer запущено на вашем компьютере. При любых вопросах вы можете обратиться в нашу службу поддержки: info@asiapartners.kz."
-              }
-            ].map((faq, index) => (
-              <details 
-                key={index}
-                style={{ 
-                  background: '#ffffff', 
-                  border: '1.5px solid #e2e8f0', 
-                  borderRadius: '14px', 
-                  padding: '1.1rem 1.4rem', 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease-in-out'
-                }}
+            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.6rem' }}>
+              Почему выбирают нашу платформу
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '520px', marginInline: 'auto' }}>
+              Преимущества для поставщиков группы Asia Partners
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: '1.1rem' }}>
+            {benefits.map(({ icon, color, bg, title, desc }, i) => (
+              <div key={i} style={{
+                background: '#f8fafc', border: '1.5px solid rgba(226,232,240,0.7)',
+                borderRadius: '16px', padding: '1.6rem 1.4rem',
+                transition: 'all 0.25s', cursor: 'default',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = color + '35'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = ; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(226,232,240,0.7)'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
               >
-                <summary style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', outline: 'none', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{faq.q}</span>
-                  <span style={{ fontSize: '1.2rem', color: '#2B8AC4', fontWeight: 900 }}>+</span>
-                </summary>
-                <p style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: '#475569', lineHeight: 1.7, borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginBottom: 0 }}>
-                  {faq.a}
-                </p>
-              </details>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                  {icon}
+                </div>
+                <h3 style={{ margin: '0 0 0.45rem', fontSize: '0.975rem', fontWeight: 800, color: '#0f172a' }}>{title}</h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.65 }}>{desc}</p>
+              </div>
             ))}
           </div>
         </div>
