@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const [userFormData, setUserFormData] = useState({ iin_bin: '', full_name: '', email: '', role: 'organizer', password: '', company_address: '' });
-  const [categoryFormData, setCategoryFormData] = useState({ name: '', code: '', description: '', icon: 'building' });
+  const [categoryFormData, setCategoryFormData] = useState({ name: '', code: '', description: '', icon: 'building', subject_type: 'goods' });
 
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -186,7 +186,7 @@ const AdminDashboard = () => {
 
   const handleOpenCategoryModal = () => {
     const autoCode = generateNextCategoryCode();
-    setCategoryFormData({ name: '', code: autoCode, description: '', icon: 'building' });
+    setCategoryFormData({ name: '', code: autoCode, description: '', icon: 'building', subject_type: 'goods' });
     setIsCategoryModalOpen(true);
   };
 
@@ -385,6 +385,7 @@ const AdminDashboard = () => {
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--pk-border)', textAlign: 'left' }}>
                   <th style={{ padding: '1rem' }}>{t('th_category_name') || 'Название категории'}</th>
+                  <th>Предмет закупки</th>
                   <th>{t('th_system_code') || 'Системный код'}</th>
                   <th>{t('th_description') || 'Описание'}</th>
                   <th>{t('th_status') || 'Статус'}</th>
@@ -395,6 +396,11 @@ const AdminDashboard = () => {
                 {categories.map((cat) => (
                   <tr key={cat.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
                     <td style={{ padding: '1rem', fontWeight: 600, fontSize: '1rem' }}>{cat.name}</td>
+                    <td>
+                      <span className="badge" style={{ backgroundColor: cat.subject_type === 'services_works' ? '#e0f2fe' : '#fef3c7', color: cat.subject_type === 'services_works' ? '#0369a1' : '#b45309', fontWeight: 600, padding: '0.25rem 0.5rem', borderRadius: '6px', fontSize: '0.78rem' }}>
+                        {cat.subject_type === 'services_works' ? '🛠️ Услуги / Работы' : '📦 Товары'}
+                      </span>
+                    </td>
                     <td><code style={{ background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px', color: '#0f172a' }}>{cat.code}</code></td>
                     <td className="text-sec text-sm" style={{ maxWidth: '350px' }}>{cat.description || '—'}</td>
                     <td>
@@ -597,6 +603,24 @@ const AdminDashboard = () => {
               <div className="form-group mb-3">
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('lbl_category_name') || 'Название категории'} <span style={{ color: 'var(--pk-danger)' }}>*</span></label>
                 <input type="text" className="form-control" required value={categoryFormData.name} onChange={e => setCategoryFormData({...categoryFormData, name: e.target.value})} placeholder="Например: 🏨 Гостиничный бизнес" />
+              </div>
+              <div className="form-group mb-3">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  Предмет закупки (Относится к) <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                </label>
+                <select 
+                  className="form-control" 
+                  required
+                  value={categoryFormData.subject_type || 'goods'} 
+                  onChange={e => setCategoryFormData({...categoryFormData, subject_type: e.target.value})}
+                  style={{ fontWeight: 600 }}
+                >
+                  <option value="goods">📦 Товары</option>
+                  <option value="services_works">🛠️ Услуги / Работы</option>
+                </select>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem', display: 'block' }}>
+                  Определяет, в каких закупках (Товары или Услуги) отображается эта категория.
+                </span>
               </div>
               <div className="form-group mb-3">
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>

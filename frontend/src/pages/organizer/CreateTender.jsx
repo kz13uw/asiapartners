@@ -278,7 +278,10 @@ const CreateTender = () => {
     toast.success(`Предмет закупки изменен на: ${newType === 'goods' ? '📦 Товары' : '🛠️ Услуги / Работы'}`);
   };
 
-  const filteredCategories = categories.filter(c => !c.subject_type || c.subject_type === formData.subject_type);
+  const filteredCategories = categories.filter(c => {
+    const cType = c.subject_type || 'goods';
+    return cType === formData.subject_type;
+  });
 
   const validateFormForPublish = () => {
     const errors = {};

@@ -19,6 +19,7 @@ class CategoryOut(BaseModel):
     code: str
     description: Optional[str] = None
     icon: Optional[str] = None
+    subject_type: Optional[str] = "goods"
     is_active: bool
 
     class Config:
@@ -30,6 +31,7 @@ class CategoryCreate(BaseModel):
     code: str
     description: Optional[str] = None
     icon: Optional[str] = "building"
+    subject_type: Optional[str] = "goods"
     is_active: Optional[bool] = True
 
 
@@ -52,6 +54,9 @@ async def create_category(
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Только Администратор может создавать категории")
 
+    from app.models.models import TenderSubjectType
+    subj_val = TenderSubjectType.SERVICES_WORKS if data.subject_type in ["services", "services_works", "work"] else TenderSubjectType.GOODS
+
     # Проверка уникальности
     existing = await db.execute(
         select(ProcurementCategory).where(
@@ -66,6 +71,7 @@ async def create_category(
         code=data.code,
         description=data.description,
         icon=data.icon,
+        subject_type=subj_val,
         is_active=data.is_active if data.is_active is not None else True
     )
     db.add(cat)
