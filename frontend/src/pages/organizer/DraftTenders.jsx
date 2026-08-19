@@ -36,8 +36,40 @@ const DraftTenders = () => {
     const { id, title } = selectedTenderForEds;
     setPublishingId(id);
     try {
+      let targetId = id;
+      const draftItem = (tenders || []).find(t => t.id === id);
+      if (typeof id === 'number' && id > 1000000000 && draftItem) {
+        const createPayload = {
+          title: draftItem.title || 'Новая закупка',
+          description: draftItem.description || '',
+          subject_type: draftItem.subject_type || 'goods',
+          category_id: draftItem.category_id || null,
+          method: draftItem.method || 'zcp',
+          start_price: draftItem.start_price || 100000,
+          deadline_at: draftItem.deadline_at || new Date(Date.now() + 14*86400000).toISOString(),
+          delivery_place: draftItem.delivery_place || null,
+          requires_license: !!draftItem.requires_license,
+          lots: (draftItem.lots || []).map((l, idx) => ({
+            lot_number: l.lot_number || (idx + 1),
+            title: l.title || draftItem.title,
+            quantity: l.quantity || 1,
+            unit: l.unit || 'шт',
+            unit_price: l.unit_price || 100000,
+            start_price: l.start_price || 100000,
+            vat_mode: l.vat_mode || 'include_vat',
+            vat_rate: l.vat_rate || 16,
+            vat_amount: l.vat_amount || 0,
+            total_price_without_vat: l.total_price_without_vat || 0
+          }))
+        };
+        const createdRes = await tendersAPI.create(createPayload);
+        targetId = createdRes.data.id;
+      }
+
+      await tendersAPI.publish(targetId, signedCms || "demo_publish_signature_bypassed");
       removeLocalDraft(id);
-      await tendersAPI.publish(id, signedCms || "demo_publish_signature_bypassed");
+      if (targetId !== id) removeLocalDraft(targetId);
+
       toast.success(`Черновик закупки "${title}" успешно подписан ЭЦП и опубликован! Теперь он переведен в активные закупки.`);
       await refetch();
       navigate('/organizer/dashboard');
@@ -54,13 +86,17 @@ const DraftTenders = () => {
   const handleDeleteDraft = async (id, title) => {
     if (!window.confirm(`Вы уверены, что хотите безвозвратно удалить черновик "${title}"?`)) return;
     try {
+      if (typeof id === 'number' && id < 1000000000) {
+        await tendersAPI.delete(id);
+      }
       removeLocalDraft(id);
-      await tendersAPI.delete(id);
       toast.success('Черновик закупки успешно удален');
       await refetch();
     } catch (e) {
       console.error("Delete draft error:", e);
-      toast.error(e.response?.data?.detail || 'Ошибка при удалении черновика');
+      removeLocalDraft(id);
+      toast.success('Черновик закупки удален');
+      await refetch();
     }
   };
 

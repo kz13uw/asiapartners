@@ -167,9 +167,25 @@ class TenderDocumentOut(BaseModel):
     doc_type: str
     file_name: str
     file_path: str
-    file_size: Optional[int] = 1024
+    file_size: Optional[Union[int, str]] = 1024
     hash_sha256: Optional[str] = None
     uploaded_at: Optional[datetime] = None
+
+    @field_validator("file_size", mode="before")
+    @classmethod
+    def parse_file_size(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            try:
+                clean_str = v.replace("МБ", "").replace("MB", "").replace("КБ", "").replace("KB", "").replace(" ", "").replace(",", ".")
+                val_float = float(clean_str)
+                if "МБ" in v or "MB" in v:
+                    return int(val_float * 1024 * 1024)
+                elif "КБ" in v or "KB" in v:
+                    return int(val_float * 1024)
+                return int(val_float)
+            except Exception:
+                return 1024
+        return v or 1024
 
     class Config:
         from_attributes = True

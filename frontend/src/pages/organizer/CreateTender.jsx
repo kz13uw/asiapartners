@@ -472,8 +472,9 @@ const CreateTender = () => {
     setIsSubmitting(true);
     try {
       const edsHash = signedCms || "demo_publish_signature_56789";
-      removeLocalDraft(createdTenderId);
       await tendersAPI.publish(createdTenderId, edsHash);
+      removeLocalDraft(createdTenderId);
+      if (editingId) removeLocalDraft(editingId);
       
       toast.success('Закупка успешно создана и опубликована по ЭЦП!');
       navigate('/organizer/dashboard');
