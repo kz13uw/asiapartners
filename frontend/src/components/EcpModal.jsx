@@ -194,7 +194,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
         <div style={{ backgroundColor: '#ffffff', padding: '1rem 1.25rem', borderBottom: '1px solid var(--pk-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <ShieldCheck color="var(--pk-primary)" size={22} />
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 700 }}>{t('eds_modal_title') || 'Подписание ЭЦП НУЦ РК'}</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 700 }}>Подписание ЭЦП НУЦ РК (NCALayer)</h3>
           </div>
           <button onClick={onClose} disabled={step === 2} style={{ background: 'none', border: 'none', cursor: step === 2 ? 'not-allowed' : 'pointer', fontSize: '1.5rem', lineHeight: 1, color: '#64748b', opacity: step === 2 ? 0.5 : 1, padding: '0.2rem' }}>×</button>
         </div>
@@ -224,11 +224,16 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
                   </p>
 
                   <div style={{ background: '#ffffff', border: '1px solid #fda4af', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', textAlign: 'left', fontSize: '0.78rem', color: '#9f1239' }}>
-                    <strong>💡 Если NCALayer запущен, но не подключается на HTTPS:</strong><br />
-                    Откройте ссылку ниже, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт 127.0.0.1 (небезопасно)»</em> для разрешения сертификата NCALayer:<br />
-                    <a href="https://127.0.0.1:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.3rem' }}>
-                      https://127.0.0.1:13579/ <ExternalLink size={12} />
-                    </a>
+                    <strong>💡 Разрешение подключения к NCALayer на HTTPS:</strong><br />
+                    Откройте одну из ссылок ниже, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт (небезопасно)»</em>:<br />
+                    <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      <a href="https://ncalayer.pki.gov.kz:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                        1. https://ncalayer.pki.gov.kz:13579/ <ExternalLink size={11} />
+                      </a>
+                      <a href="https://127.0.0.1:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                        2. https://127.0.0.1:13579/ <ExternalLink size={11} />
+                      </a>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'center' }}>
@@ -288,7 +293,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
             <div className="fade-in" style={{ textAlign: 'center' }}>
               <div style={{ background: '#defbe6', padding: '1.25rem', borderRadius: '12px', marginBottom: '1rem' }}>
                 <CheckCircle2 size={40} color="#198038" style={{ margin: '0 auto 0.5rem' }} />
-                <h4 style={{ margin: '0 0 0.25rem 0', color: '#198038', fontSize: '1.1rem' }}>Подпись ЭЦП успешно сформирована!</h4>
+                <h4 style={{ margin: '0 0 0.25rem 0', color '#198038', fontSize: '1.1rem' }}>Подпись ЭЦП успешно сформирована!</h4>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--pk-text-secondary)' }}>Нажмите кнопку ниже для завершения операции</p>
               </div>
 
