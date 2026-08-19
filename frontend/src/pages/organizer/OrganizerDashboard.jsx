@@ -123,7 +123,7 @@ const OrganizerDashboard = () => {
                 <th style={{ padding: '0.65rem 0.75rem' }}>Наименование тендера</th>
                 <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Метод</th>
                 <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Прием заявок (до)</th>
-                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Статус жизненного цикла</th>
+                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Статус</th>
                 <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Действия</th>
               </tr>
             </thead>
