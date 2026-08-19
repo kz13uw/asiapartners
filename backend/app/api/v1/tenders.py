@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import selectinload
@@ -8,14 +8,15 @@ import uuid
 from app.db.session import get_db
 from app.models.models import Tender, TenderStatus, TenderDocument, AuditLog, User, UserRole, Lot, QualificationRequirement
 from app.schemas.schemas import TenderCreate, TenderUpdate, TenderOut, TenderListOut, TenderCancel
-from app.api.v1.auth import get_current_user
+from typing import Optional
+from app.api.v1.auth import get_current_user, get_optional_user
 
 router = APIRouter()
 
 
 def generate_tender_number() -> str:
     year = datetime.utcnow().year
-    uid = str(uuid.uuid4())[:4].upper()
+    uid = uuid.uuid4().hex[:6].upper()
     return f"T-{year}-{uid}"
 
 
@@ -88,18 +89,16 @@ async def my_tenders(
 async def get_tender(
     tender_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
 ):
     from sqlalchemy.orm import selectinload
-    from app.api.v1.auth import get_optional_user
     result = await db.execute(select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.id == tender_id))
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
     if tender.status == TenderStatus.DRAFT:
-        # Check current user for draft access
-        from app.api.v1.auth import oauth2_scheme_optional
-        # Simple draft check: ensure it's accessed via my tenders or valid organizer token
-        pass
+        if not current_user or (current_user.id != tender.organizer_id and current_user.role != UserRole.ADMIN):
+            raise HTTPException(status_code=403, detail="Черновик закупки доступен только создавшему его организатору")
     return tender
 
 

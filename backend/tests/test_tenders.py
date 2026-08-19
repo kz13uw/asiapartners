@@ -66,8 +66,13 @@ class TestTendersEndpoints(unittest.TestCase):
         self.assertEqual(len(data["lots"]), 1)
         self.assertEqual(data["lots"][0]["incoterms"], "DDP")
 
-        # Получаем карточку по ID
         tender_id = data["id"]
+
+        # 1. Проверяем доступ БЕЗ авторизации создателя -> должно вернуть 403 Forbidden
+        unauth_res = client.get(f"/api/v1/tenders/{tender_id}")
+        self.assertEqual(unauth_res.status_code, 403)
+
+        # 2. Проверяем доступ СО штампом авторизации создателя -> должно вернуть 200 OK
         card_res = client.get(f"/api/v1/tenders/{tender_id}", headers=self.headers)
         self.assertEqual(card_res.status_code, 200)
         self.assertEqual(card_res.json()["id"], tender_id)
