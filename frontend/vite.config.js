@@ -13,5 +13,10 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  // [P2-FIX] Убираем все console.log/warn/error в production-сборке
+  esbuild: {
+    drop: ['console', 'debugger'],
   }
 })
+

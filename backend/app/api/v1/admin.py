@@ -44,6 +44,9 @@ async def create_internal_user(
         is_valid, msg = validate_password_policy(body.password)
         if not is_valid:
             raise HTTPException(status_code=400, detail=msg)
+    else:
+        # [P2-FIX] Генерируем безопасный временный пароль вместо предсказуемого Pass1234!
+        body.password = secrets.token_urlsafe(16) + "A1!"
 
     user = User(
         username=body.username or body.email or body.iin_bin,
@@ -52,7 +55,7 @@ async def create_internal_user(
         email=body.email,
         role=body.role,
         status=UserStatus.ACTIVE,
-        hashed_password=get_password_hash(body.password) if body.password else get_password_hash("Pass1234!"),
+        hashed_password=get_password_hash(body.password),
     )
     db.add(user)
     await db.flush()

@@ -173,7 +173,7 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         res = await db.execute(select(Company).where(Company.bin == company_bin))
         company = res.scalar_one_or_none()
         if not company:
-            # Создаем новую компанию
+            # [P0-FIX] Не ставим owner_id=1; будем пользовать None до получения user.id
             company = Company(
                 bin=company_bin,
                 full_name=req_comp_name or f"ТОО {company_bin}",
@@ -183,7 +183,7 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
                 email=req_email,
                 director_name=req_director,
                 is_accredited=True,
-                owner_id=1
+                owner_id=None  # Будет заполнен после создания пользователя
             )
             db.add(company)
             await db.flush()
@@ -197,8 +197,10 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     # Ищем или создаем пользователя
     res = await db.execute(select(User).where(User.iin_bin == iin))
     user = res.scalar_one_or_none()
+    is_new_user = False  # флаг первого входа — фронтенд покажет форму доп. данных
     
     if not user:
+        is_new_user = True  # новый пользователь — показать форму регистрации
         user = User(
             iin_bin=iin,
             full_name=req_director or subject_name,
@@ -222,6 +224,10 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     if not user.account_code:
         user.account_code = generate_account_code(user.id, user.role)
 
+    # [P0-FIX] Теперь корректно присваиваем owner_id компании реальному пользователю
+    if company and (company.owner_id is None or company.owner_id == 1):
+        company.owner_id = user.id
+
     user.last_login = datetime.utcnow()
     await db.commit()
 
@@ -233,6 +239,7 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
+        is_new_user=is_new_user,
     )
 
 
@@ -264,11 +271,16 @@ async def logout(
     token: str = Depends(oauth2_scheme),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    request: Request = None
+    request: Request = None,
+    body: Optional[RefreshRequest] = None,
 ):
     from app.models.models import TokenBlacklist
+    # Добавляем access_token в blacklist
     if token:
         db.add(TokenBlacklist(token=token, user_id=current_user.id))
+    # [P1-FIX] Также добавляем refresh_token в blacklist, чтобы он больше не был валиден
+    if body and body.refresh_token:
+        db.add(TokenBlacklist(token=body.refresh_token, user_id=current_user.id))
 
     log = AuditLog(user_id=current_user.id, ip_address=request.client.host if request else None, action="LOGOUT", entity_type="user", entity_id=current_user.id)
     db.add(log)

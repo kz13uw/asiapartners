@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 from app.models.models import UserRole, UserStatus, TenderMethod, TenderStatus, BidStatus, ContractStatus, TenderSubjectType, generate_account_code
 
@@ -31,6 +31,7 @@ class TokenResponse(BaseModel):
     account_code: Optional[str] = None
     role: UserRole
     full_name: str
+    is_new_user: bool = False  # True при первом входе через ЭЦП — показать форму доп. данных
 
 
 class RefreshRequest(BaseModel):
@@ -214,9 +215,22 @@ class BidDocumentOut(BaseModel):
         from_attributes = True
 
 
+class TenderBriefOut(BaseModel):
+    """Brief tender info for inclusion in BidOut to avoid circular imports"""
+    id: int
+    number: Optional[str] = None
+    title: str
+    status: TenderStatus
+    deadline_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 class BidOut(BaseModel):
     id: int
     tender_id: int
+    tender: Optional[TenderBriefOut] = None  # [P2-FIX] Нестим данные тендера для кабинета
     supplier_id: int
     company_id: Optional[int] = None
     company_name: Optional[str] = None

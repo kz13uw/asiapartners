@@ -53,7 +53,11 @@ export const authAPI = {
     API.post('/auth/login/eds', { cms_base64: cmsBase64, ...extraFields }),
   refresh: (refreshToken) =>
     API.post('/auth/refresh', { refresh_token: refreshToken }),
-  logout: () => API.post('/auth/logout'),
+  // [P1-FIX] Передаём refresh_token в теле запроса — бэкенд добавит его в blacklist
+  logout: () => {
+    const refresh_token = localStorage.getItem('refresh_token');
+    return API.post('/auth/logout', refresh_token ? { refresh_token } : {});
+  },
 };
 
 // ===== TENDERS =====

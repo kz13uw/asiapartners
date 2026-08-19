@@ -168,6 +168,7 @@ class Tender(Base):
     step_down_pct: Mapped[Optional[float]] = mapped_column(Float, nullable=True)      # % шага понижения
     min_step_amount: Mapped[Optional[float]] = mapped_column(Float, nullable=True)    # минимальный шаг в тенге ₸
     auto_extend_minutes: Mapped[int] = mapped_column(Integer, default=5)           # anti-sniping автопродление
+    extension_count: Mapped[int] = mapped_column(Integer, default=0)              # [P2-FIX] Счётчик продлений (макс. 3)
     anti_dumping_pct: Mapped[float] = mapped_column(Float, default=20.0)           # порог демпинга %
     status: Mapped[TenderStatus] = mapped_column(Enum(TenderStatus), default=TenderStatus.DRAFT)
     deadline_at: Mapped[datetime] = mapped_column(DateTime)

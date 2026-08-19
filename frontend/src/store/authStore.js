@@ -13,7 +13,7 @@ export const useAuthStore = create(
       loginEds: async (cmsBase64, extraFields = {}) => {
         try {
           const res = await authAPI.loginEds(cmsBase64, extraFields);
-          const { access_token, refresh_token, ...userData } = res.data;
+          const { access_token, refresh_token, is_new_user, ...userData } = res.data;
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
           
@@ -33,7 +33,8 @@ export const useAuthStore = create(
               director_name: extraFields.director_name || userData.full_name
             }});
           }
-          return mergedUser;
+          // Возвращаем флаг нового пользователя, чтобы фронтенд мог решить — показать форму или нет
+          return { ...mergedUser, is_new_user: is_new_user ?? false };
         } catch (error) {
           console.error("EDS Login error:", error);
           throw error;

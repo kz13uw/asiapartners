@@ -26,6 +26,20 @@ async def submit_bid(
     if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED]:
         raise HTTPException(status_code=400, detail="Прием ценовых предложений закрыт")
 
+    # [P0-FIX] Проверка дублирования заявки — один поставщик, одна активная заявка
+    dup_result = await db.execute(
+        select(Bid).where(
+            Bid.tender_id == body.tender_id,
+            Bid.supplier_id == current_user.id,
+            Bid.status != BidStatus.REJECTED
+        )
+    )
+    if dup_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=409,
+            detail="Активная заявка на эту закупку уже подана. Сначала отзовите её, чтобы подать новую версию."
+        )
+
     # Проверяем шаг цены
     if body.price >= tender.start_price:
         raise HTTPException(
@@ -41,13 +55,16 @@ async def submit_bid(
     now = datetime.utcnow()
     time_left_seconds = (tender.deadline_at - now).total_seconds()
     auto_extend = tender.auto_extend_minutes or 5
+    MAX_EXTENSIONS = 3  # [P2-FIX] Ограничение на максимальное количество продлений
 
-    if 0 < time_left_seconds <= (auto_extend * 60):
+    extension_count = getattr(tender, 'extension_count', 0) or 0
+    if 0 < time_left_seconds <= (auto_extend * 60) and extension_count < MAX_EXTENSIONS:
         from datetime import timedelta
         tender.deadline_at = tender.deadline_at + timedelta(minutes=auto_extend)
+        tender.extension_count = extension_count + 1
         log_ext = AuditLog(
             user_id=current_user.id, 
-            action="ANTI_SNIPING_EXTENSION", 
+            action=f"ANTI_SNIPING_EXTENSION_{extension_count + 1}", 
             entity_type="tender", 
             entity_id=tender.id
         )
@@ -57,17 +74,12 @@ async def submit_bid(
     from app.models.models import Company
     comp_result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
     company = comp_result.scalar_one_or_none()
+    # [P1-FIX] Больше не создаём компанию-заглушку — требуем регистрации
     if not company:
-        # Создаем временную компанию для тестирования, если не создана
-        company = Company(
-            bin=current_user.iin_bin or "123456789012",
-            full_name=f"ТОО {current_user.full_name}",
-            legal_form="ТОО",
-            is_accredited=True,
-            owner_id=current_user.id
+        raise HTTPException(
+            status_code=403,
+            detail="Для подачи заявки необходимо зарегистрировать компанию в разделе 'Профиль'. Заполните реквизиты и сохраните их."
         )
-        db.add(company)
-        await db.flush()
 
     bid = Bid(
         tender_id=body.tender_id,
@@ -101,12 +113,16 @@ async def submit_bid(
                 hash_sha256=doc.hash_sha256 or f"demo_hash_bid_{bid.id}",
             ))
 
-    # Обновляем текущую минимальную цену тендера
-    tender.current_lowest_price = bid.price
+    # [P1-FIX] Обновляем текущую минимальную цену — только если новая цена ниже текущей
+    if tender.current_lowest_price is None or bid.price < tender.current_lowest_price:
+        tender.current_lowest_price = bid.price
 
-    # Пересчитываем ранги всех заявок по этому тендеру
+    # Пересчитываем ранги всех заявок по этому тендеру (только активные)
     bids_res = await db.execute(
-        select(Bid).where(Bid.tender_id == body.tender_id).order_by(Bid.price.asc())
+        select(Bid).where(
+            Bid.tender_id == body.tender_id,
+            Bid.status != BidStatus.REJECTED
+        ).order_by(Bid.price.asc())
     )
     all_bids = bids_res.scalars().all()
     for idx, b in enumerate(all_bids, start=1):
@@ -133,7 +149,18 @@ async def my_bids(
     current_user: User = Depends(require_role(UserRole.SUPPLIER, UserRole.ADMIN)),
 ):
     from sqlalchemy.orm import selectinload
-    result = await db.execute(select(Bid).options(selectinload(Bid.items), selectinload(Bid.documents)).where(Bid.supplier_id == current_user.id).order_by(Bid.submitted_at.desc()))
+    # [P2-FIX] Добавляем загрузку связанного тендера для корректного отображения статуса в кабинете
+    result = await db.execute(
+        select(Bid)
+        .options(
+            selectinload(Bid.items),
+            selectinload(Bid.documents),
+            selectinload(Bid.tender),
+            selectinload(Bid.company)
+        )
+        .where(Bid.supplier_id == current_user.id)
+        .order_by(Bid.submitted_at.desc())
+    )
     return result.scalars().all()
 
 
