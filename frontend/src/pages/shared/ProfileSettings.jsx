@@ -155,6 +155,19 @@ const ProfileSettings = () => {
                 placeholder="Иванов Иван Иванович"
               />
             </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+                {t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}
+              </label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={profileData.company_name || ''} 
+                onChange={e => setProfileData({ ...profileData, company_name: e.target.value })} 
+                placeholder='Например: ТОО "Asia Partners"'
+              />
+            </div>
             
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
@@ -219,10 +232,14 @@ const ProfileSettings = () => {
               <input type="text" className="form-control" defaultValue={user?.iin_bin || "123456789012"} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('lbl_full_name_org') || 'Наименование организации'}</label>
+              <label className="form-label">{t('lbl_company_name') || 'Наименование организации'}</label>
+              <input type="text" className="form-control" defaultValue={profileData.company_name || 'ТОО Asia Partners'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('lbl_full_name') || 'ФИО Руководителя'}</label>
               <input type="text" className="form-control" defaultValue={profileData.full_name} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
-            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+            <div className="form-group">
               <label className="form-label">{t('lbl_company_address') || 'Юридический адрес'}</label>
               <input type="text" className="form-control" defaultValue="Республика Казахстан, г. Астана, ул. Достык, 1" disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
