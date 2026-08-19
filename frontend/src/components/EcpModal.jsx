@@ -4,9 +4,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
 
-// Официальный домен НУЦ РК для валидного SSL на HTTPS сайтах + fallback адреса
 const NCALAYER_URLS = [
-  'wss://ncalayer.pki.gov.kz:13579/',
   'wss://127.0.0.1:13579/',
   'wss://localhost:13579/',
   'wss://127.0.0.1:13580/',
@@ -225,13 +223,10 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
 
                   <div style={{ background: '#ffffff', border: '1px solid #fda4af', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', textAlign: 'left', fontSize: '0.78rem', color: '#9f1239' }}>
                     <strong>💡 Разрешение подключения к NCALayer на HTTPS:</strong><br />
-                    Откройте одну из ссылок ниже, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт (небезопасно)»</em>:<br />
-                    <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                      <a href="https://ncalayer.pki.gov.kz:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
-                        1. https://ncalayer.pki.gov.kz:13579/ <ExternalLink size={11} />
-                      </a>
+                    Откройте прямую ссылку 127.0.0.1, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт 127.0.0.1 (небезопасно)»</em>:<br />
+                    <div style={{ marginTop: '0.4rem' }}>
                       <a href="https://127.0.0.1:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
-                        2. https://127.0.0.1:13579/ <ExternalLink size={11} />
+                        👉 https://127.0.0.1:13579/ <ExternalLink size={12} />
                       </a>
                     </div>
                   </div>
@@ -293,7 +288,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
             <div className="fade-in" style={{ textAlign: 'center' }}>
               <div style={{ background: '#defbe6', padding: '1.25rem', borderRadius: '12px', marginBottom: '1rem' }}>
                 <CheckCircle2 size={40} color="#198038" style={{ margin: '0 auto 0.5rem' }} />
-                <h4 style={{ margin: '0 0 0.25rem 0', color '#198038', fontSize: '1.1rem' }}>Подпись ЭЦП успешно сформирована!</h4>
+                <h4 style={{ margin: '0 0 0.25rem 0', color: '#198038', fontSize: '1.1rem' }}>Подпись ЭЦП успешно сформирована!</h4>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--pk-text-secondary)' }}>Нажмите кнопку ниже для завершения операции</p>
               </div>
 
