@@ -73,7 +73,9 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
           setSignedData(response.result);
           
           try {
-            const res = await axios.post('/api/v1/eds/verify', {
+            const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+            const verifyUrl = isLocal ? 'http://localhost:8000/api/v1/eds/verify' : '/api/v1/eds/verify';
+            const res = await axios.post(verifyUrl, {
               cms_base64: response.result
             });
             setParsedInfo(res.data);

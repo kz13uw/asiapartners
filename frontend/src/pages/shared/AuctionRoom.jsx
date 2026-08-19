@@ -19,13 +19,16 @@ const AuctionRoom = () => {
   const [selectedBidPrice, setSelectedBidPrice] = useState(null);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
 
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const apiBase = isLocal ? 'http://localhost:8000/api/v1' : '/api/v1';
+
   const fetchAuctionData = async () => {
     try {
-      const res = await axios.get(`/api/v1/tenders/${id}`);
+      const res = await axios.get(`${apiBase}/tenders/${id}`);
       setTender(res.data);
 
       try {
-        const bidsRes = await axios.get(`/api/v1/bids/tender/${id}`);
+        const bidsRes = await axios.get(`${apiBase}/bids/tender/${id}`);
         setBids(bidsRes.data);
       } catch (e) {
         // Fallback mock bids for display
