@@ -90,14 +90,20 @@ const PublicTenders = () => {
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid var(--pk-border)', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.85rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div className="text-sm text-sec">{t('start_price')}</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, marginBottom: '0.15rem' }}>
+                    {t('start_price')}
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--pk-primary)', lineHeight: 1.2 }}>
                     {formatCurrency(tender.start_price || tender.budget)}
                   </div>
                 </div>
-                <Link to={`/tenders/${tender.id}`} className="btn btn-outline btn-sm">
+                <Link 
+                  to={`/tenders/${tender.id}`} 
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '0.45rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem', textDecoration: 'none' }}
+                >
                   {t('view_details')} <ArrowRight size={14} />
                 </Link>
               </div>
