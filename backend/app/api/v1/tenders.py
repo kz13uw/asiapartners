@@ -14,10 +14,14 @@ from app.api.v1.auth import get_current_user, get_optional_user
 router = APIRouter()
 
 
-def generate_tender_number() -> str:
-    year = datetime.utcnow().year
-    uid = uuid.uuid4().hex[:6].upper()
-    return f"T-{year}-{uid}"
+def generate_tender_number(subject_type: str = "goods", tender_id: Optional[int] = None) -> str:
+    subj = str(subject_type).lower()
+    prefix = "U" if ("service" in subj or "work" in subj) else "T"
+    if tender_id:
+        return f"{prefix}{tender_id:08d}"
+    import random
+    num = random.randint(10000000, 99999999)
+    return f"{prefix}{num}"
 
 
 def require_role(*roles: UserRole):
@@ -124,11 +128,14 @@ async def create_tender(
     org_code = current_user.computed_account_code
     tender = Tender(
         **tender_data,
-        number=generate_tender_number(),
+        number=generate_tender_number(body.subject_type),
         organizer_id=current_user.id,
         organizer_code=org_code,
     )
     db.add(tender)
+    await db.flush()
+
+    tender.number = generate_tender_number(body.subject_type, tender.id)
     await db.flush()
 
     from app.models.models import Lot, QualificationRequirement, TenderDocument

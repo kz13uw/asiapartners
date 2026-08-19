@@ -655,36 +655,35 @@ const CreateTender = () => {
           {/* Блок 1: Основная информация */}
           <h4 style={{ marginBottom: '1rem', color: 'var(--pk-primary)' }}>{t('section_1') || '1. Основные сведения'}</h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div style={{ gridColumn: '1 / -1' }}>
+            
+            {/* 1. ID Закупки */}
+            <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                {t('tender_title_label') || 'Наименование закупки'} <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.5em', fontStyle: 'italic', marginLeft: '0.25rem' }}>* (Обязательно для публикации)</span>
+                1. ID Закупки <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Авто-генерация)</span>
               </label>
               <input 
                 type="text" 
-                name="title" 
                 className="form-control" 
-                placeholder={t('placeholder_title') || 'например: Поставка строительных материалов'} 
-                value={formData.title} 
-                onChange={handleChange}
+                disabled 
+                readOnly
+                value={formData.number || (formData.subject_type === 'goods' ? 'T00000000 (авто)' : 'U00000000 (авто)')} 
                 style={{
-                  borderColor: fieldErrors.title ? '#ef4444' : undefined,
-                  backgroundColor: fieldErrors.title ? '#fef2f2' : undefined,
-                  boxShadow: fieldErrors.title ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : undefined
+                  backgroundColor: '#f1f5f9',
+                  color: 'var(--pk-primary)',
+                  fontWeight: 700,
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.5px'
                 }}
               />
-              {fieldErrors.title && (
-                <div style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '0.35rem', fontWeight: 600 }}>
-                  ⚠️ {fieldErrors.title}
-                </div>
-              )}
+              <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                * Т — для товаров, U — для услуг. Заполняется автоматически.
+              </span>
             </div>
 
+            {/* 2. Категория закупки */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Категория предмета закупки <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.5em', fontStyle: 'italic', marginLeft: '0.25rem' }}>* (Обязательно для публикации)</span>
-                <span style={{ color: '#0284c7', fontSize: '0.78rem', display: 'block', fontWeight: 400 }}>
-                  (фильтр по типу: «{formData.subject_type === 'goods' ? 'Товары' : 'Услуги / Работы'}»)
-                </span>
+                2. Категория закупки <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.7em', fontStyle: 'italic' }}>*</span>
               </label>
               <select 
                 name="category_id" 
@@ -711,9 +710,10 @@ const CreateTender = () => {
               )}
             </div>
 
+            {/* 3. Срок окончания приема заявок */}
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Срок окончания приема заявок <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.5em', fontStyle: 'italic', marginLeft: '0.25rem' }}>* (Обязательно для публикации)</span>
+                3. Срок окончания приема заявок <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.7em', fontStyle: 'italic' }}>*</span>
               </label>
               <input 
                 type="datetime-local" 
@@ -734,23 +734,50 @@ const CreateTender = () => {
               )}
             </div>
 
+            {/* 4. Наименование закупки */}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                Место поставки / выгрузки <span style={{ color: '#64748b', fontSize: '0.8rem' }}>(Необязательно)</span>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                4. Наименование закупки <span style={{ color: '#dc2626', fontWeight: 500, fontSize: '0.7em', fontStyle: 'italic' }}>*</span>
+              </label>
+              <input 
+                type="text" 
+                name="title" 
+                className="form-control" 
+                placeholder={t('placeholder_title') || 'например: Поставка строительных материалов'} 
+                value={formData.title} 
+                onChange={handleChange}
+                style={{
+                  borderColor: fieldErrors.title ? '#ef4444' : undefined,
+                  backgroundColor: fieldErrors.title ? '#fef2f2' : undefined,
+                  boxShadow: fieldErrors.title ? '0 0 0 3px rgba(239, 68, 68, 0.15)' : undefined
+                }}
+              />
+              {fieldErrors.title && (
+                <div style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '0.35rem', fontWeight: 600 }}>
+                  ⚠️ {fieldErrors.title}
+                </div>
+              )}
+            </div>
+
+            {/* 5. Место поставки */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                5. Место поставки <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Необязательно)</span>
               </label>
               <input 
                 type="text" 
                 name="delivery_place" 
                 className="form-control" 
-                placeholder="г. Семей, Объект Азия Парк" 
+                placeholder="например: г. Семей, Объект Азия Парк" 
                 value={formData.delivery_place || ''} 
                 onChange={handleChange}
               />
             </div>
 
+            {/* 6. Краткое описание */}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>
-                Краткое описание / ТЗ <span style={{ color: '#64748b', fontSize: '0.8rem' }}>(Необязательно)</span>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                6. Краткое описание <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Необязательно)</span>
               </label>
               <textarea name="description" className="form-control" rows="3" placeholder="Укажите особые условия поставки, требования к качеству..." value={formData.description || ''} onChange={handleChange}></textarea>
             </div>
