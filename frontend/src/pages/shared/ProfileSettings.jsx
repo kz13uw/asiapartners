@@ -144,7 +144,7 @@ const ProfileSettings = () => {
           <div className="grid-2" style={{ gap: '1.25rem', marginBottom: '1.5rem' }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('lbl_full_name_org') || 'Полное имя'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                {t('lbl_full_name') || 'ФИО (Контактное лицо)'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
               </label>
               <input 
                 type="text" 
