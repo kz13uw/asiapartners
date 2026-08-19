@@ -41,9 +41,6 @@ const PublicTenders = () => {
         <h1 style={{ fontSize: '2.25rem', marginBottom: '0.75rem', color: 'var(--pk-primary)' }}>
           Открытый реестр закупок «Asia Partners»
         </h1>
-        <p className="text-sec" style={{ maxWidth: '650px', margin: '0 auto', fontSize: '1.05rem' }}>
-          Официальный открытый реестр закупок компании Asia Partners.
-        </p>
       </div>
 
       {/* Фильтры и Поиск */}
