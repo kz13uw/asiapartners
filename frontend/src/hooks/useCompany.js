@@ -18,7 +18,7 @@ export const useCompany = () => {
       setCompany({
         bin: '123456789012',
         name: 'ТОО "Тестовый Поставщик"',
-        address: 'г. Алматы, ул. Абая 1',
+        address: 'г. Семей, ул. Абая 1',
         bank_details: 'IBAN KZ123456789012345678, БИК KZKXAAAA',
         status: 'approved'
       });

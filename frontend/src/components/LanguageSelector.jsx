@@ -3,34 +3,35 @@ import { Globe } from 'lucide-react';
 import { useLanguageStore } from '../store/useLanguageStore';
 
 const languages = [
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'kz', label: 'Қазақша', flag: '🇰🇿' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'ru', label: 'RU', fullName: 'Русский' },
+  { code: 'kz', label: 'KZ', fullName: 'Қазақша' },
+  { code: 'en', label: 'EN', fullName: 'English' },
+  { code: 'zh', label: 'CN', fullName: '中文' },
 ];
 
 const LanguageSelector = () => {
   const { lang, setLanguage } = useLanguageStore();
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--pk-bg-surface)', padding: '0.25rem 0.6rem', borderRadius: '8px', border: '1px solid var(--pk-border)' }}>
-      <Globe size={16} color="var(--pk-primary)" />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255, 255, 255, 0.95)', padding: '0.35rem 0.65rem', borderRadius: '99px', border: '1px solid rgba(255, 255, 255, 0.3)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+      <Globe size={16} color="#163A54" />
       <select 
         value={lang} 
         onChange={(e) => setLanguage(e.target.value)}
         style={{ 
           background: 'transparent', 
           border: 'none', 
-          color: 'var(--pk-text-main)', 
-          fontWeight: 600, 
+          color: '#163A54', 
+          fontWeight: 700, 
           fontSize: '0.85rem',
           cursor: 'pointer',
-          outline: 'none'
+          outline: 'none',
+          paddingRight: '0.2rem'
         }}
       >
         {languages.map((item) => (
-          <option key={item.code} value={item.code}>
-            {item.flag} {item.label}
+          <option key={item.code} value={item.code} style={{ color: '#0f172a', fontWeight: 600 }}>
+            {item.label}
           </option>
         ))}
       </select>

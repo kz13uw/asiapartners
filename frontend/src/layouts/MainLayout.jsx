@@ -25,6 +25,34 @@ const MainLayout = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const updateUnreadCount = () => {
+    try {
+      const stored = localStorage.getItem(`notifications_${user?.id || 'guest'}`);
+      if (stored) {
+        const notifs = JSON.parse(stored);
+        if (Array.isArray(notifs)) {
+          setUnreadCount(notifs.filter(n => !n.read).length);
+          return;
+        }
+      }
+      setUnreadCount(2);
+    } catch (e) {
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    updateUnreadCount();
+    const interval = setInterval(updateUnreadCount, 2000);
+    window.addEventListener('storage', updateUnreadCount);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', updateUnreadCount);
+    };
+  }, [user]);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
@@ -57,8 +85,8 @@ const MainLayout = () => {
       return [
         { path: '/organizer/dashboard', icon: Settings, label: t('dashboard_organizer') },
         { path: '/organizer/tenders/create', icon: Scale, label: t('nav_create_tender') },
+        { path: '/organizer/tenders/drafts', icon: FileText, label: t('nav_draft_tenders') || 'Черновики тендеров' },
         { path: '/tenders', icon: Scale, label: t('nav_tenders') },
-        { path: '/reports', icon: FileText, label: t('nav_reports') },
       ];
     }
     
@@ -88,35 +116,33 @@ const MainLayout = () => {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
-          className="mobile-overlay mobile-block" 
+          className="mobile-overlay" 
           onClick={() => setIsMobileMenuOpen(false)}
           style={{
-            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 40, display: 'none'
+            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 990, backdropFilter: 'blur(2px)'
           }}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className="sidebar glass-sidebar" 
+        className={`sidebar glass-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
         style={{ 
-          width: '280px', 
-          minWidth: '280px',
+          width: '260px', 
+          minWidth: '260px',
           flexShrink: 0,
           display: 'flex', 
           flexDirection: 'column',
-          position: window.innerWidth <= 768 ? 'fixed' : 'relative',
           height: '100vh',
-          zIndex: 50,
-          left: window.innerWidth <= 768 ? (isMobileMenuOpen ? 0 : '-280px') : 0,
-          transition: 'left 0.3s ease',
-          boxShadow: isMobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.1)' : 'none'
+          zIndex: 1000,
+          transition: 'all 0.3s ease',
+          boxShadow: isMobileMenuOpen ? '4px 0 24px rgba(0,0,0,0.2)' : 'none'
         }}
       >
         <div className="sidebar-logo" style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.95)', minHeight: '72px' }}>
-          <img src="/logo.png" alt="Asia Partners" style={{ height: '110px', margin: '-10px 0', transform: 'scale(3)', pointerEvents: 'none' }} />
+          <img src="/logo.png" alt="Asia Partners" style={{ height: '100px', margin: '-10px 0', transform: 'scale(2.5)', pointerEvents: 'none' }} />
         </div>
-        <nav className="sidebar-nav" style={{ padding: '1.5rem 0', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <nav className="sidebar-nav" style={{ padding: '1.5rem 0', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', overflowY: 'auto' }}>
           {menu.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
@@ -131,31 +157,31 @@ const MainLayout = () => {
                   backgroundColor: isActive ? 'var(--pk-primary)' : 'transparent',
                   borderLeft: `4px solid ${isActive ? 'var(--pk-accent)' : 'transparent'}`,
                   fontWeight: 500,
-                  fontSize: '0.95rem',
+                  fontSize: '0.92rem',
                   letterSpacing: '0.01em',
                   transition: 'all 0.2s ease'
                 }}
               >
-                <Icon size={20} color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} /> {item.label}
+                <Icon size={19} color={isActive ? '#fff' : 'rgba(255,255,255,0.7)'} /> {item.label}
               </Link>
             );
           })}
         </nav>
         <div style={{ padding: '1rem' }}>
           <button onClick={handleLogout} className="nav-item" style={{ width: '100%', background: 'none', border: 'none', color: '#ff8389', cursor: 'pointer', textAlign: 'left', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 500 }}>
-            <LogOut size={20} /> {t('logout')}
+            <LogOut size={19} /> {t('logout')}
           </button>
         </div>
       </aside>
 
-      <main className="main-wrapper" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'transparent' }}>
-        <header className="top-header glass-header" style={{ height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', position: 'relative', zIndex: 100 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {/* Hamburger Button for Mobile */}
+      <main className="main-wrapper" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', backgroundColor: 'transparent', height: '100vh', overflow: 'hidden' }}>
+        <header className="top-header glass-header" style={{ height: '72px', minHeight: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.25rem', position: 'relative', zIndex: 100 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Hamburger Button for Mobile/Tablet */}
             <button 
               className="mobile-menu-btn"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', display: window.innerWidth <= 768 ? 'block' : 'none' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.4rem', color: 'var(--pk-text-main)', display: isMobile ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -165,7 +191,6 @@ const MainLayout = () => {
             <LanguageSelector />
             <div className="hidden-mobile" style={{ textAlign: 'right' }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--pk-text-main)' }}>{user?.full_name}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--pk-text-secondary)' }}>{user?.role}</div>
             </div>
             
             <div 
@@ -190,9 +215,11 @@ const MainLayout = () => {
                   </Link>
                   <Link to="/profile/notifications" onClick={() => setIsProfileMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.25rem', color: 'var(--pk-text-main)', textDecoration: 'none', transition: 'background 0.2s', justifyContent: 'space-between' }} onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--pk-bg-main)'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <Activity size={18} color="var(--pk-text-secondary)" /> Уведомления
+                      <Activity size={18} color="var(--pk-text-secondary)" /> {t('notifications_title') || 'Уведомления'}
                     </div>
-                    <span className="badge badge-primary" style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>3</span>
+                    {unreadCount > 0 && (
+                      <span className="badge badge-primary" style={{ padding: '0.15rem 0.45rem', fontSize: '0.75rem', borderRadius: '10px' }}>{unreadCount}</span>
+                    )}
                   </Link>
                   <div style={{ height: '1px', backgroundColor: 'var(--pk-border)', margin: '0.5rem 0' }}></div>
                   <button 

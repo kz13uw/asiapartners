@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,18 +12,42 @@ from app.core.security import verify_password, create_access_token, create_refre
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+
+async def get_optional_user(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    if not token:
+        return None
+    try:
+        return await get_current_user(token=token, db=db)
+    except Exception:
+        return None
 
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    from app.models.models import TokenBlacklist
+    # Проверка на токен в блэклисте
+    blacklisted = await db.execute(select(TokenBlacklist).where(TokenBlacklist.token == token))
+    if blacklisted.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен отозван")
+
     payload = decode_token(token)
     if not payload or payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный токен")
 
     user_id = payload.get("sub")
-    result = await db.execute(select(User).where(User.id == int(user_id)))
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный токен")
+
+    result = await db.execute(select(User).where(User.id == user_id_int))
     user = result.scalar_one_or_none()
 
     if not user:
@@ -83,14 +108,22 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     user.last_login = datetime.utcnow()
 
     # Аудит
-    log = AuditLog(user_id=user.id, ip_address=request.client.host if request else None, action="LOGIN", entity_type="user", entity_id=user.id)
+    ip_addr = request.client.host if (request and request.client) else None
+    log = AuditLog(user_id=user.id, ip_address=ip_addr, action="LOGIN", entity_type="user", entity_id=user.id)
     db.add(log)
+    await db.commit()
+
+    if not user.account_code:
+        from app.models.models import generate_account_code
+        user.account_code = generate_account_code(user.id, user.role)
+        await db.commit()
 
     token_data = {"sub": str(user.id), "role": user.role.value}
     return TokenResponse(
         access_token=create_access_token(token_data),
         refresh_token=create_refresh_token(token_data),
         user_id=user.id,
+        account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
     )
@@ -100,7 +133,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_db), request: Request = None):
     import base64
     import re
-    from app.models.models import Company, UserRole
+    from app.models.models import Company, UserRole, generate_account_code
 
     # Декодируем Base64 строку в сырые байты (ASN.1 DER) - упрощенно для PoC
     try:
@@ -128,6 +161,12 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     else:
         subject_name = "Пользователь НУЦ РК"
 
+    req_address = payload.company_address or payload.address
+    req_phone = payload.phone
+    req_email = payload.email
+    req_director = payload.director_name
+    req_comp_name = payload.company_name
+
     # Ищем или создаем компанию
     company = None
     if company_bin:
@@ -137,13 +176,23 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
             # Создаем новую компанию
             company = Company(
                 bin=company_bin,
-                full_name=f"ТОО {company_bin}",
+                full_name=req_comp_name or f"ТОО {company_bin}",
                 legal_form="ТОО",
-                is_accredited=False,
-                owner_id=1  # Временно заглушка, позже привяжем к юзеру
+                address=req_address,
+                phone=req_phone,
+                email=req_email,
+                director_name=req_director,
+                is_accredited=True,
+                owner_id=1
             )
             db.add(company)
             await db.flush()
+        else:
+            if req_address: company.address = req_address
+            if req_phone: company.phone = req_phone
+            if req_email: company.email = req_email
+            if req_director: company.director_name = req_director
+            company.is_accredited = True
 
     # Ищем или создаем пользователя
     res = await db.execute(select(User).where(User.iin_bin == iin))
@@ -152,23 +201,26 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     if not user:
         user = User(
             iin_bin=iin,
-            full_name=subject_name,
+            full_name=req_director or subject_name,
+            email=req_email or f"supplier_{iin}@asia.kz",
+            phone=req_phone,
             role=UserRole.SUPPLIER,
             status=UserStatus.ACTIVE
         )
         db.add(user)
         await db.flush()
+        user.account_code = generate_account_code(user.id, user.role)
         
         # Если создали компанию, назначаем этого пользователя владельцем
-        if company and company.owner_id == 1:
+        if company:
             company.owner_id = user.id
+    else:
+        if req_email: user.email = req_email
+        if req_phone: user.phone = req_phone
+        if req_director: user.full_name = req_director
 
-    # Привязываем юзера к компании
-    if company:
-        # Для связи через relationship (company_id нету, есть owner_id и ForeignKey("Company.owner_id") в юзере, но лучше связать).
-        # В нашей модели: user.company_id нет, есть company.users
-        # Просто оставим как есть.
-        pass
+    if not user.account_code:
+        user.account_code = generate_account_code(user.id, user.role)
 
     user.last_login = datetime.utcnow()
     await db.commit()
@@ -178,6 +230,7 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         access_token=create_access_token(token_data),
         refresh_token=create_refresh_token(token_data),
         user_id=user.id,
+        account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
     )
@@ -200,13 +253,24 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         access_token=create_access_token(token_data),
         refresh_token=create_refresh_token(token_data),
         user_id=user.id,
+        account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
     )
 
 
 @router.post("/logout", summary="Выход")
-async def logout(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db), request: Request = None):
+async def logout(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    request: Request = None
+):
+    from app.models.models import TokenBlacklist
+    if token:
+        db.add(TokenBlacklist(token=token, user_id=current_user.id))
+
     log = AuditLog(user_id=current_user.id, ip_address=request.client.host if request else None, action="LOGOUT", entity_type="user", entity_id=current_user.id)
     db.add(log)
+    await db.commit()
     return {"message": "Выход выполнен успешно"}

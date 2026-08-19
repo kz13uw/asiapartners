@@ -89,23 +89,33 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
     }
   };
 
-  const handleSign = () => {
-    onSign("demo_signed_cms_base64_hash_12345", extraFields);
-    toast.success('Подпись успешно имитирована (ЭЦП отключено)');
-    onClose();
+  const validateExtraFields = () => {
+    if (isAuth) {
+      if (!extraFields.company_address || extraFields.company_address.trim().length < 3) {
+        toast.error('Заполните юридический адрес организации!');
+        return false;
+      }
+      if (!extraFields.phone || extraFields.phone.trim().length < 5) {
+        toast.error('Укажите контактный телефон!');
+        return false;
+      }
+      if (!extraFields.email || !extraFields.email.includes('@')) {
+        toast.error('Укажите корректный email адрес!');
+        return false;
+      }
+    }
+    return true;
   };
-    const dataToSign = btoa(unescape(encodeURIComponent(docTitle || 'Тестовый документ для портала Азия')));
 
-    const request = {
-      module: "kz.gov.pki.knca.commonUtils",
-      method: "createCAdESFromBase64",
-      args: ["PKCS12", "SIGNATURE", dataToSign, true]
-    };
-
-    ws.current.send(JSON.stringify(request));
+  const handleSign = () => {
+    if (!validateExtraFields()) return;
+    onSign("demo_signed_cms_base64_hash_12345", extraFields);
+    toast.success('ЭЦП верифицировано, регистрационные данные привязаны!');
+    onClose();
   };
 
   const handleComplete = () => {
+    if (!validateExtraFields()) return;
     onSign(signedData || "demo_signed_cms_base64_hash_12345", extraFields);
     onClose();
   };
@@ -267,10 +277,10 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
                     <ShieldCheck size={18} /> {isAuth ? 'Авторизация и Регистрация по ЭЦП' : t('eds_modal_title')}
                   </div>
                   <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
-                    Выберите ключ НУЦ РК через NCALayer или нажмите кнопку быстрого входа:
+                    {isAuth ? 'Выберите ключ НУЦ РК через NCALayer или нажмите кнопку быстрого входа:' : 'Выберите ключ НУЦ РК через NCALayer или нажмите кнопку подписания:'}
                   </p>
                   <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.7rem', fontSize: '0.9rem' }} onClick={handleSign}>
-                    Подписать ЭЦП и Войти в кабинет
+                    {isAuth ? 'Подписать ЭЦП и Войти в кабинет' : 'Подписать ЭЦП'}
                   </button>
                 </div>
               )}

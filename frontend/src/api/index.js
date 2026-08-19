@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL: 'http://127.0.0.1:8000/api/v1',
   withCredentials: true,
 });
 
@@ -31,8 +31,10 @@ API.interceptors.response.use(
         original.headers.Authorization = `Bearer ${access_token}`;
         return API(original);
       } catch {
-        localStorage.clear();
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         window.location.href = '/login';
+        return Promise.reject(error);
       }
     }
     return Promise.reject(error);
@@ -45,8 +47,8 @@ export const authAPI = {
     API.post('/auth/login', new URLSearchParams({ username, password }), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }),
-  loginEds: (cmsBase64) =>
-    API.post('/auth/login/eds', { cms_base64: cmsBase64 }),
+  loginEds: (cmsBase64, extraFields = {}) =>
+    API.post('/auth/login/eds', { cms_base64: cmsBase64, ...extraFields }),
   refresh: (refreshToken) =>
     API.post('/auth/refresh', { refresh_token: refreshToken }),
   logout: () => API.post('/auth/logout'),
@@ -58,16 +60,21 @@ export const tendersAPI = {
   get: (id) => API.get(`/tenders/${id}`),
   myList: (params) => API.get('/tenders/my/list', { params }),
   create: (data) => API.post('/tenders', data),
+  duplicate: (id) => API.post(`/tenders/${id}/duplicate`),
   update: (id, data) => API.patch(`/tenders/${id}`, data),
   publish: (id, edsHash) => API.post(`/tenders/${id}/publish`, null, { params: { eds_hash: edsHash } }),
+  cancel: (id, reason) => API.post(`/tenders/${id}/cancel`, { reason }),
   delete: (id) => API.delete(`/tenders/${id}`),
 };
 
 // ===== BIDS =====
 export const bidsAPI = {
   submit: (data) => API.post('/bids', data),
+  myBids: () => API.get('/bids/my'),
   getByTender: (tenderId) => API.get(`/bids/tender/${tenderId}`),
   updateStatus: (bidId, data) => API.patch(`/bids/${bidId}/status`, data),
+  revoke: (bidId, data) => API.post(`/bids/${bidId}/revoke`, data),
+  resubmit: (bidId, data) => API.post(`/bids/${bidId}/resubmit`, data),
   generateProtocol: (tenderId, edsHash) =>
     API.post(`/bids/tender/${tenderId}/protocol`, null, { params: { eds_hash: edsHash } }),
 };
@@ -75,6 +82,8 @@ export const bidsAPI = {
 // ===== USERS =====
 export const usersAPI = {
   me: () => API.get('/users/me'),
+  updateProfile: (data) => API.put('/users/me', data),
+  changePassword: (data) => API.post('/users/me/change-password', data),
   myCompany: () => API.get('/users/me/company'),
   registerCompany: (data) => API.post('/users/me/company', data),
   updateCompany: (data) => API.put('/users/me/company', data),
@@ -103,6 +112,14 @@ export const categoriesAPI = {
   list: () => API.get('/categories'),
   create: (data) => API.post('/categories', data),
   delete: (id) => API.delete(`/categories/${id}`),
+};
+
+// ===== NOTIFICATIONS =====
+export const notificationsAPI = {
+  list: () => API.get('/notifications'),
+  markRead: (id) => API.patch(`/notifications/${id}/read`),
+  markAllRead: () => API.post('/notifications/read-all'),
+  delete: (id) => API.delete(`/notifications/${id}`),
 };
 
 export default API;

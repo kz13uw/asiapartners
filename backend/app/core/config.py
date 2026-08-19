@@ -23,12 +23,10 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [
-        "*",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
-        "http://localhost:80",
-        "http://localhost",
-        "http://127.0.0.1",
+        "http://127.0.0.1:8000",
     ]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
@@ -37,14 +35,14 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             v_trimmed = v.strip()
             if not v_trimmed:
-                return ["*"]
+                return ["http://localhost:5173"]
             if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
                 try:
                     return json.loads(v_trimmed)
                 except Exception:
                     pass
             return [i.strip() for i in v_trimmed.split(",") if i.strip()]
-        return v or ["*"]
+        return v or ["http://localhost:5173"]
 
     # File storage
     UPLOAD_DIR: str = "/app/uploads"

@@ -41,7 +41,8 @@ async def register_company(
 
     company = Company(**body.model_dump(), owner_id=current_user.id)
     db.add(company)
-    await db.flush()
+    await db.commit()
+    await db.refresh(company)
     return company
 
 
@@ -57,4 +58,59 @@ async def update_company(
         raise HTTPException(status_code=404, detail="Компания не найдена")
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(company, field, value)
+    await db.commit()
+    await db.refresh(company)
     return company
+
+
+# ===== PROFILE & PASSWORD MANAGEMENT =====
+
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+
+
+@router.put("/me", response_model=UserOut, summary="Обновить профиль пользователя")
+async def update_my_profile(
+    body: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.full_name:
+        current_user.full_name = body.full_name.strip()
+    if body.email:
+        current_user.email = body.email.strip()
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/change-password", summary="Сменить текущий пароль")
+async def change_my_password(
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.core.security import verify_password, get_password_hash, validate_password_policy
+    if not current_user.hashed_password or not verify_password(body.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Неверно указан старый пароль")
+    
+    is_valid, msg = validate_password_policy(body.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=msg)
+
+    current_user.hashed_password = get_password_hash(body.new_password)
+    current_user.password_changed_at = datetime.utcnow()
+    db.add(current_user)
+    await db.commit()
+    return {"message": "Пароль успешно изменен"}
+

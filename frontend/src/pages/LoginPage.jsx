@@ -16,18 +16,44 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showEdsModal, setShowEdsModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [supplierExtra, setSupplierExtra] = useState({
+    company_address: '',
+    phone: '',
+    email: '',
+    director_name: '',
+  });
 
   const handleEdsSuccess = async (cmsBase64, extraFields) => {
+    const finalFields = { ...supplierExtra, ...extraFields };
     setIsLoading(true);
     try {
-      await loginEds(cmsBase64, extraFields);
-      toast.success('Успешная авторизация по ЭЦП!');
+      await loginEds(cmsBase64, finalFields);
+      toast.success('Успешная регистрация и вход по ЭЦП!');
       navigate('/supplier/dashboard');
     } catch (e) {
+      console.error(e);
       toast.error('Ошибка входа по ЭЦП. Проверьте ключ или соединение.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSupplierFormSubmit = (e) => {
+    e.preventDefault();
+    if (!supplierExtra.company_address || supplierExtra.company_address.trim().length < 3) {
+      toast.error('Заполните юридический адрес организации');
+      return;
+    }
+    if (!supplierExtra.phone || supplierExtra.phone.trim().length < 5) {
+      toast.error('Укажите контактный телефон');
+      return;
+    }
+    if (!supplierExtra.email || !supplierExtra.email.includes('@')) {
+      toast.error('Укажите корректный email адрес');
+      return;
+    }
+
+    setShowEdsModal(true);
   };
 
   const handleStaffLogin = async (e) => {
@@ -47,61 +73,137 @@ const LoginPage = () => {
       else if (role === 'supplier') navigate('/supplier/dashboard');
       else navigate('/organizer/dashboard');
     } catch (e) {
-      toast.error('Неверный логин или пароль');
+      console.error("Login error:", e);
+      const msg = e.response?.data?.detail || (e.message?.includes('Network Error') ? 'Ошибка сети: Сервер бэкенда недоступен' : 'Неверный логин или пароль');
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '1rem' }}>
-      <div className="card glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '0', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+    <div className="fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '1.5rem 1rem' }}>
+      <div className="card glass-panel" style={{ maxWidth: '520px', width: '100%', padding: '0', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
         
         {/* Вкладки */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--pk-border)' }}>
           <button 
             onClick={() => setActiveTab('eds')}
-            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'eds' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'eds' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'eds' ? 600 : 500, cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'eds' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'eds' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'eds' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}
           >
-            {t('eds_login_tab')}
+            🛡️ Регистрация / Вход Поставщика (ЭЦП)
           </button>
           <button 
             onClick={() => setActiveTab('staff')}
-            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'staff' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'staff' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'staff' ? 600 : 500, cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'staff' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'staff' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'staff' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}
           >
             {t('staff_login_tab')}
           </button>
         </div>
 
-        <div style={{ padding: '2.5rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <ShieldCheck size={48} color="var(--pk-primary)" style={{ marginBottom: '1rem' }} />
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{activeTab === 'eds' ? t('eds_login_title') : t('staff_login_title')}</h2>
-            <p className="text-sec" style={{ fontSize: '0.9rem' }}>
-              {activeTab === 'eds' ? t('eds_login_desc') : t('staff_login_desc')}
+        <div style={{ padding: '2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <ShieldCheck size={44} color="var(--pk-primary)" style={{ marginBottom: '0.5rem' }} />
+            <h2 style={{ fontSize: '1.35rem', marginBottom: '0.4rem', fontWeight: 800, color: '#0f172a' }}>
+              {activeTab === 'eds' ? 'Регистрация и Вход Поставщика по ЭЦП' : t('staff_login_title')}
+            </h2>
+            <p className="text-sec" style={{ fontSize: '0.85rem', margin: 0 }}>
+              {activeTab === 'eds' ? 'ЭЦП считывает БИН/ИИН и Название компании. Укажите дополнительный адрес и контакты для входа в Личный кабинет.' : t('staff_login_desc')}
             </p>
           </div>
 
           {activeTab === 'eds' ? (
-            <div 
-              className="file-upload-box" 
-              onClick={() => handleEdsSuccess("demo_signed_cms_base64_hash_12345", {
-                email: 'supplier@asia.kz',
-                phone: '+7 (7222) 55-44-33',
-                company_address: 'г. Семей, ул. Кабанбай Батыра 42',
-                director_name: 'Ахметов Марат Ерланович',
-                business_sector: '🏗️ Строительство и Девелопмент'
-              })}
-              style={{ 
-                border: '2px dashed var(--pk-primary)', backgroundColor: 'var(--pk-primary-light)', borderRadius: '12px', padding: '2rem',
-                textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
-                pointerEvents: isLoading ? 'none' : 'auto', opacity: isLoading ? 0.7 : 1
-              }}
-            >
-              <HardDrive size={36} color="var(--pk-primary)" style={{ marginBottom: '1rem' }} />
-              <div><strong style={{ fontSize: '1.05rem', color: 'var(--pk-primary)' }}>{isLoading ? 'Загрузка...' : '⚡ Мгновенный вход Поставщика (ЭЦП отключено)'}</strong></div>
-              <div className="text-sec" style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Нажмите для моментального входа Поставщика без NCALayer</div>
-            </div>
+            <form onSubmit={handleSupplierFormSubmit}>
+              <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1e40af', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  📋 Форма дополнительных регистрационных данных (отсутствующих в ЭЦП):
+                </div>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    🏢 Юридический адрес ТОО / ИП <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-control"
+                    style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
+                    placeholder="Например: г. Семей, ул. Кабанбай Батыра 42"
+                    value={supplierExtra.company_address}
+                    onChange={e => setSupplierExtra(p => ({ ...p, company_address: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      📞 Контактный телефон <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                    </label>
+                    <input 
+                      type="tel" 
+                      className="form-control"
+                      style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
+                      placeholder="+7 (7222) 55-44-33"
+                      value={supplierExtra.phone}
+                      onChange={e => setSupplierExtra(p => ({ ...p, phone: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      ✉️ Электронная почта <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                    </label>
+                    <input 
+                      type="email" 
+                      className="form-control"
+                      style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
+                      placeholder="supplier@asia.kz"
+                      value={supplierExtra.email}
+                      onChange={e => setSupplierExtra(p => ({ ...p, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    👤 ФИО Руководителя
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-control"
+                    style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
+                    placeholder="Ахметов Марат Ерланович"
+                    value={supplierExtra.director_name}
+                    onChange={e => setSupplierExtra(p => ({ ...p, director_name: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div 
+                className="file-upload-box mb-3" 
+                onClick={() => handleEdsSuccess("demo_signed_cms_base64_hash_12345", supplierExtra)}
+                style={{ 
+                  border: '2px dashed var(--pk-primary)', backgroundColor: 'var(--pk-primary-light)', borderRadius: '12px', padding: '1rem',
+                  textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
+                  pointerEvents: isLoading ? 'none' : 'auto', opacity: isLoading ? 0.7 : 1
+                }}
+              >
+                <HardDrive size={28} color="var(--pk-primary)" style={{ marginBottom: '0.3rem' }} />
+                <div><strong style={{ fontSize: '0.95rem', color: 'var(--pk-primary)' }}>{isLoading ? 'Регистрация...' : '⚡ Мгновенная регистрация Поставщика (Демо ЭЦП)'}</strong></div>
+                <div className="text-sec" style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>Нажмите для мгновенного подтверждения регистрационных данных</div>
+              </div>
+
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '0.85rem', justifyContent: 'center', fontSize: '0.95rem', borderRadius: '10px' }}
+                disabled={isLoading}
+              >
+                🔑 Выбрать ключ ЭЦП (NCALayer) и Войти в кабинет
+              </button>
+            </form>
           ) : (
             <form onSubmit={handleStaffLogin}>
               <div style={{ marginBottom: '1.25rem' }}>
@@ -138,7 +240,7 @@ const LoginPage = () => {
         isOpen={showEdsModal} 
         onClose={() => setShowEdsModal(false)}
         onSign={handleEdsSuccess}
-        docTitle="Авторизация на портале"
+        docTitle="Регистрация Поставщика по ЭЦП"
         isAuth={true}
       />
     </div>

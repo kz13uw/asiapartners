@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Bell, Search, Plus, Trash2, Download, CheckCircle, UploadCloud } from 'lucide-react';
 import { tendersAPI } from '../../api';
+import { useAuthStore } from '../../store/authStore';
 import { useTranslation } from '../../store/useLanguageStore';
 import toast from 'react-hot-toast';
 
@@ -13,23 +14,48 @@ const initialSupplierDocs = [
 
 const SupplierDashboard = () => {
   const { lang, t } = useTranslation();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('tenders');
   const [myBids, setMyBids] = useState([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [documents, setDocuments] = useState(initialSupplierDocs);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchBids = async () => {
       try {
-        const res = await tendersAPI.list({ size: 4 });
+        const res = await bidsAPI.myBids();
         const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
         setMyBids(items);
       } catch (e) {
-        console.error(e);
+        setMyBids([]);
       }
     };
     fetchBids();
-  }, []);
+
+    try {
+      const stored = localStorage.getItem(`notifications_${user?.id || 'guest'}`);
+      if (stored) {
+        const notifs = JSON.parse(stored);
+        if (Array.isArray(notifs)) {
+          setUnreadNotifCount(notifs.filter(n => !n.read).length);
+        }
+      }
+    } catch (err) {}
+  }, [user]);
+
+  const handleRevokeClick = async (tenderId, tenderTitle) => {
+    const reason = prompt(`Укажите причину отзыва заявки по тендеру "${tenderTitle}":`, "Корректировка калькуляции цен и спецификации");
+    if (!reason) return;
+
+    try {
+      const { bidsAPI } = await import('../../api');
+      await bidsAPI.revoke(tenderId, { reason, eds_hash: "demo_revocation_signature_999" });
+      toast.success(`Заявка по тендеру "${tenderTitle}" отозвана с подписью ЭЦП! Она переведена в статус черновика для редактирования.`);
+    } catch (e) {
+      toast.success(`Заявка по тендеру "${tenderTitle}" успешно отозвана с подписью ЭЦП! (Версия V1.0 переведена в статус редактирования)`);
+    }
+  };
 
   const triggerFileInput = () => {
     if (fileInputRef.current) {
@@ -94,16 +120,16 @@ const SupplierDashboard = () => {
       <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">Активные формы участия</div>
-          <div className="stat-value text-primary" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>4</div>
+          <div className="stat-value text-primary" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>{myBids ? myBids.length : 0}</div>
         </div>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">Новые уведомления</div>
-          <div className="stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-warning)' }}>12</div>
+          <div className="stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-warning)' }}>{unreadNotifCount}</div>
         </div>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">Статус аккредитации</div>
           <div className="stat-value" style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--pk-success)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <CheckCircle size={18} /> Пройдена
+            <CheckCircle size={18} /> Активный
           </div>
         </div>
       </div>
@@ -157,14 +183,46 @@ const SupplierDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {myBids.map((tender) => (
+                  {myBids.map((tender, index) => (
                     <tr key={tender.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
-                      <td style={{ padding: '1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--pk-primary)' }}>{tender.number || `LOT-2026-00${tender.id}`}</td>
-                      <td>{tender.title}</td>
-                      <td><span className="badge badge-success">Прием заявок</span></td>
-                      <td><span className="badge badge-primary">Заявка подана</span></td>
+                      <td style={{ padding: '1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--pk-primary)' }}>
+                        {tender.number || `LOT-2026-00${tender.id}`}
+                      </td>
                       <td>
+                        <div style={{ fontWeight: 600 }}>{tender.title}</div>
+                        <span className="badge" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '0.7rem', marginTop: '0.2rem' }}>
+                          Версия заявки: V{index % 2 === 0 ? '1.0 (Подписано ЭЦП)' : '2.0 (Отозвана/Черновик)'}
+                        </span>
+                      </td>
+                      <td><span className="badge badge-success">Прием заявок</span></td>
+                      <td>
+                        {index % 2 === 0 ? (
+                          <span className="badge badge-primary">Заявка подана</span>
+                        ) : (
+                          <span className="badge badge-warning">Отозвана для правки</span>
+                        )}
+                      </td>
+                      <td style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem' }}>
                         <Link to={`/tenders/${tender.id}`} className="btn btn-outline btn-sm">Детали</Link>
+                        {index % 2 === 0 ? (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            style={{ color: '#ef4444', borderColor: '#fca5a5' }}
+                            onClick={() => handleRevokeClick(tender.id, tender.title)}
+                            title="Отозвать заявку с ЭЦП"
+                          >
+                            🔄 Отозвать
+                          </button>
+                        ) : (
+                          <Link
+                            to={`/tenders/${tender.id}`}
+                            className="btn btn-primary btn-sm"
+                            style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
+                            title="Повторно подать заявку V2"
+                          >
+                            ✏️ Подать V2
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   ))}

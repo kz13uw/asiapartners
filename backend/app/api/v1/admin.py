@@ -19,7 +19,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
-    result = await db.execute(select(User).where(User.role != UserRole.ADMIN))
+    result = await db.execute(select(User).where(User.id != current_user.id).order_by(User.created_at.desc()))
     return result.scalars().all()
 
 
@@ -56,6 +56,8 @@ async def create_internal_user(
     )
     db.add(user)
     await db.flush()
+    from app.models.models import generate_account_code
+    user.account_code = generate_account_code(user.id, user.role)
 
     if body.company_address:
         from app.models.models import Company
@@ -125,6 +127,8 @@ async def block_user(
     user.status = UserStatus.BLOCKED
     log = AuditLog(user_id=current_user.id, action="BLOCK_USER", entity_type="user", entity_id=user.id)
     db.add(log)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
@@ -139,6 +143,10 @@ async def unblock_user(
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     user.status = UserStatus.ACTIVE
+    log = AuditLog(user_id=current_user.id, action="UNBLOCK_USER", entity_type="user", entity_id=user.id)
+    db.add(log)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
@@ -159,6 +167,7 @@ async def reset_password(
 
     log = AuditLog(user_id=current_user.id, action="RESET_PASSWORD", entity_type="user", entity_id=user.id)
     db.add(log)
+    await db.commit()
     return {"message": "Пароль успешно сброшен", "temp_password": temp_password}
 
 

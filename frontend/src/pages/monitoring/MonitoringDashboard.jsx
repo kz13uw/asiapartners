@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, ShieldCheck, FileText, Users, Search, RefreshCw, BarChart2, Eye } from 'lucide-react';
-import axios from 'axios';
+import { adminAPI } from '../../api';
 import toast from 'react-hot-toast';
 
 import { useTranslation } from '../../store/useLanguageStore';
@@ -20,19 +20,17 @@ const MonitoringDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const statsRes = await axios.get('http://127.0.0.1:8000/api/v1/admin/stats');
-      setStats(statsRes.data);
+      const statsRes = await adminAPI.stats();
+      if (statsRes.data) {
+        setStats(statsRes.data);
+      }
 
-      const logsRes = await axios.get('http://127.0.0.1:8000/api/v1/admin/audit-log');
-      setAuditLogs(logsRes.data);
+      const logsRes = await adminAPI.auditLog(100);
+      if (logsRes.data && Array.isArray(logsRes.data)) {
+        setAuditLogs(logsRes.data);
+      }
     } catch (e) {
-      console.warn('Using fallback data for monitoring');
-      // Mock logs for demonstration
-      setAuditLogs([
-        { id: 101, action: 'EDS_SIGN', user_id: 5, ip_address: '192.168.1.45', entity_type: 'bid', created_at: new Date().toISOString() },
-        { id: 102, action: 'PUBLISH_TENDER', user_id: 2, ip_address: '192.168.1.12', entity_type: 'tender', created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: 103, action: 'LOGIN', user_id: 1, ip_address: '192.168.1.100', entity_type: 'user', created_at: new Date(Date.now() - 7200000).toISOString() }
-      ]);
+      console.warn('API error fetching monitoring data:', e);
     } finally {
       setLoading(false);
     }
@@ -85,7 +83,7 @@ const MonitoringDashboard = () => {
 
         <div className="card" style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)', border: '1px solid #fed7aa' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.9rem', color: '#c2410c', fontWeight: 600 }}>Аккредитованных компаний</span>
+            <span style={{ fontSize: '0.9rem', color: '#c2410c', fontWeight: 600 }}>{t('stat_suppliers') || 'Поставщики'}</span>
             <Users color="#c2410c" size={20} />
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 700, color: '#9a3412' }}>{stats.total_companies}</div>

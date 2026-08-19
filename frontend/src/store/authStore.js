@@ -75,6 +75,9 @@ export const useAuthStore = create(
       },
 
       setCompany: (companyData) => set({ company: companyData }),
+      updateUser: (updatedFields) => set((state) => ({
+        user: state.user ? { ...state.user, ...updatedFields } : null
+      })),
     }),
     {
       name: 'auth-storage',

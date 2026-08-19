@@ -21,6 +21,7 @@ import AuctionRoom from '../pages/shared/AuctionRoom';
 import ProfileSettings from '../pages/shared/ProfileSettings';
 import Notifications from '../pages/shared/Notifications';
 import CreateTender from '../pages/organizer/CreateTender';
+import DraftTenders from '../pages/organizer/DraftTenders';
 import EvaluateTender from '../pages/organizer/EvaluateTender';
 import OrgContracts from '../pages/organizer/OrgContracts';
 import OrgProtocols from '../pages/organizer/OrgProtocols';
@@ -109,6 +110,16 @@ const AppRouter = () => {
         <Route path="/organizer/tenders/create" element={
           <ProtectedRoute allowedRoles={['organizer', 'admin']}>
             <CreateTender />
+          </ProtectedRoute>
+        } />
+        <Route path="/organizer/tenders/:id/edit" element={
+          <ProtectedRoute allowedRoles={['organizer', 'admin']}>
+            <CreateTender />
+          </ProtectedRoute>
+        } />
+        <Route path="/organizer/tenders/drafts" element={
+          <ProtectedRoute allowedRoles={['organizer', 'admin']}>
+            <DraftTenders />
           </ProtectedRoute>
         } />
         <Route path="/organizer/tenders/:id/evaluate" element={

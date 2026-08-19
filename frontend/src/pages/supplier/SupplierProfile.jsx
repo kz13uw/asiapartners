@@ -30,9 +30,26 @@ const SupplierProfile = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success('Изменения успешно сохранены!');
+    try {
+      const payload = {
+        bin: profile.bin,
+        full_name: profile.name,
+        legal_form: 'ТОО',
+        address: profile.address,
+        phone: profile.phone,
+        email: profile.email,
+        iban: profile.iban,
+        director_name: profile.directorName,
+        director_iin: profile.directorIin,
+      };
+      const { usersAPI } = await import('../../api');
+      await usersAPI.updateCompany(payload);
+      toast.success('Реквизиты компании успешно сохранены!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Ошибка сохранения реквизитов компании');
+    }
   };
 
   if (loading || !profile) {

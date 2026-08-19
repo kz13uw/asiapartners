@@ -33,7 +33,11 @@ class CategoryCreate(BaseModel):
     is_active: Optional[bool] = True
 
 
+from app.core.cache import cache_response, cache_manager
+
+
 @router.get("", response_model=List[CategoryOut], summary="Получить список категорий (Публичный)")
+@cache_response(ttl_seconds=300, prefix="categories")
 async def list_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProcurementCategory).order_by(ProcurementCategory.name.asc()))
     return result.scalars().all()
@@ -67,6 +71,7 @@ async def create_category(
     db.add(cat)
     await db.commit()
     await db.refresh(cat)
+    await cache_manager.delete("categories:*")
     return cat
 
 
@@ -85,4 +90,5 @@ async def delete_category(
 
     await db.delete(cat)
     await db.commit()
+    await cache_manager.delete("categories:*")
     return {"message": "Категория успешно удалена"}

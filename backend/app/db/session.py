@@ -5,7 +5,7 @@ from app.core.config import settings
 
 db_url = settings.DATABASE_URL
 if os.getenv("USE_SQLITE", "true").lower() == "true":
-    db_url = "sqlite+aiosqlite:///./asia_local.db"
+    db_url = f"sqlite+aiosqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '../../asia_local.db'))}"
 
 engine = create_async_engine(
     db_url,

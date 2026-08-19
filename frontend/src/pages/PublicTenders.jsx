@@ -87,7 +87,9 @@ const PublicTenders = () => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--pk-text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
                   <Building2 size={16} />
-                  <span>{tender.company_name || tender.organizer_name || 'ТОО "Asia Partners"'}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--pk-text-main)' }}>
+                    {tender.company_name || tender.organizer_name || 'ТОО "Asia Partners"'}
+                  </span>
                 </div>
               </div>
 

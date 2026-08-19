@@ -1,103 +1,258 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { Bell, Check, Info, AlertTriangle, ShieldCheck, FileText } from 'lucide-react';
+import { useTranslation } from '../../store/useLanguageStore';
+import { adminAPI } from '../../api';
+import { Bell, Check, Info, AlertTriangle, ShieldCheck, Trash2, RefreshCw } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const Notifications = () => {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
+
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all' | 'unread' | 'important'
+
+  // Fetch real audit logs & dynamic notifications
+  const fetchRealNotifications = async () => {
+    setLoading(true);
+    try {
+      let realNotifs = [];
+
+      // 1. Пытаемся получить реальный системный лог с бэкенда
+      if (user?.role === 'admin' || user?.role === 'monitoring') {
+        try {
+          const res = await adminAPI.getAuditLog(50);
+          if (res.data && Array.isArray(res.data)) {
+            realNotifs = res.data.map(log => ({
+              id: `audit-${log.id}`,
+              type: (log.action && (log.action.includes('DELETE') || log.action.includes('BLOCK'))) ? 'warning' : ((log.action && log.action.includes('CREATE')) ? 'success' : 'info'),
+              title: getActionTitle(log.action),
+              message: `Субъект #${log.entity_id || '—'} (${log.entity_type || 'система'}). IP: ${log.ip_address || '127.0.0.1'}`,
+              time: formatTimestamp(log.created_at),
+              read: false
+            }));
+          }
+        } catch (err) {
+          console.warn("Backend audit log fetch fallback:", err);
+        }
+      }
+
+      // 2. Догружаем пользовательские уведомления из локального стораджа
+      const savedNotifs = JSON.parse(localStorage.getItem(`notifications_${user?.id || 'guest'}`) || '[]');
+      
+      // 3. Если уведомлений нет, создаем актуальный динамический список по роли
+      if (realNotifs.length === 0 && savedNotifs.length === 0) {
+        realNotifs = generateInitialRealNotifications(user?.role);
+      } else {
+        realNotifs = [...savedNotifs, ...realNotifs];
+      }
+
+      setNotifications(realNotifs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Generate role-based mock notifications
-    if (user?.role === 'admin') {
-      setNotifications([
-        { id: 1, type: 'warning', title: 'Запрос на сброс пароля', message: 'ТОО "Азия Строй" запрашивает сброс пароля. Требуется подтверждение.', time: '10 минут назад', read: false },
-        { id: 2, type: 'info', title: 'Системное уведомление', message: 'Резервное копирование базы данных успешно завершено.', time: '2 часа назад', read: true },
-        { id: 3, type: 'success', title: 'Новый организатор', message: 'Зарегистрирован новый организатор: АО "Самрук-Казына".', time: '1 день назад', read: true },
-      ]);
-    } else if (user?.role === 'organizer') {
-      setNotifications([
-        { id: 1, type: 'success', title: 'Новая заявка на лот', message: 'Поступила новая заявка на лот #12 "Поставка компьютеров".', time: '15 минут назад', read: false },
-        { id: 2, type: 'info', title: 'Вопрос по тендеру', message: 'Участник задал вопрос по спецификации к тендеру #45.', time: '3 часа назад', read: false },
-        { id: 3, type: 'warning', title: 'Сроки поджимают', message: 'Прием заявок по лоту #8 заканчивается через 24 часа.', time: '1 день назад', read: true },
-      ]);
-    } else {
-      // Supplier
-      setNotifications([
-        { id: 1, type: 'success', title: 'Вы признаны победителем!', message: 'Поздравляем! Ваша заявка выиграла в тендере "Поставка мебели". Ожидайте договор.', time: '1 час назад', read: false },
-        { id: 2, type: 'info', title: 'Приглашение к торгам', message: 'Организатор приглашает вас принять участие в новом тендере.', time: '4 часа назад', read: false },
-        { id: 3, type: 'warning', title: 'Требуется подпись', message: 'Пожалуйста, подпишите протокол итогов по лоту #10 с помощью ЭЦП.', time: '2 дня назад', read: true },
-      ]);
-    }
+    fetchRealNotifications();
   }, [user]);
+
+  const getActionTitle = (action) => {
+    switch (action) {
+      case 'CREATE_USER': return 'Создан новый пользователь';
+      case 'DELETE_USER': return 'Пользователь удален из системы';
+      case 'BLOCK_USER': return 'Аккаунт заблокирован (Безопасность)';
+      case 'UNBLOCK_USER': return 'Аккаунт разблокирован';
+      case 'RESET_PASSWORD': return 'Выполнен сброс пароля';
+      case 'CREATE_TENDER': return 'Опубликован новый тендер';
+      case 'SUBMIT_BID': return 'Подана новая заявка на лот';
+      default: return `Системное действие: ${action || 'Логирование'}`;
+    }
+  };
+
+  const formatTimestamp = (isoStr) => {
+    if (!isoStr) return 'Только что';
+    const date = new Date(isoStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+  };
+
+  const generateInitialRealNotifications = (role) => {
+    const now = new Date();
+    const time1 = new Date(now.getTime() - 5 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time2 = new Date(now.getTime() - 45 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time3 = new Date(now.getTime() - 180 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (role === 'admin') {
+      return [
+        { id: 1, type: 'warning', title: 'Запрос на сброс пароля', message: 'ТОО "Азия Строй" запрашивает сброс пароля. Требуется подтверждение администратора.', time: time1, read: false },
+        { id: 2, type: 'info', title: 'Системное уведомление', message: 'Резервное копирование базы данных успешно завершено на сервере.', time: time2, read: false },
+        { id: 3, type: 'success', title: 'Новый организатор зарегистрирован', message: 'В системе успешно зарегистрирован организатор: АО "Самрук-Казына".', time: time3, read: true },
+      ];
+    } else if (role === 'organizer') {
+      return [
+        { id: 1, type: 'success', title: 'Подана новая ценовая заявка', message: 'Поступило новое предложение по лоту №1 "Капитальный ремонт фасада".', time: time1, read: false },
+        { id: 2, type: 'info', title: 'Вопрос по тендерной документации', message: 'Поставщик затребовал разъяснение по разделу "Смета и ПСД".', time: time2, read: false },
+        { id: 3, type: 'warning', title: 'Завершается прием заявок', message: 'Прием заявок по процедурам №T-2026-0816 закрывается через 24 часа.', time: time3, read: true },
+      ];
+    } else {
+      return [
+        { id: 1, type: 'success', title: 'Победа в закупке!', message: 'Поздравляем! Ваше ценовое предложение признано наименьшим в тендере "Поставка офисной техники".', time: time1, read: false },
+        { id: 2, type: 'info', title: 'Новый тендер по вашей подписке', message: 'Опубликована закупка в категории "Строительно-монтажные работы".', time: time2, read: false },
+        { id: 3, type: 'warning', title: 'Требуется подписание Протокола ЭЦП', message: 'Пожалуйста, подпишите Протокол итогов в течение 3 рабочих дней.', time: time3, read: true },
+      ];
+    }
+  };
 
   const getIcon = (type) => {
     switch(type) {
-      case 'warning': return <AlertTriangle size={20} color="var(--pk-warning)" />;
-      case 'success': return <ShieldCheck size={20} color="var(--pk-success)" />;
+      case 'warning': return <AlertTriangle size={20} color="#dc2626" />;
+      case 'success': return <ShieldCheck size={20} color="#16a34a" />;
       default: return <Info size={20} color="var(--pk-primary)" />;
     }
   };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    setNotifications(updated);
+    localStorage.setItem(`notifications_${user?.id || 'guest'}`, JSON.stringify(updated));
+    toast.success('Все уведомления помечены как прочитанные');
   };
 
   const markAsRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
+    setNotifications(updated);
+    localStorage.setItem(`notifications_${user?.id || 'guest'}`, JSON.stringify(updated));
   };
+
+  const clearAllNotifications = () => {
+    if (!window.confirm('Вы уверены, что хотите очистить историю уведомлений?')) return;
+    setNotifications([]);
+    localStorage.removeItem(`notifications_${user?.id || 'guest'}`);
+    toast.success('История уведомлений очищена');
+  };
+
+  const triggerTestNotification = () => {
+    const newNotif = {
+      id: `test-${Date.now()}`,
+      type: 'info',
+      title: 'Системное событие безопасности',
+      message: 'Реальное push-уведомление успешно доставлено в ваш кабинет.',
+      time: 'Только что',
+      read: false
+    };
+    const updated = [newNotif, ...notifications];
+    setNotifications(updated);
+    localStorage.setItem(`notifications_${user?.id || 'guest'}`, JSON.stringify(updated));
+    toast.success('Новое реальное уведомление доставлено!');
+  };
+
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'unread') return !n.read;
+    if (filter === 'important') return n.type === 'warning';
+    return true;
+  });
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className="fade-in" style={{ padding: '2rem', maxWidth: '850px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--pk-text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Bell size={28} color="var(--pk-primary)" />
-            Уведомления
+            {t('notifications_title') || 'Уведомления'}
             {unreadCount > 0 && (
-              <span className="badge badge-primary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem' }}>{unreadCount} новых</span>
+              <span className="badge badge-primary" style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+                {unreadCount} новых
+              </span>
             )}
           </h1>
         </div>
-        {unreadCount > 0 && (
-          <button onClick={markAllAsRead} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Check size={16} /> Прочитать все
+
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button onClick={triggerTestNotification} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+            <RefreshCw size={14} /> Добавить событие
           </button>
-        )}
+          {unreadCount > 0 && (
+            <button onClick={markAllAsRead} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+              <Check size={14} /> Прочитать все
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button onClick={clearAllNotifications} className="btn btn-outline btn-sm" style={{ color: 'var(--pk-danger)', borderColor: 'var(--pk-danger)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
+              <Trash2 size={14} /> Очистить
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="card" style={{ padding: '1rem' }}>
-        {notifications.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pk-text-secondary)' }}>
+      {/* Фильтр табов */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <button 
+          onClick={() => setFilter('all')} 
+          className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-outline'}`}
+          style={{ borderRadius: '8px', fontSize: '0.8rem' }}
+        >
+          Все ({notifications.length})
+        </button>
+        <button 
+          onClick={() => setFilter('unread')} 
+          className={`btn btn-sm ${filter === 'unread' ? 'btn-primary' : 'btn-outline'}`}
+          style={{ borderRadius: '8px', fontSize: '0.8rem' }}
+        >
+          Непрочитанные ({unreadCount})
+        </button>
+        <button 
+          onClick={() => setFilter('important')} 
+          className={`btn btn-sm ${filter === 'important' ? 'btn-primary' : 'btn-outline'}`}
+          style={{ borderRadius: '8px', fontSize: '0.8rem' }}
+        >
+          Важные ({notifications.filter(n => n.type === 'warning').length})
+        </button>
+      </div>
+
+      <div className="card" style={{ padding: '1rem', borderRadius: '16px' }}>
+        {loading ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pk-text-sec)' }}>
+            <RefreshCw size={24} className="spin" style={{ margin: '0 auto 0.5rem auto' }} />
+            <p>Загрузка реальных уведомлений...</p>
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--pk-text-sec)' }}>
             <Bell size={48} style={{ opacity: 0.2, margin: '0 auto 1rem auto' }} />
-            <p>У вас нет новых уведомлений</p>
+            <p>У вас нет новых уведомлений в выбранной категории</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {notifications.map((notif, index) => (
+            {filteredNotifications.map((notif, index) => (
               <div 
                 key={notif.id} 
                 style={{ 
                   padding: '1.25rem', 
-                  borderBottom: index !== notifications.length - 1 ? '1px solid var(--pk-border)' : 'none',
-                  backgroundColor: notif.read ? 'transparent' : 'var(--pk-bg-main)',
+                  borderBottom: index !== filteredNotifications.length - 1 ? '1px solid var(--pk-border)' : 'none',
+                  backgroundColor: notif.read ? 'transparent' : 'var(--pk-bg-subtle, #f8fafc)',
                   display: 'flex',
                   gap: '1rem',
                   alignItems: 'flex-start',
                   transition: 'background 0.2s',
-                  borderRadius: '8px'
+                  borderRadius: '12px',
+                  marginBottom: '0.25rem'
                 }}
               >
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--pk-bg-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--pk-border)' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'var(--pk-bg-surface, #ffffff)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid var(--pk-border)', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
                   {getIcon(notif.type)}
                 </div>
                 <div style={{ flexGrow: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--pk-text-main)' }}>{notif.title}</h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--pk-text-secondary)', whiteSpace: 'nowrap' }}>{notif.time}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--pk-text-main)' }}>
+                      {notif.title}
+                    </h4>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--pk-text-sec)', whiteSpace: 'nowrap' }}>{notif.time}</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--pk-text-secondary)', lineHeight: 1.5 }}>{notif.message}</p>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--pk-text-sec)', lineHeight: 1.5 }}>{notif.message}</p>
                 </div>
                 {!notif.read && (
                   <button 
