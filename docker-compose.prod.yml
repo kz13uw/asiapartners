@@ -9,14 +9,14 @@ services:
     container_name: asia_db_prod
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-asia_procurement}
-      POSTGRES_USER: ${POSTGRES_USER:-asia}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-asia_super_secret_pass}
+      POSTGRES_DB: asia_procurement
+      POSTGRES_USER: asia
+      POSTGRES_PASSWORD: asia_super_secret_pass
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-asia} -d ${POSTGRES_DB:-asia_procurement}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U asia -d asia_procurement"]
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -31,7 +31,7 @@ services:
       - redis_data_prod:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
 
@@ -44,10 +44,13 @@ services:
       dockerfile: Dockerfile
     container_name: asia_backend_prod
     restart: always
-    # Перезаписываем команду запуска без флага --reload (для скорости)
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://asia:asia_super_secret_pass@db:5432/asia_procurement
+      DATABASE_URL_SYNC: postgresql://asia:asia_super_secret_pass@db:5432/asia_procurement
+      REDIS_URL: redis://redis:6379/0
+      ADMIN_PASSWORD: "Asia@Procurement2025!"
+      SECRET_KEY: "asia_partners_super_secure_jwt_secret_key_prod_2026"
     volumes:
       - uploads_data_prod:/app/uploads
     depends_on:
