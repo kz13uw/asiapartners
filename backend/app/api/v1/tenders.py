@@ -465,8 +465,14 @@ async def delete_tender(
     if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
         raise HTTPException(status_code=403, detail="Нет прав на удаление этого тендера")
     
+    from app.models.models import Lot, QualificationRequirement, TenderDocument
+    await db.execute(delete(Lot).where(Lot.tender_id == tender_id))
+    await db.execute(delete(QualificationRequirement).where(QualificationRequirement.tender_id == tender_id))
+    await db.execute(delete(TenderDocument).where(TenderDocument.tender_id == tender_id))
+
     await db.delete(tender)
     log = AuditLog(user_id=current_user.id, action="DELETE_TENDER", entity_type="tender", entity_id=tender_id)
     db.add(log)
     await db.commit()
-    return {"message": "Тендер успешно удален"}
+    await cache_manager.delete("tenders:*")
+    return {"message": "Черновик закупки успешно удален"}

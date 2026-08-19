@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, Search, Plus, Trash2, Send, Copy, Eye, Clock, ShieldCheck } from 'lucide-react';
+import { FileText, Search, Plus, Trash2, Send, Eye, Clock, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTenders } from '../../hooks/useTenders';
 import { tendersAPI } from '../../api';
@@ -37,8 +37,9 @@ const DraftTenders = () => {
     setPublishingId(id);
     try {
       await tendersAPI.publish(id, signedCms || "demo_publish_signature_bypassed");
-      toast.success(`Черновик закупки "${title}" успешно подписан ЭЦП и опубликован! Теперь он доступен всем поставщикам.`);
-      refetch();
+      toast.success(`Черновик закупки "${title}" успешно подписан ЭЦП и опубликован! Теперь он переведен в активные закупки.`);
+      await refetch();
+      navigate('/organizer/dashboard');
     } catch (e) {
       console.error(e);
       toast.error(e.response?.data?.detail || 'Ошибка публикации черновика');
@@ -49,24 +50,15 @@ const DraftTenders = () => {
     }
   };
 
-  const handleDuplicateDraft = async (id) => {
-    try {
-      const res = await tendersAPI.duplicate(id);
-      toast.success(`Новый черновик успешно создан на основе копии! (№ ${res.data.number})`);
-      refetch();
-    } catch (e) {
-      toast.error('Ошибка копирования черновика');
-    }
-  };
-
   const handleDeleteDraft = async (id, title) => {
     if (!window.confirm(`Вы уверены, что хотите безвозвратно удалить черновик "${title}"?`)) return;
     try {
       await tendersAPI.delete(id);
-      toast.success('Черновик удален');
-      refetch();
+      toast.success('Черновик закупки успешно удален');
+      await refetch();
     } catch (e) {
-      toast.error('Ошибка при удалении черновика');
+      console.error("Delete draft error:", e);
+      toast.error(e.response?.data?.detail || 'Ошибка при удалении черновика');
     }
   };
 
@@ -201,15 +193,6 @@ const DraftTenders = () => {
                           title="Опубликовать данный черновик"
                         >
                           <Send size={13} /> {publishingId === tnd.id ? '...' : 'Опубликовать'}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-sm"
-                          style={{ padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
-                          onClick={() => handleDuplicateDraft(tnd.id)}
-                          title="Скопировать как новый черновик"
-                        >
-                          <Copy size={13} />
                         </button>
                         <button
                           type="button"
