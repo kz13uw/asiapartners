@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Search, Plus, Trash2, Send, Eye, Clock, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useTenders } from '../../hooks/useTenders';
+import { useTenders, removeLocalDraft } from '../../hooks/useTenders';
 import { tendersAPI } from '../../api';
 import { useTranslation } from '../../store/useLanguageStore';
 
@@ -36,6 +36,7 @@ const DraftTenders = () => {
     const { id, title } = selectedTenderForEds;
     setPublishingId(id);
     try {
+      removeLocalDraft(id);
       await tendersAPI.publish(id, signedCms || "demo_publish_signature_bypassed");
       toast.success(`Черновик закупки "${title}" успешно подписан ЭЦП и опубликован! Теперь он переведен в активные закупки.`);
       await refetch();
@@ -53,6 +54,7 @@ const DraftTenders = () => {
   const handleDeleteDraft = async (id, title) => {
     if (!window.confirm(`Вы уверены, что хотите безвозвратно удалить черновик "${title}"?`)) return;
     try {
+      removeLocalDraft(id);
       await tendersAPI.delete(id);
       toast.success('Черновик закупки успешно удален');
       await refetch();

@@ -17,6 +17,16 @@ export const getStoredLocalDrafts = (currentUser) => {
   } catch (e) {
     return [];
   }
+export const removeLocalDraft = (draftId) => {
+  try {
+    const data = localStorage.getItem('organizer_draft_tenders');
+    if (!data) return;
+    const current = JSON.parse(data);
+    const updated = current.filter(d => String(d.id) !== String(draftId));
+    localStorage.setItem('organizer_draft_tenders', JSON.stringify(updated));
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 export const saveLocalDraft = (draft, currentUser) => {

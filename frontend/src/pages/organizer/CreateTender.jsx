@@ -7,7 +7,7 @@ import { tendersAPI, categoriesAPI } from '../../api';
 import EcpModal from '../../components/EcpModal';
 
 import { useTranslation } from '../../store/useLanguageStore';
-import { saveLocalDraft, getStoredLocalDrafts } from '../../hooks/useTenders';
+import { saveLocalDraft, getStoredLocalDrafts, removeLocalDraft } from '../../hooks/useTenders';
 import LotEditorCard from '../../components/tender/LotEditorCard';
 import QualReqList from '../../components/tender/QualReqList';
 import TenderFileDropzone from '../../components/tender/TenderFileDropzone';
@@ -472,6 +472,7 @@ const CreateTender = () => {
     setIsSubmitting(true);
     try {
       const edsHash = signedCms || "demo_publish_signature_56789";
+      removeLocalDraft(createdTenderId);
       await tendersAPI.publish(createdTenderId, edsHash);
       
       toast.success('Закупка успешно создана и опубликована по ЭЦП!');
