@@ -4,7 +4,9 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
 
+// Официальный домен НУЦ РК для валидного SSL на HTTPS сайтах + fallback адреса
 const NCALAYER_URLS = [
+  'wss://ncalayer.pki.gov.kz:13579/',
   'wss://127.0.0.1:13579/',
   'wss://localhost:13579/',
   'wss://127.0.0.1:13580/',
@@ -37,7 +39,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
     } else {
       clearTimeout(connTimeout.current);
       if (ws.current) {
-        ws.current.close();
+        try { ws.current.close(); } catch (e) {}
         ws.current = null;
       }
     }
@@ -58,7 +60,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
         if (ws.current && ws.current.readyState !== WebSocket.OPEN) {
           tryNextUrl();
         }
-      }, 1200);
+      }, 1500);
       
       ws.current.onopen = () => {
         clearTimeout(connTimeout.current);
