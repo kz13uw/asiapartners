@@ -86,7 +86,6 @@ const MainLayout = () => {
         { path: '/organizer/dashboard', icon: Settings, label: t('dashboard_organizer') },
         { path: '/organizer/tenders/create', icon: Scale, label: t('nav_create_tender') },
         { path: '/organizer/tenders/drafts', icon: FileText, label: t('nav_draft_tenders') || 'Черновики тендеров' },
-        { path: '/tenders', icon: Scale, label: t('nav_tenders') },
       ];
     }
     
