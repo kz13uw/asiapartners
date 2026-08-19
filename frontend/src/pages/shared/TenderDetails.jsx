@@ -209,7 +209,7 @@ const TenderDetails = () => {
           <div className="card mb-3" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Package size={20} color="var(--pk-primary)" /> Реестр лотов и спецификация ({tender.lots?.length || 1})
+                <Package size={20} color="var(--pk-primary)" /> Лоты закупки ({tender.lots?.length || 1})
               </h3>
               <span className="badge badge-outline" style={{ fontSize: '0.78rem' }}>
                 {isGoods ? 'Спецификация товаров' : 'График выполнения работ'}
