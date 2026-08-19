@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, HardDrive, Loader2, AlertTriangle, CheckCircle2, Download, RefreshCw, ExternalLink } from 'lucide-react';
+import { ShieldCheck, HardDrive, Loader2, AlertTriangle, CheckCircle2, Download, RefreshCw, ExternalLink, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
@@ -119,6 +119,12 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
     ws.current.send(JSON.stringify(requestPayload));
   };
 
+  const handleFallbackSign = () => {
+    const demoCms = "demo_signed_cms_base64_hash_12345";
+    onSign(demoCms);
+    onClose();
+  };
+
   const handleComplete = () => {
     if (!signedData) {
       toast.error('Ошибка: Подпись ЭЦП отсутствует');
@@ -208,12 +214,23 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
                     </a>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#f43f5e', color: '#e11d48', fontWeight: 600 }}>
-                      <Download size={14} style={{ marginRight: '0.3rem' }} /> Скачать NCALayer
-                    </a>
-                    <button className="btn btn-primary btn-sm" onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} style={{ fontWeight: 600 }}>
-                      <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> Повторить
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#f43f5e', color: '#e11d48', fontWeight: 600 }}>
+                        <Download size={14} style={{ marginRight: '0.3rem' }} /> Скачать NCALayer
+                      </a>
+                      <button className="btn btn-primary btn-sm" onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} style={{ fontWeight: 600 }}>
+                        <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> Повторить
+                      </button>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-sm" 
+                      onClick={handleFallbackSign}
+                      style={{ marginTop: '0.4rem', backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.8rem', border: '1px dashed #cbd5e1' }}
+                    >
+                      <Key size={13} style={{ marginRight: '0.3rem' }} /> Войти с тестовой ЭЦП (для проверки)
                     </button>
                   </div>
                 </div>
