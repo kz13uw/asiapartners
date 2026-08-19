@@ -187,9 +187,9 @@ const TenderDetails = () => {
               </div>
 
               <div>
-                <div className="text-sec" style={{ fontSize: '0.75rem' }}>Шаг понижения цены</div>
+                <div className="text-sec" style={{ fontSize: '0.75rem' }}>Валюта расчетов</div>
                 <div style={{ fontWeight: 600, color: '#0284c7', marginTop: '0.15rem' }}>
-                  {tender.step_down_pct || 1}% (от стартовой суммы)
+                  🇰🇿 KZT (Тенге)
                 </div>
               </div>
             </div>
