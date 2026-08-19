@@ -249,40 +249,6 @@ const IndexPage = () => {
         </div>
       </section>
 
-
-
-      {/* ════════════════════ LIVE TENDERS ════════════════════ */}
-      {tenders.length > 0 && (
-        <section style={{ padding: 'clamp(3rem,5vw,4.5rem) 1.5rem', background: 'rgba(255,255,255,0.6)' }}>
-          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: '100px', padding: '0.3rem 0.85rem', marginBottom: '0.6rem', fontSize: '0.75rem', fontWeight: 700, color: '#059669' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', display: 'inline-block', animation: 'apPulse 1.5s ease-in-out infinite' }} />
-                  LIVE — Открытые закупки
-                </div>
-                <h2 style={{ margin: '0 0 0.3rem', fontSize: 'clamp(1.4rem,2.5vw,1.9rem)', fontWeight: 900, color: '#0f172a' }}>Актуальные закупки группы</h2>
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Подайте предложение — победитель получает контракт</p>
-              </div>
-              <Link to="/public-tenders" style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                color: '#2B8AC4', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none',
-                background: 'rgba(43,138,196,0.08)', padding: '0.55rem 1.1rem',
-                borderRadius: '9px', transition: 'all 0.2s', border: '1px solid rgba(43,138,196,0.15)',
-              }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(43,138,196,0.14)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'rgba(43,138,196,0.08)'}
-              >
-                Все закупки <ArrowRight size={15} />
-              </Link>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: '1rem' }}>
-              {tenders.map(t => <TenderCard key={t.id} tender={t} />)}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ════════════════════ HOW TO BECOME SUPPLIER ════════════════════ */}
       <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: 'linear-gradient(180deg,#f8fafc 0%,#eef4f9 100%)' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
