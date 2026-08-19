@@ -144,7 +144,14 @@ async def get_bids_by_tender(
     current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.COMMISSION)),
 ):
     from sqlalchemy.orm import selectinload
-    result = await db.execute(select(Bid).options(selectinload(Bid.items), selectinload(Bid.documents)).where(Bid.tender_id == tender_id).order_by(Bid.price.asc()))
+    result = await db.execute(
+        select(Bid).options(
+            selectinload(Bid.items), 
+            selectinload(Bid.documents), 
+            selectinload(Bid.supplier), 
+            selectinload(Bid.company)
+        ).where(Bid.tender_id == tender_id).order_by(Bid.price.asc())
+    )
     bids = result.scalars().all()
     return bids
 
@@ -178,7 +185,14 @@ async def update_bid_status(
     db.add(log)
     await db.commit()
 
-    res = await db.execute(select(Bid).options(selectinload(Bid.items)).where(Bid.id == bid_id))
+    res = await db.execute(
+        select(Bid).options(
+            selectinload(Bid.items), 
+            selectinload(Bid.documents), 
+            selectinload(Bid.supplier), 
+            selectinload(Bid.company)
+        ).where(Bid.id == bid_id)
+    )
     return res.scalar_one()
 
 

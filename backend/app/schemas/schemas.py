@@ -218,7 +218,14 @@ class BidOut(BaseModel):
     id: int
     tender_id: int
     supplier_id: int
-    company_id: int
+    company_id: Optional[int] = None
+    company_name: Optional[str] = None
+    company_bin: Optional[str] = None
+    supplier_name: Optional[str] = None
+    supplier_email: Optional[str] = None
+    supplier_phone: Optional[str] = None
+    supplier_address: Optional[str] = None
+    director_name: Optional[str] = None
     price: float
     rank: Optional[int] = None
     is_anti_dumping_flag: bool = False
@@ -232,6 +239,30 @@ class BidOut(BaseModel):
     revocation_eds_hash: Optional[str] = None
     items: list[BidItemOut] = []
     documents: list[BidDocumentOut] = []
+
+    @model_validator(mode='before')
+    @classmethod
+    def populate_supplier_info(cls, data: Any) -> Any:
+        d = getattr(data, '__dict__', {})
+        if 'supplier' in d and d['supplier'] is not None:
+            sup = d['supplier']
+            if not getattr(data, 'supplier_name', None):
+                data.supplier_name = getattr(sup, 'full_name', None) or getattr(sup, 'username', None)
+            if not getattr(data, 'supplier_email', None):
+                data.supplier_email = getattr(sup, 'email', None)
+        if 'company' in d and d['company'] is not None:
+            comp = d['company']
+            if not getattr(data, 'company_name', None):
+                data.company_name = getattr(comp, 'full_name', None)
+            if not getattr(data, 'company_bin', None):
+                data.company_bin = getattr(comp, 'bin', None)
+            if not getattr(data, 'supplier_phone', None):
+                data.supplier_phone = getattr(comp, 'phone', None)
+            if not getattr(data, 'supplier_address', None):
+                data.supplier_address = getattr(comp, 'address', None)
+            if not getattr(data, 'director_name', None):
+                data.director_name = getattr(comp, 'director_name', None)
+        return data
 
     class Config:
         from_attributes = True
