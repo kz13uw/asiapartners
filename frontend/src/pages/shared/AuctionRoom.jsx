@@ -21,11 +21,11 @@ const AuctionRoom = () => {
 
   const fetchAuctionData = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/api/v1/tenders/${id}`);
+      const res = await axios.get(`/api/v1/tenders/${id}`);
       setTender(res.data);
 
       try {
-        const bidsRes = await axios.get(`http://127.0.0.1:8000/api/v1/bids/tender/${id}`);
+        const bidsRes = await axios.get(`/api/v1/bids/tender/${id}`);
         setBids(bidsRes.data);
       } catch (e) {
         // Fallback mock bids for display
@@ -82,7 +82,7 @@ const AuctionRoom = () => {
     setShowEdsModal(false);
     try {
       const token = localStorage.getItem('access_token');
-      await axios.post('http://127.0.0.1:8000/api/v1/bids', {
+      await axios.post('/api/v1/bids', {
         tender_id: parseInt(id),
         price: selectedBidPrice,
         eds_hash: cmsBase64 || 'mock_eds_hash_bnect'

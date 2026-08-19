@@ -73,7 +73,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
           setSignedData(response.result);
           
           try {
-            const res = await axios.post('http://127.0.0.1:8000/api/v1/eds/verify', {
+            const res = await axios.post('/api/v1/eds/verify', {
               cms_base64: response.result
             });
             setParsedInfo(res.data);
