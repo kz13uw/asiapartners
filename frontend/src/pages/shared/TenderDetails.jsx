@@ -15,12 +15,52 @@ const TenderDetails = () => {
   const [myBid, setMyBid] = useState(null);
   const [bidPrice, setBidPrice] = useState('');
   const [supplierFiles, setSupplierFiles] = useState([]);
+  const [vaultDocs, setVaultDocs] = useState([]);
+  const [selectedVaultDocIds, setSelectedVaultDocIds] = useState([]);
   const [showEdsModal, setShowEdsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchTenderAndBids();
+    loadVaultDocs();
   }, [id]);
+
+  const loadVaultDocs = () => {
+    try {
+      const saved = localStorage.getItem('supplier_vault_docs');
+      if (saved) {
+        setVaultDocs(JSON.parse(saved));
+      } else {
+        const defaultVault = [
+          { id: 1, name: 'Лицензия на СМР (1 категории)', category: 'Лицензии', date: '12.01.2024', size: '2.4 МБ', format: 'PDF' },
+          { id: 2, name: 'Справка об отсутствии налоговой задолженности', category: 'Налоги', date: '15.08.2024', size: '1.1 МБ', format: 'PDF' },
+          { id: 3, name: 'Свидетельство о государственной регистрации ТОО', category: 'Учредительные', date: '10.02.2024', size: '850 КБ', format: 'PDF' }
+        ];
+        setVaultDocs(defaultVault);
+      }
+    } catch (e) {}
+  };
+
+  const toggleVaultDoc = (doc) => {
+    if (selectedVaultDocIds.includes(doc.id)) {
+      setSelectedVaultDocIds(prev => prev.filter(id => id !== doc.id));
+      setSupplierFiles(prev => prev.filter(f => f.vaultId !== doc.id));
+    } else {
+      setSelectedVaultDocIds(prev => [...prev, doc.id]);
+      setSupplierFiles(prev => [
+        ...prev,
+        {
+          id: Date.now() + Math.random(),
+          vaultId: doc.id,
+          name: `${doc.name}.${doc.format ? doc.format.toLowerCase() : 'pdf'}`,
+          size: 1024 * 1024,
+          category: doc.category || 'Хранилище Поставщика',
+          file_path: `/uploads/vault/${doc.id}/${doc.name}`
+        }
+      ]);
+      toast.success(`Документ "${doc.name}" прикреплен из Хранилища!`);
+    }
+  };
 
   const fetchTenderAndBids = async () => {
     try {
@@ -498,10 +538,64 @@ const TenderDetails = () => {
                     </div>
                   </div>
 
-                  {/* Поле 2: ПОДГРУЗКА ФАЙЛОВ ПОСТАВЩИКА */}
+                  {/* Поле 2: ХРАНИЛИЩЕ ДОКУМЕНТОВ ПОСТАВЩИКА */}
                   <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.88rem', color: '#334155' }}>
-                      2. Документация заявки (Файлы) <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                      2. Прикрепить квалификацию из Электронного хранилища
+                    </label>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {vaultDocs.length > 0 ? (
+                        vaultDocs.map(doc => {
+                          const isChecked = selectedVaultDocIds.includes(doc.id);
+                          return (
+                            <label 
+                              key={doc.id} 
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.6rem', 
+                                cursor: 'pointer', 
+                                background: isChecked ? '#f0f9ff' : '#ffffff', 
+                                padding: '0.55rem 0.75rem', 
+                                borderRadius: '8px', 
+                                border: isChecked ? '1.5px solid #0284c7' : '1px solid #e2e8f0', 
+                                transition: 'all 0.2s' 
+                              }}
+                            >
+                              <input 
+                                type="checkbox" 
+                                checked={isChecked} 
+                                onChange={() => toggleVaultDoc(doc)} 
+                                style={{ width: '16px', height: '16px', accentColor: '#0284c7' }}
+                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {doc.name}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                  {doc.category} • {doc.format} ({doc.size})
+                                </div>
+                              </div>
+                              {isChecked && (
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#0369a1', background: '#bae6fd', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                  ✓ Прикреплен
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center', padding: '0.5rem' }}>
+                          Хранилище документов пусто. Загрузите файлы в Кабинете Поставщика.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Поле 3: ПОДГРУЗКА ДОПОЛНИТЕЛЬНЫХ ФАЙЛОВ ПОСТАВЩИКА */}
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 700, fontSize: '0.88rem', color: '#334155' }}>
+                      3. Коммерческое предложение и спецификация <span style={{ color: 'var(--pk-danger)' }}>*</span>
                     </label>
 
                     <label style={{
@@ -518,7 +612,7 @@ const TenderDetails = () => {
                     }}>
                       <Upload size={24} color="var(--pk-primary)" />
                       <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--pk-primary)', textAlign: 'center' }}>
-                        Загрузить коммерческое предложение и квалификационные формы
+                        Загрузить новый файл коммерческого предложения
                       </span>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
                         PDF, DOCX, XLSX, ZIP (до 50 МБ)
@@ -532,20 +626,33 @@ const TenderDetails = () => {
                       />
                     </label>
 
-                    {/* Список загруженных файлов поставщика */}
+                    {/* Список всех прикрепленных файлов к этой заявке */}
                     {supplierFiles.length > 0 && (
                       <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.2rem' }}>
+                          Прикрепленные документы к заявке ({supplierFiles.length}):
+                        </div>
                         {supplierFiles.map(file => (
-                          <div key={file.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '0.45rem 0.65rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.78rem' }}>
+                          <div key={file.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: file.vaultId ? '#f0f9ff' : '#f8fafc', padding: '0.45rem 0.65rem', borderRadius: '6px', border: file.vaultId ? '1px solid #bae6fd' : '1px solid #e2e8f0', fontSize: '0.78rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
                               <FileText size={15} color="var(--pk-primary)" />
                               <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
                                 {file.name}
                               </span>
+                              {file.vaultId && (
+                                <span style={{ fontSize: '0.65rem', color: '#0369a1', fontWeight: 700, background: '#e0f2fe', padding: '0.1rem 0.35rem', borderRadius: '3px' }}>
+                                  Из хранилища
+                                </span>
+                              )}
                             </div>
                             <button
                               type="button"
-                              onClick={() => handleRemoveFile(file.id)}
+                              onClick={() => {
+                                if (file.vaultId) {
+                                  setSelectedVaultDocIds(prev => prev.filter(id => id !== file.vaultId));
+                                }
+                                handleRemoveFile(file.id);
+                              }}
                               style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.2rem' }}
                               title="Удалить файл"
                             >

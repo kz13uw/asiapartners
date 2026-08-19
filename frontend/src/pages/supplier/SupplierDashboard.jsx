@@ -12,18 +12,34 @@ const initialSupplierDocs = [
   { id: 3, name: 'Свидетельство о государственной регистрации ТОО', category: 'Учредительные', date: '10.02.2024', size: '850 КБ', format: 'PDF' }
 ];
 
+const getStoredDocs = () => {
+  try {
+    const saved = localStorage.getItem('supplier_vault_docs');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return initialSupplierDocs;
+};
+
 const SupplierDashboard = () => {
   const { lang, t } = useTranslation();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('tenders');
   const [myBids, setMyBids] = useState([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
-  const [documents, setDocuments] = useState(initialSupplierDocs);
+  const [documents, setDocuments] = useState(getStoredDocs);
   const fileInputRef = useRef(null);
+
+  const saveDocs = (newDocs) => {
+    setDocuments(newDocs);
+    try {
+      localStorage.setItem('supplier_vault_docs', JSON.stringify(newDocs));
+    } catch (e) {}
+  };
 
   useEffect(() => {
     const fetchBids = async () => {
       try {
+        const { bidsAPI } = await import('../../api');
         const res = await bidsAPI.myBids();
         const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
         setMyBids(items);
@@ -84,7 +100,8 @@ const SupplierDashboard = () => {
         format: file.name.split('.').pop()?.toUpperCase() || 'FILE'
       };
 
-      setDocuments(prev => [newDoc, ...prev]);
+      const updated = [newDoc, ...documents];
+      saveDocs(updated);
       toast.success(`Документ "${file.name}" успешно сохранен в хранилище!`, { id: toastId });
       
       // Reset input
@@ -95,7 +112,8 @@ const SupplierDashboard = () => {
   };
 
   const handleDeleteDoc = (id, name) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
+    const updated = documents.filter(d => d.id !== id);
+    saveDocs(updated);
     toast.success(`Документ "${name}" удален из хранилища`);
   };
 
