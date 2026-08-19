@@ -561,7 +561,7 @@ const CreateTender = () => {
     const newLot = calculateLot({
       id: Date.now(),
       lot_number: newLotNumber,
-      title: `Лот №${newLotNumber} — Новый предмет закупки`,
+      title: formData.subject_type === 'goods' ? `Лот №${newLotNumber} — Поставка товаров` : `Лот №${newLotNumber} — Выполнение работ / Оказание услуг`,
       description: '',
       quantity: 1,
       unit: 'шт',
@@ -929,10 +929,24 @@ const CreateTender = () => {
                       <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.2rem' }}>Авансирование (% предоплаты)</label>
                       <input
                         type="number"
+                        min="0"
+                        max="100"
                         className="form-control form-control-sm"
                         placeholder="0 %"
                         value={lot.advance_payment_pct || 0}
                         onChange={(e) => handleLotChange(index, 'advance_payment_pct', e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.2rem' }}>Срок поставки (дней)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="form-control form-control-sm"
+                        placeholder="30"
+                        value={lot.delivery_days_count || ''}
+                        onChange={(e) => handleLotChange(index, 'delivery_days_count', e.target.value)}
                       />
                     </div>
                   </div>

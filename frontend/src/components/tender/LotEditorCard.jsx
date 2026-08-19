@@ -67,12 +67,12 @@ const LotEditorCard = ({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.3rem', color: '#334155' }}>
-            Наименование лота (Товара / Услуги) *
+            {subjectType === 'goods' ? 'Наименование поставляемого товара *' : 'Наименование услуги / объема работ *'}
           </label>
           <input
             type="text"
             className="form-control"
-            placeholder="Например: Кабель силовой ВВГнг-LS 3x2.5"
+            placeholder={subjectType === 'goods' ? 'например: Кабель силовой ВВГнг-LS 3x2.5' : 'например: Монтаж электроосвещения и СМР'}
             value={lot.title || ''}
             onChange={(e) => onUpdate(index, { ...lot, title: e.target.value })}
             required
