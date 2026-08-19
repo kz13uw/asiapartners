@@ -49,6 +49,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://asia:asia_super_secret_pass@db:5432/asia_procurement
       DATABASE_URL_SYNC: postgresql://asia:asia_super_secret_pass@db:5432/asia_procurement
       REDIS_URL: redis://redis:6379/0
+      USE_SQLITE: "false"
       ADMIN_PASSWORD: "Asia@Procurement2025!"
       SECRET_KEY: "asia_partners_super_secure_jwt_secret_key_prod_2026"
     volumes:
