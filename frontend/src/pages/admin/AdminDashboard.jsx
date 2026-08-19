@@ -473,12 +473,12 @@ const AdminDashboard = () => {
                 )}
               </div>
               <div className="form-group mb-3">
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('lbl_full_name') || 'ФИО (Контактное лицо)'}</label>
-                <input type="text" className="form-control" required value={userFormData.full_name} onChange={e => setUserFormData({...userFormData, full_name: e.target.value})} placeholder="Например: Иванов Иван Иванович" />
-              </div>
-              <div className="form-group mb-3">
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}</label>
                 <input type="text" className="form-control" value={userFormData.company_name || ''} onChange={e => setUserFormData({...userFormData, company_name: e.target.value})} placeholder='Например: ТОО "Asia Partners"' />
+              </div>
+              <div className="form-group mb-3">
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('lbl_full_name') || 'ФИО (Контактное лицо)'}</label>
+                <input type="text" className="form-control" required value={userFormData.full_name} onChange={e => setUserFormData({...userFormData, full_name: e.target.value})} placeholder="Например: Иванов Иван Иванович" />
               </div>
               <div className="form-group mb-3">
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('lbl_company_address') || 'Адрес компании'}</label>
