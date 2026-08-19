@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, HardDrive, Loader2, AlertTriangle, CheckCircle2, Download, RefreshCw } from 'lucide-react';
+import { ShieldCheck, HardDrive, Loader2, AlertTriangle, CheckCircle2, Download, RefreshCw, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
 
-const NCALAYER_WS_URL = 'wss://127.0.0.1:13579/';
+const NCALAYER_URLS = [
+  'wss://127.0.0.1:13579/',
+  'wss://127.0.0.1:13580/',
+  'ws://127.0.0.1:13579/'
+];
 
 const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
   const { lang, t } = useTranslation();
@@ -14,6 +18,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
   const [signedData, setSignedData] = useState(null);
   const [parsedInfo, setParsedInfo] = useState(null);
   const ws = useRef(null);
+  const currentUrlIdx = useRef(0);
 
   // Подключение к NCALayer при открытии
   useEffect(() => {
@@ -23,6 +28,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
       setErrorMessage('');
       setSignedData(null);
       setParsedInfo(null);
+      currentUrlIdx.current = 0;
       connectNCALayer();
     } else {
       if (ws.current) {
@@ -38,18 +44,20 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
       if (ws.current) {
         ws.current.close();
       }
-      ws.current = new WebSocket(NCALAYER_WS_URL);
+      
+      const targetUrl = NCALAYER_URLS[currentUrlIdx.current] || NCALAYER_URLS[0];
+      ws.current = new WebSocket(targetUrl);
       
       ws.current.onopen = () => {
         setNcaStatus('connected');
       };
 
       ws.current.onclose = () => {
-        setNcaStatus('not_running');
+        tryNextUrl();
       };
 
       ws.current.onerror = () => {
-        setNcaStatus('not_running');
+        tryNextUrl();
       };
 
       ws.current.onmessage = async (event) => {
@@ -82,6 +90,15 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
         }
       };
     } catch (e) {
+      tryNextUrl();
+    }
+  };
+
+  const tryNextUrl = () => {
+    if (currentUrlIdx.current < NCALAYER_URLS.length - 1) {
+      currentUrlIdx.current += 1;
+      setTimeout(connectNCALayer, 200);
+    } else {
       setNcaStatus('not_running');
     }
   };
@@ -136,7 +153,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
         className="modal-card card" 
         style={{ 
           width: '100%', 
-          maxWidth: '480px', 
+          maxWidth: '500px', 
           margin: 'auto', 
           animation: 'slideUp 0.25s ease-out', 
           padding: 0, 
@@ -177,16 +194,25 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
                 <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '1.25rem', borderRadius: '12px', textAlign: 'center' }}>
                   <AlertTriangle size={36} color="#e11d48" style={{ margin: '0 auto 0.6rem' }} />
                   <div style={{ fontWeight: 700, color: '#9f1239', fontSize: '0.95rem', marginBottom: '0.4rem' }}>
-                    NCALayer не запущен на вашем ПК
+                    Не удалось подключиться к NCALayer
                   </div>
-                  <p style={{ fontSize: '0.82rem', color: '#be123c', lineHeight: 1.4, margin: '0 0 1.25rem 0' }}>
-                    Для работы с ЭЦП НУЦ РК необходимо запустить приложение <strong>NCALayer</strong>. Если оно у вас не установлено, скачайте его с официального портала НУЦ РК.
+                  <p style={{ fontSize: '0.82rem', color: '#be123c', lineHeight: 1.4, margin: '0 0 1rem 0' }}>
+                    Для работы с ЭЦП НУЦ РК убедитесь, что приложение <strong>NCALayer</strong> запущено на вашем компьютере.
                   </p>
-                  <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
+
+                  <div style={{ background: '#ffffff', border: '1px solid #fda4af', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', textAlign: 'left', fontSize: '0.78rem', color: '#9f1239' }}>
+                    <strong>💡 Если NCALayer запущен, но не подключается (HTTPS порт):</strong><br />
+                    Откройте ссылку ниже, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт 127.0.0.1 (небезопасно)»</em> для разрешения сертификата NCALayer:<br />
+                    <a href="https://127.0.0.1:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.3rem' }}>
+                      https://127.0.0.1:13579/ <ExternalLink size={12} />
+                    </a>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                     <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#f43f5e', color: '#e11d48', fontWeight: 600 }}>
                       <Download size={14} style={{ marginRight: '0.3rem' }} /> Скачать NCALayer
                     </a>
-                    <button className="btn btn-primary btn-sm" onClick={connectNCALayer} style={{ fontWeight: 600 }}>
+                    <button className="btn btn-primary btn-sm" onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} style={{ fontWeight: 600 }}>
                       <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> Повторить
                     </button>
                   </div>
