@@ -50,6 +50,10 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      USE_SQLITE: "false"
+      DATABASE_URL: "postgresql+asyncpg://asia:asia_pass@db:5432/asia_procurement"
+      SEED_TEST_DATA: "false"
     ports:
       - "8000:8000"
     volumes:

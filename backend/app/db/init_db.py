@@ -33,13 +33,16 @@ async def init_db(clean_all: bool = False):
                 await db.execute(sql_delete(User).where(User.username != "admin"))
                 await db.commit()
 
+            admin_pwd = os.getenv("ADMIN_PASSWORD", "admin123")
+            seed_test_users = os.getenv("SEED_TEST_DATA", "false").lower() == "true"
+
             # 1. Системные пользователи всех ролей
             users_to_seed = [
                 {
                     "username": "admin",
                     "full_name": "Главный Администратор Системы",
                     "email": "admin@asiapartners.kz",
-                    "hashed_password": get_password_hash("admin123"),
+                    "hashed_password": get_password_hash(admin_pwd),
                     "role": UserRole.ADMIN,
                     "status": UserStatus.ACTIVE,
                     "iin_bin": "000000000000"
@@ -48,12 +51,24 @@ async def init_db(clean_all: bool = False):
                     "username": "info@asiapartners.kz",
                     "full_name": "Организатор Закупок Asia Partners",
                     "email": "info@asiapartners.kz",
-                    "hashed_password": get_password_hash("admin123"),
+                    "hashed_password": get_password_hash(os.getenv("ORGANIZER_PASSWORD", admin_pwd)),
                     "role": UserRole.ORGANIZER,
                     "status": UserStatus.ACTIVE,
                     "iin_bin": "111111111111"
                 },
                 {
+                    "username": "monitoring@asiapartners.kz",
+                    "full_name": "Служба Мониторинга и СБ",
+                    "email": "monitoring@asiapartners.kz",
+                    "hashed_password": get_password_hash(os.getenv("MONITORING_PASSWORD", admin_pwd)),
+                    "role": UserRole.MONITORING,
+                    "status": UserStatus.ACTIVE,
+                    "iin_bin": "222222222222"
+                }
+            ]
+
+            if seed_test_users:
+                users_to_seed.append({
                     "username": "supplier@asia.kz",
                     "full_name": "ТОО СтройСервис Азия",
                     "email": "supplier@asia.kz",
@@ -61,17 +76,7 @@ async def init_db(clean_all: bool = False):
                     "role": UserRole.SUPPLIER,
                     "status": UserStatus.ACTIVE,
                     "iin_bin": "987654321012"
-                },
-                {
-                    "username": "monitoring@asiapartners.kz",
-                    "full_name": "Служба Мониторинга и СБ",
-                    "email": "monitoring@asiapartners.kz",
-                    "hashed_password": get_password_hash("admin123"),
-                    "role": UserRole.MONITORING,
-                    "status": UserStatus.ACTIVE,
-                    "iin_bin": "222222222222"
-                }
-            ]
+                })
 
             from app.models.models import generate_account_code
             for udata in users_to_seed:
