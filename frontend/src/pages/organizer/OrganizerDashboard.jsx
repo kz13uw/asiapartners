@@ -172,7 +172,7 @@ const OrganizerDashboard = () => {
                         </Link>
                       ) : tender.status === 'accepting' || tender.status === 'published' ? <span className="badge badge-success" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Опубликован (Прием)</span> :
                        tender.status === 'evaluation' ? <span className="badge badge-warning" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Рассмотрение (Review)</span> :
-                       tender.status === 'completed' ? <span className="badge badge-success" style={{backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', padding: '0.2rem 0.5rem', fontWeight: 700}}>✓ Состоялся</span> :
+                       tender.status === 'completed' ? <span className="badge badge-primary" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Завершен (Completed)</span> :
                        tender.status === 'cancelled' ? <span className="badge" style={{backgroundColor: '#ef4444', color: '#fff', fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Отменен (Canceled)</span> :
                        <span className="badge badge-primary" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>{tender.status}</span>}
                     </td>
