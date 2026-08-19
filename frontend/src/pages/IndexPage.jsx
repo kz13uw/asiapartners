@@ -289,8 +289,7 @@ const IndexPage = () => {
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
 
             <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.6rem' }}>
-              3 шага до первого контракта
-            </h2>
+              Почему выбирают нашу платформу</h2>
             <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '480px', marginInline: 'auto' }}>
               Простой и понятный процесс — от регистрации до победы в закупке
             </p>
@@ -323,139 +322,7 @@ const IndexPage = () => {
       <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#ffffff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.6rem' }}>
-              Почему выбирают нашу платформу
-            </h2>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '520px', marginInline: 'auto' }}>
-              Преимущества для поставщиков группы Asia Partners
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(290px,1fr))', gap: '1.1rem' }}>
-            {benefits.map(({ icon, color, bg, title, desc }, i) => (
-              <div key={i} style={{
-                background: '#f8fafc', border: '1.5px solid rgba(226,232,240,0.7)',
-                borderRadius: '16px', padding: '1.6rem 1.4rem',
-                transition: 'all 0.25s', cursor: 'default',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = color + '35'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 12px 32px ${color}12`; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = 'rgba(226,232,240,0.7)'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
-              >
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-                  {icon}
-                </div>
-                <h3 style={{ margin: '0 0 0.45rem', fontSize: '0.975rem', fontWeight: 800, color: '#0f172a' }}>{title}</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.65 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════ EXPANDED FAQ SECTION WITH INTEGRATED VISUAL GUIDES ════════════════════ */}
-      <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#f8fafc' }}>
-        <div style={{ maxWidth: '950px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <span style={{ background: 'rgba(43,138,196,0.1)', color: '#2B8AC4', fontSize: '0.78rem', fontWeight: 800, padding: '0.35rem 0.9rem', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              База знаний портала
-            </span>
-            <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 900, color: '#0f172a', margin: '0.75rem 0 0.5rem' }}>
-              Вопросы, ответы и инструкции (FAQ)
-            </h2>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '580px', margin: '0 auto' }}>
-              Наглядные инструкции со скриншотами интерфейса и ответы по правилам участия
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-            {/* FAQ 1: Visual Walkthrough Screenshot Cards */}
-            <details 
-              open
-              style={{ 
-                background: '#ffffff', 
-                border: '2px solid rgba(43,138,196,0.3)', 
-                borderRadius: '16px', 
-                padding: '1.25rem 1.5rem', 
-                boxShadow: '0 8px 25px rgba(43,138,196,0.06)',
-                cursor: 'pointer'
-              }}
-            >
-              <summary style={{ fontWeight: 800, fontSize: '1.05rem', color: '#163A54', outline: 'none', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  📸 <strong>Инструкция со скриншотами: Как работать на портале и побеждать в закупках?</strong>
-                </span>
-                <span style={{ fontSize: '1.2rem', color: '#2B8AC4', fontWeight: 900 }}>▼</span>
-              </summary>
-              <div style={{ marginTop: '1.25rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
-                <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-                  Пошаговый визуальный интерфейс для Поставщиков и Заказчиков:
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '1.25rem' }}>
-                  {/* Card 1 */}
-                  <div style={{ background: '#f8fafc', borderRadius: '14px', border: '1px solid #cbd5e1', padding: '1.1rem' }}>
-                    <div style={{ background: 'linear-gradient(135deg,#0a2133,#163A54)', borderRadius: '10px', padding: '1rem', color: '#ffffff', marginBottom: '0.85rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.7rem', color: '#FFAF00', fontWeight: 700 }}>
-                        <span>ЭКРАН 1: АВТОРИЗАЦИЯ</span>
-                        <ShieldCheck size={14} color="#38bdf8" />
-                      </div>
-                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                        🔑 Вход через NCALayer (ЭЦП НУЦ РК)
-                      </div>
-                    </div>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.3rem' }}>1. Авторизация по ЭЦП</h4>
-                    <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                      Выбор ключей AUTH/RSA в NCALayer. Автоматическая верификация организации по БИН/ИИН.
-                    </p>
-                  </div>
-
-                  {/* Card 2 */}
-                  <div style={{ background: '#f8fafc', borderRadius: '14px', border: '1px solid #cbd5e1', padding: '1.1rem' }}>
-                    <div style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '10px', padding: '1rem', marginBottom: '0.85rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                        <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>Опубликован</span>
-                        <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>№ T00000049</span>
-                      </div>
-                      <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#0f172a', marginBottom: '0.4rem' }}>Поставка товаров</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                        <span style={{ fontWeight: 800, color: '#163A54', fontSize: '0.85rem' }}>150 100 000 ₸</span>
-                        <span style={{ background: '#0284c7', color: '#fff', fontSize: '0.65rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>Подать</span>
-                      </div>
-                    </div>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.3rem' }}>2. Подача предложения</h4>
-                    <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                      Указание цены лота и условий. Отправка предложения со строгим соблюдением дедлайна.
-                    </p>
-                  </div>
-
-                  {/* Card 3 */}
-                  <div style={{ background: '#f8fafc', borderRadius: '14px', border: '1px solid #cbd5e1', padding: '1.1rem' }}>
-                    <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '10px', padding: '1rem', marginBottom: '0.85rem' }}>
-                      <div style={{ color: '#166534', fontWeight: 800, fontSize: '0.75rem', marginBottom: '0.3rem' }}>
-                        🏛️ Протокол Итогов PDF
-                      </div>
-                      <div style={{ background: '#ffffff', borderRadius: '6px', padding: '0.4rem', fontSize: '0.7rem', color: '#15803d', fontWeight: 700, border: '1px solid #86efac' }}>
-                        🏆 Победитель: ТОО "СтройКом"
-                      </div>
-                    </div>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.3rem' }}>3. Протокол с ЭЦП</h4>
-                    <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                      Автоматическое подведение итогов, выгрузка официального двуязычного PDF-протокола.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            {[
-              {
-                q: "1. Кто может участвовать в закупках холдинга Asia Partners?",
-                a: "В закупках могут принимать участие любые юридические лица (ТОО, АО) и индивидуальные предприниматели (ИП) Республики Казахстан, а также компании-нерезиденты, имеющие валидную ЭЦП НУЦ РК."
-              },
-              {
-                q: "2. Нужна ли платная подписка или регистрация на портале?",
-                a: "Нет! Регистрация на портале и участие во всех закупках группы Asia Partners являются БЕСПЛАТНЫМИ. Никаких скрытых комиссий с поставщиков не взимается."
-              },
-              {
-                q: "3. Чем отличается форма создания для «Товаров» от «Услуг и Работ»?",
+            <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f17»?",
                 a: "Для Товаров указываются условия поставки по Инкотермс (DDP, EXW и др.), процент авансирования и срок доставки в днях. Для Услуг и Работ указываются даты начала/завершения работ и гарантийный срок в месяцах."
               },
               {
