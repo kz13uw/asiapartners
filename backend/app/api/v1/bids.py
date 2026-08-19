@@ -355,6 +355,48 @@ async def revoke_bid(
     return res.scalar_one()
 
 
+@router.post("/tender/{tender_id}/revoke", response_model=BidOut, summary="Отозвать заявку по tender_id с ЭЦП")
+async def revoke_bid_by_tender(
+    tender_id: int,
+    body: BidRevoke,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.SUPPLIER)),
+):
+    from sqlalchemy.orm import selectinload
+    res_t = await db.execute(select(Tender).where(Tender.id == tender_id))
+    tender = res_t.scalar_one_or_none()
+    if not tender:
+        raise HTTPException(status_code=404, detail="Тендер не найден")
+    if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED]:
+        raise HTTPException(status_code=400, detail="Срок приема заявок истек, отзыв заблокирован")
+
+    result = await db.execute(
+        select(Bid)
+        .options(selectinload(Bid.items))
+        .where(Bid.tender_id == tender_id, Bid.supplier_id == current_user.id, Bid.status != BidStatus.REJECTED)
+    )
+    bid = result.scalar_one_or_none()
+    if not bid:
+        raise HTTPException(status_code=404, detail="Активная заявка по данному тендеру не найдена")
+
+    bid.status = BidStatus.REJECTED
+    bid.revocation_reason = body.reason
+    bid.revocation_eds_hash = body.eds_hash or "demo_revocation_signature"
+    bid.revoked_at = datetime.utcnow()
+
+    log = AuditLog(
+        user_id=current_user.id,
+        action="REVOKE_BID_WITH_EDS",
+        entity_type="bid",
+        entity_id=bid.id,
+    )
+    db.add(log)
+    await db.commit()
+
+    res = await db.execute(select(Bid).options(selectinload(Bid.items)).where(Bid.id == bid.id))
+    return res.scalar_one()
+
+
 @router.post("/{bid_id}/resubmit", response_model=BidOut, summary="Повторно подать отозванную заявку с ЭЦП (Версионирование)")
 async def resubmit_bid(
     bid_id: int,

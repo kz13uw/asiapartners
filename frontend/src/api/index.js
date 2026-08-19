@@ -76,6 +76,7 @@ export const bidsAPI = {
   getByTender: (tenderId) => API.get(`/bids/tender/${tenderId}`),
   updateStatus: (bidId, data) => API.patch(`/bids/${bidId}/status`, data),
   revoke: (bidId, data) => API.post(`/bids/${bidId}/revoke`, data),
+  revokeByTender: (tenderId, data) => API.post(`/bids/tender/${tenderId}/revoke`, data),
   resubmit: (bidId, data) => API.post(`/bids/${bidId}/resubmit`, data),
   generateProtocol: (tenderId, edsHash) =>
     API.post(`/bids/tender/${tenderId}/protocol`, null, { params: { eds_hash: edsHash } }),

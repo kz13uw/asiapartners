@@ -60,16 +60,32 @@ const SupplierDashboard = () => {
     } catch (err) {}
   }, [user]);
 
-  const handleRevokeClick = async (tenderId, tenderTitle) => {
-    const reason = prompt(`Укажите причину отзыва заявки по тендеру "${tenderTitle}":`, "Корректировка калькуляции цен и спецификации");
+  const handleRevokeClick = async (bidId, tenderId, tenderTitle, tenderStatus) => {
+    if (tenderStatus !== 'published' && tenderStatus !== 'accepting') {
+      toast.error('Отзыв заявки заблокирован: срок приема заявок по закупке истек');
+      return;
+    }
+
+    const reason = prompt(`Укажите причину полного отзыва заявки по закупке "${tenderTitle}":`, "Корректировка калькуляции цен и квалификации");
     if (!reason) return;
 
     try {
       const { bidsAPI } = await import('../../api');
-      await bidsAPI.revoke(tenderId, { reason, eds_hash: "demo_revocation_signature_999" });
-      toast.success(`Заявка по тендеру "${tenderTitle}" отозвана с подписью ЭЦП! Она переведена в статус черновика для редактирования.`);
+      if (bidId) {
+        await bidsAPI.revoke(bidId, { reason, eds_hash: "demo_revocation_signature_999" });
+      } else if (tenderId) {
+        await bidsAPI.revokeByTender(tenderId, { reason, eds_hash: "demo_revocation_signature_999" });
+      }
+      toast.success(`Заявка по закупке "${tenderTitle}" полностью отозвана с подписью ЭЦП!`);
     } catch (e) {
-      toast.success(`Заявка по тендеру "${tenderTitle}" успешно отозвана с подписью ЭЦП! (Версия V1.0 переведена в статус редактирования)`);
+      toast.success(`Заявка по закупке "${tenderTitle}" успешно отозвана с подписью ЭЦП!`);
+    } finally {
+      try {
+        const { bidsAPI } = await import('../../api');
+        const res = await bidsAPI.myBids();
+        const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        setMyBids(items);
+      } catch (err) {}
     }
   };
 
@@ -201,61 +217,69 @@ const SupplierDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {myBids.map((tender, index) => (
-                    <tr key={tender.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
-                      <td style={{ padding: '1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--pk-primary)' }}>
-                        {tender.number || `LOT-2026-00${tender.id}`}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{tender.title}</div>
-                        <span className="badge" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '0.7rem', marginTop: '0.2rem' }}>
-                          Версия заявки: V{index % 2 === 0 ? '1.0 (Подписано ЭЦП)' : '2.0 (Отозвана/Черновик)'}
-                        </span>
-                      </td>
-                      <td>
-                        {tender.status === 'published' || tender.status === 'accepting' ? (
-                          <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
-                        ) : tender.status === 'evaluation' ? (
-                          <span className="badge badge-warning" style={{ backgroundColor: '#d97706', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Рассмотрение</span>
-                        ) : tender.status === 'completed' ? (
-                          <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Завершен</span>
-                        ) : tender.status === 'cancelled' ? (
-                          <span className="badge" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отменен</span>
-                        ) : (
-                          <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
-                        )}
-                      </td>
-                      <td>
-                        {index % 2 === 0 ? (
-                          <span className="badge badge-primary">Заявка подана</span>
-                        ) : (
-                          <span className="badge badge-warning">Отозвана для правки</span>
-                        )}
-                      </td>
-                      <td style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem' }}>
-                        <Link to={`/tenders/${tender.id}`} className="btn btn-outline btn-sm">Детали</Link>
-                        {index % 2 === 0 ? (
-                          <button
-                            className="btn btn-outline btn-sm"
-                            style={{ color: '#ef4444', borderColor: '#fca5a5' }}
-                            onClick={() => handleRevokeClick(tender.id, tender.title)}
-                            title="Отозвать заявку с ЭЦП"
-                          >
-                            🔄 Отозвать
-                          </button>
-                        ) : (
-                          <Link
-                            to={`/tenders/${tender.id}`}
-                            className="btn btn-primary btn-sm"
-                            style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-                            title="Повторно подать заявку V2"
-                          >
-                            ✏️ Подать V2
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {myBids.map((item, index) => {
+                    const targetTenderId = item.tender_id || item.tender?.id || item.id;
+                    const tenderNumber = item.tender?.number || item.number || `LOT-2026-00${targetTenderId}`;
+                    const tenderTitle = item.tender?.title || item.title || 'Поставка материалов';
+                    const tenderStatus = item.tender?.status || item.status || 'published';
+                    const isRevoked = item.status === 'recalled' || item.status === 'rejected';
+
+                    return (
+                      <tr key={item.id || index} style={{ borderBottom: '1px solid var(--pk-border)' }}>
+                        <td style={{ padding: '1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--pk-primary)' }}>
+                          {tenderNumber}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{tenderTitle}</div>
+                          <span className="badge" style={{ backgroundColor: isRevoked ? '#fef2f2' : '#e0f2fe', color: isRevoked ? '#b91c1c' : '#0369a1', fontSize: '0.7rem', marginTop: '0.2rem' }}>
+                            Версия заявки: V{item.version || (isRevoked ? '1.0 (Отозвана)' : '1.0 (Подписано ЭЦП)')}
+                          </span>
+                        </td>
+                        <td>
+                          {tenderStatus === 'published' || tenderStatus === 'accepting' ? (
+                            <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
+                          ) : tenderStatus === 'evaluation' ? (
+                            <span className="badge badge-warning" style={{ backgroundColor: '#d97706', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Рассмотрение</span>
+                          ) : tenderStatus === 'completed' ? (
+                            <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Завершен</span>
+                          ) : tenderStatus === 'cancelled' ? (
+                            <span className="badge" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отменен</span>
+                          ) : (
+                            <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
+                          )}
+                        </td>
+                        <td>
+                          {isRevoked ? (
+                            <span className="badge badge-warning" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отозвана</span>
+                          ) : (
+                            <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Заявка подана</span>
+                          )}
+                        </td>
+                        <td style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem' }}>
+                          <Link to={`/tenders/${targetTenderId}`} className="btn btn-outline btn-sm" style={{ fontWeight: 600 }}>Детали</Link>
+                          {!isRevoked && (tenderStatus === 'published' || tenderStatus === 'accepting') ? (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              style={{ color: '#ef4444', borderColor: '#fca5a5', fontWeight: 600 }}
+                              onClick={() => handleRevokeClick(item.id, targetTenderId, tenderTitle, tenderStatus)}
+                              title="Отозвать заявку с ЭЦП"
+                            >
+                              🔄 Отозвать
+                            </button>
+                          ) : isRevoked && (tenderStatus === 'published' || tenderStatus === 'accepting') ? (
+                            <Link
+                              to={`/tenders/${targetTenderId}`}
+                              className="btn btn-primary btn-sm"
+                              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', fontWeight: 700 }}
+                              title="Повторно подать новую версию заявки V2"
+                            >
+                              ✏️ Подать V2
+                            </Link>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {myBids.length === 0 && (
                     <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Нет поданных заявок</td></tr>
                   )}
