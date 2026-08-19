@@ -194,7 +194,19 @@ const SupplierDashboard = () => {
                           Версия заявки: V{index % 2 === 0 ? '1.0 (Подписано ЭЦП)' : '2.0 (Отозвана/Черновик)'}
                         </span>
                       </td>
-                      <td><span className="badge badge-success">Прием заявок</span></td>
+                      <td>
+                        {tender.status === 'published' || tender.status === 'accepting' ? (
+                          <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
+                        ) : tender.status === 'evaluation' ? (
+                          <span className="badge badge-warning" style={{ backgroundColor: '#d97706', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Рассмотрение</span>
+                        ) : tender.status === 'completed' ? (
+                          <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Завершен</span>
+                        ) : tender.status === 'cancelled' ? (
+                          <span className="badge" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отменен</span>
+                        ) : (
+                          <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
+                        )}
+                      </td>
                       <td>
                         {index % 2 === 0 ? (
                           <span className="badge badge-primary">Заявка подана</span>

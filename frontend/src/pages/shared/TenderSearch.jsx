@@ -89,11 +89,12 @@ const TenderSearch = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--pk-border)', textAlign: 'left', fontSize: '0.85rem', color: '#475569' }}>
-                <th style={{ padding: '1rem 1.25rem', width: '32%' }}>{t('th_lot_num_title') || '№ и наименование лота'}</th>
-                <th style={{ padding: '1rem 1.25rem', width: '20%' }}>{t('th_organizer_sector') || 'Организатор / Сфера'}</th>
-                <th style={{ padding: '1rem 1.25rem', width: '18%' }}>{t('th_procurement_method') || 'Способ закупки'}</th>
-                <th style={{ padding: '1rem 1.25rem', width: '15%' }}>{t('th_budget_amount') || 'Плановая сумма'}</th>
-                <th style={{ padding: '1rem 1.25rem', width: '15%' }}>{t('th_delivery_place') || 'Место поставки'}</th>
+                <th style={{ padding: '1rem 1.25rem', width: '26%' }}>{t('th_lot_num_title') || '№ и наименование лота'}</th>
+                <th style={{ padding: '1rem 1.25rem', width: '18%' }}>{t('th_organizer_sector') || 'Организатор / Сфера'}</th>
+                <th style={{ padding: '1rem 1.25rem', width: '15%' }}>{t('th_procurement_method') || 'Способ закупки'}</th>
+                <th style={{ padding: '1rem 1.25rem', width: '14%' }}>Статус</th>
+                <th style={{ padding: '1rem 1.25rem', width: '13%' }}>{t('th_budget_amount') || 'Плановая сумма'}</th>
+                <th style={{ padding: '1rem 1.25rem', width: '14%' }}>{t('th_delivery_place') || 'Место поставки'}</th>
                 <th style={{ padding: '1rem 1.25rem', width: '10%', textAlign: 'right' }}>{t('th_actions') || 'Действие'}</th>
               </tr>
             </thead>
@@ -116,6 +117,29 @@ const TenderSearch = () => {
                     <span className="badge badge-outline" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--pk-primary)', borderColor: 'var(--pk-primary)' }}>
                       {t('method_zcp') || 'Запрос ценовых предложений'}
                     </span>
+                  </td>
+                  <td style={{ padding: '1rem 1.25rem' }}>
+                    {tnd.status === 'published' || tnd.status === 'accepting' ? (
+                      <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.25rem 0.55rem' }}>
+                        Прием заявок
+                      </span>
+                    ) : tnd.status === 'evaluation' ? (
+                      <span className="badge badge-warning" style={{ backgroundColor: '#d97706', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.25rem 0.55rem' }}>
+                        Рассмотрение
+                      </span>
+                    ) : tnd.status === 'completed' ? (
+                      <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.25rem 0.55rem' }}>
+                        Завершен
+                      </span>
+                    ) : tnd.status === 'cancelled' ? (
+                      <span className="badge" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.25rem 0.55rem' }}>
+                        Отменен
+                      </span>
+                    ) : (
+                      <span className="badge badge-outline" style={{ fontSize: '0.72rem', fontWeight: 600 }}>
+                        {tnd.status}
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', fontWeight: 700, color: 'var(--pk-primary)', fontSize: '0.95rem' }}>
                     {formatCurrency(tnd.start_price || tnd.budget)}
