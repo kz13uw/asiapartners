@@ -530,6 +530,13 @@ def generate_protocol_bilingual_html(tender_number: str, title: str, start_price
   .btn-print:hover {{ background: #0369a1; }}
   @media print {{ .no-print {{ display: none !important; }} body {{ background: white; padding: 0; }} .protocol-box {{ border: none; box-shadow: none; padding: 0; max-width: 100%; }} }}
 </style>
+<script>
+  window.onload = function() {{
+    setTimeout(function() {{
+      window.print();
+    }}, 300);
+  }};
+</script>
 </head>
 <body>
 
