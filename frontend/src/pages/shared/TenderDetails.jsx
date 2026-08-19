@@ -413,7 +413,9 @@ const TenderDetails = () => {
                   🏛️ Официальный Протокол Итогов Опубликован
                 </div>
                 <a
-                  href={`data:text/plain;charset=utf-8,${encodeURIComponent(`🏛️ ОФИЦИАЛЬНЫЙ ПРОТОКОЛ ИТОГОВ ЗАКУПКИ № ${tender.number}\nДата публикации: ${new Date().toLocaleString('ru-RU')}\n\n1 МЕСТО (ПОБЕДИТЕЛЬ): Подтверждено\nШтамп ЭЦП: NCALayer SHA256: 8f9b2c...`)}`}
+                  href={`${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8000/api/v1' : '/api/v1'}/tenders/${tender.id}/protocol/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
                   download={`Протокол_Итогов_${tender.number}.pdf`}
                   className="btn btn-primary btn-sm"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', backgroundColor: '#15803d', borderColor: '#15803d', marginTop: '0.5rem' }}
