@@ -475,72 +475,142 @@ async def delete_tender(
     db.add(log)
     await db.commit()
     await cache_manager.delete("tenders:*")
-def generate_protocol_pdf_bytes(tender_number: str, title: str, start_price: float, winner_name: str, winner_bin: str, winner_price: float, signer_name: str, signer_bin: str, eds_hash: str) -> bytes:
-    text_lines = [
-        f"OFFICIAL FINAL PROTOCOL OF TENDER N {tender_number}",
-        f"Organizer: TOO Asia Partners (BIN 987654321012)",
-        f"Tender Title: {title}",
-        f"Starting Budget: {start_price:,.2f} KZT",
-        "--------------------------------------------------------------------------------",
-        "WINNER OF TENDER (1ST PLACE):",
-        f"  Participant: {winner_name} (BIN/IIN: {winner_bin})",
-        f"  Offered Price: {winner_price:,.2f} KZT",
-        f"  Decision: APPROVED AND DECLARED WINNER",
-        "--------------------------------------------------------------------------------",
-        "DIGITAL SIGNATURE INFORMATION (NCALayer / GOST 34.310-2015):",
-        "  Signature Status: VALIDATED BY NCALayer GOST 34.310-2015",
-        f"  Signer: {signer_name}",
-        f"  BIN / IIN: {signer_bin}",
-        f"  CMS Digital Signature Hash: {eds_hash}",
-        "--------------------------------------------------------------------------------",
-        "Protocol generated automatically by Asia Partners Procurement Portal."
-    ]
+def generate_protocol_bilingual_html(tender_number: str, title: str, start_price: float, winner_name: str, winner_bin: str, winner_price: float, signer_name: str, signer_bin: str, eds_hash: str, bids_list: list) -> str:
+    published_date = datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S")
     
-    content_stream = 'BT\n/F1 11 Tf\n15 TL\n40 780 Td\n'
-    for line in text_lines:
-        safe_line = line.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
-        content_stream += f'({safe_line}) Tj T*\n'
-    content_stream += 'ET'
-    
-    stream_bytes = content_stream.encode('latin-1', errors='replace')
-    stream_len = len(stream_bytes)
-    
-    pdf_str = f"""%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 595 842] /Contents 5 0 R >>
-endobj
-4 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
-endobj
-5 0 obj
-<< /Length {stream_len} >>
-stream
-{content_stream}
-endstream
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000244 00000 n 
-0000000333 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-{400 + stream_len}
-%%EOF"""
-    return pdf_str.encode('latin-1', errors='replace')
+    bids_rows = ""
+    for idx, b in enumerate(bids_list, start=1):
+        c_name = b.company.full_name if (b and getattr(b, 'company', None) and b.company) else f"Поставщик №{b.supplier_id}"
+        c_bin = b.company.bin if (b and getattr(b, 'company', None) and b.company) else "980440001234"
+        is_w = (idx == 1)
+        badge = '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;">ПОБЕДИТЕЛЬ / ЖЕҢІМПАЗ</span>' if is_w else f'{idx} место / орын'
+        bids_rows += f"""
+        <tr style="{ 'background:#f0fdf4;font-weight:bold;' if is_w else '' }">
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">{idx}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;">{c_name}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;font-family:monospace;">{c_bin}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;font-size:14px;color:#15803d;">{b.price:,.2f} ₸</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">{badge}</td>
+        </tr>
+        """
+        
+    if not bids_rows:
+        bids_rows = f"""
+        <tr style="background:#f0fdf4;font-weight:bold;">
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">1</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;">{winner_name}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;font-family:monospace;">{winner_bin}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;font-size:14px;color:#15803d;">{winner_price:,.2f} ₸</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;"><span style="background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;">ПОБЕДИТЕЛЬ / ЖЕҢІМПАЗ</span></td>
+        </tr>
+        """
+
+    return f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Протокол Итогов Закупки № {tender_number}</title>
+<style>
+  @page {{ size: A4; margin: 15mm; }}
+  body {{ font-family: 'Segoe UI', Arial, Roboto, sans-serif; color: #0f172a; background: #f8fafc; margin: 0; padding: 25px; }}
+  .protocol-box {{ max-width: 850px; margin: 0 auto; background: #ffffff; padding: 45px; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }}
+  .header {{ text-align: center; border-bottom: 3px double #0284c7; padding-bottom: 20px; margin-bottom: 25px; }}
+  .header h1 {{ font-size: 18px; color: #0f172a; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }}
+  .header h2 {{ font-size: 14px; color: #64748b; margin: 0; font-weight: 600; }}
+  .section-title {{ font-size: 14px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1.5px solid #e2e8f0; }}
+  .info-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+  .info-table td {{ padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 13px; }}
+  .info-table td.lbl {{ background: #f8fafc; width: 40%; font-weight: 600; color: #475569; }}
+  .winner-box {{ background: #f0fdf4; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; margin: 25px 0; }}
+  .winner-title {{ color: #166534; font-size: 16px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }}
+  .eds-stamp {{ background: #f8fafc; border: 2px dashed #0284c7; border-radius: 10px; padding: 18px; margin-top: 30px; display: flex; gap: 15px; align-items: center; }}
+  .eds-badge {{ background: #0284c7; color: #ffffff; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 13px; white-space: nowrap; }}
+  .btn-print {{ background: #0284c7; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; margin-bottom: 25px; transition: all 0.2s; }}
+  .btn-print:hover {{ background: #0369a1; }}
+  @media print {{ .no-print {{ display: none !important; }} body {{ background: white; padding: 0; }} .protocol-box {{ border: none; box-shadow: none; padding: 0; max-width: 100%; }} }}
+</style>
+</head>
+<body>
+
+<div class="no-print" style="text-align: center;">
+  <button class="btn-print" onclick="window.print()">🖨️ Печать / Сохранить в PDF (Басып шығару / PDF сақтау)</button>
+</div>
+
+<div class="protocol-box">
+  <div class="header">
+    <h1>ОФИЦИАЛЬНЫЙ ПРОТОКОЛ ИТОГОВ ЗАКУПКИ</h1>
+    <h2>САТЫП АЛУ НӘТИЖЕЛЕРІНІҢ РЕСМИ ХАТТАМАСЫ</h2>
+    <div style="font-size: 13px; color: #0284c7; font-weight: 700; margin-top: 8px;">
+      № {tender_number} • Дата публикации: {published_date}
+    </div>
+  </div>
+
+  <div class="section-title">1. ОБЩИЕ СВЕДЕНИЯ / ЖАЛПЫ МӘЛІМЕТТЕР</div>
+  <table class="info-table">
+    <tr>
+      <td class="lbl">Организатор закупок / Сатып алуды ұйымдастырушы:</td>
+      <td><strong>ТОО "Asia Partners" (БИН 987654321012)</strong></td>
+    </tr>
+    <tr>
+      <td class="lbl">Наименование закупки / Зақымдау атауы:</td>
+      <td><strong>{title}</strong></td>
+    </tr>
+    <tr>
+      <td class="lbl">Способ проведения / Өткізу тәсілі:</td>
+      <td>Запрос ценовых предложений (ЗЦП) / Баға ұсыныстарын сұрату</td>
+    </tr>
+    <tr>
+      <td class="lbl">Начальный бюджет / Бастапқы бюджет:</td>
+      <td><strong style="color:#0284c7; font-size:14px;">{start_price:,.2f} ₸</strong></td>
+    </tr>
+  </table>
+
+  <div class="winner-box">
+    <div class="winner-title">
+      🏆 ПОБЕДИТЕЛЬ ЗАКУПКИ (1-ОРЫН / 1 МЕСТО):
+    </div>
+    <div style="font-size: 14px; line-height: 1.6;">
+      • <strong>Победитель / Жеңімпаз:</strong> {winner_name} (БИН/ИИН: <span style="font-family:monospace;">{winner_bin}</span>)<br>
+      • <strong>Ценовое предложение / Ұсынылған бағасы:</strong> <strong style="color:#15803d; font-size:16px;">{winner_price:,.2f} ₸</strong><br>
+      • <strong>Решение комиссии / Комиссия шешімі:</strong> Признать победителем закупки / Зақымдау жеңімпазы деп тану.
+    </div>
+  </div>
+
+  <div class="section-title">2. РЕЕСТР ПОДАННЫХ ЗАЯВОК / БАҒА ҰСЫНЫСТАРЫНЫҢ ТІЗІЛІМІ</div>
+  <table class="info-table" style="margin-bottom: 25px;">
+    <thead>
+      <tr style="background:#f1f5f9; font-weight:bold;">
+        <th style="padding:10px; border:1px solid #cbd5e1; text-align:center; width:40px;">№</th>
+        <th style="padding:10px; border:1px solid #cbd5e1;">Участник / Қатысушы</th>
+        <th style="padding:10px; border:1px solid #cbd5e1;">БИН / ИИН</th>
+        <th style="padding:10px; border:1px solid #cbd5e1; text-align:right;">Ценовое предложение</th>
+        <th style="padding:10px; border:1px solid #cbd5e1; text-align:center;">Статус / Ранг</th>
+      </tr>
+    </thead>
+    <tbody>
+      {bids_rows}
+    </tbody>
+  </table>
+
+  <div class="eds-stamp">
+    <div class="eds-badge">
+      🛡️ ЭЦП НУЦ РК<br>ҚР ҰОТ ЭЦҚ
+    </div>
+    <div style="font-size: 12px; color: #334155; line-height: 1.5;">
+      <strong>ШТАМП ЦИФРОВОЙ ПОДПИСИ (ЭЦП НУЦ РК):</strong><br>
+      • Статус / Мәртебесі: <span style="color:#16a34a; font-weight:700;">[✓ ВАЛИДИРОВАН НУЦ РК / ҚР ҰОТ РАСТАЛДЫ]</span><br>
+      • Подписант / Қол қоюшы: <strong>{signer_name}</strong> (ИИН/БИН: <span style="font-family:monospace;">{signer_bin}</span>)<br>
+      • Цифровой хэш / Сандық хэш (CMS): <span style="font-family:monospace; font-size:11px; color:#0284c7;">{eds_hash}</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>"""
 
 
-@router.get("/{tender_id}/protocol/pdf", summary="Скачать официальный протокол в формате PDF")
+@router.get("/{tender_id}/protocol/pdf", summary="Скачать официальный протокол в формате PDF / HTML")
 async def get_tender_protocol_pdf(
     tender_id: int,
     db: AsyncSession = Depends(get_db)
@@ -566,26 +636,26 @@ async def get_tender_protocol_pdf(
     bids = res_bids.scalars().all()
     winner = bids[0] if bids else None
     
-    winner_name = (winner.company.full_name if (winner and winner.company) else "TOO StroyKom Kazakhstan")
-    winner_bin = (winner.company.bin if (winner and winner.company) else "980440001234")
+    winner_name = (winner.company.full_name if (winner and getattr(winner, 'company', None) and winner.company) else "ТОО СтройКом Казахстан")
+    winner_bin = (winner.company.bin if (winner and getattr(winner, 'company', None) and winner.company) else "980440001234")
     winner_price = winner.price if winner else (tender.start_price * 0.95)
     
     eds_hash = protocol.eds_hash if protocol else "demo_protocol_signature_999"
     
-    pdf_bytes = generate_protocol_pdf_bytes(
+    html_content = generate_protocol_bilingual_html(
         tender_number=tender.number,
         title=tender.title,
         start_price=tender.start_price,
         winner_name=winner_name,
         winner_bin=winner_bin,
         winner_price=winner_price,
-        signer_name="Kassenov M. A.",
+        signer_name="Касенов М. А.",
         signer_bin="850612300456",
-        eds_hash=eds_hash
+        eds_hash=eds_hash,
+        bids_list=bids
     )
     
     return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename=Protocol_Tender_{tender.number}.pdf"}
+        content=html_content.encode('utf-8'),
+        media_type="text/html; charset=utf-8"
     )
