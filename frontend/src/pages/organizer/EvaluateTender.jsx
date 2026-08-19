@@ -100,7 +100,7 @@ const EvaluateTender = () => {
           <div>
             <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', margin: 0 }}>{tender.title}</h2>
             <div className="text-secondary" style={{ color: 'var(--pk-text-secondary)', marginTop: '0.5rem' }}>
-              Номер: {tender.number} • Метод: {tender.method === 'one_stage' ? 'Одноэтапный' : 'Двухэтапный'} • Плановая сумма: {tender.start_price.toLocaleString('ru-RU')} ₸
+              Номер: {tender.number} • Метод: Запрос ценовых предложений (ЗЦП) • Плановая сумма: {tender.start_price.toLocaleString('ru-RU')} ₸
             </div>
           </div>
           <span className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>Идет оценка заявок</span>
