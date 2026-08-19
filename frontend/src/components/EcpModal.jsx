@@ -6,8 +6,11 @@ import { useTranslation } from '../store/useLanguageStore';
 
 const NCALAYER_URLS = [
   'wss://127.0.0.1:13579/',
+  'wss://localhost:13579/',
   'wss://127.0.0.1:13580/',
-  'ws://127.0.0.1:13579/'
+  'wss://localhost:13580/',
+  'ws://127.0.0.1:13579/',
+  'ws://localhost:13579/'
 ];
 
 const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
@@ -19,6 +22,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
   const [parsedInfo, setParsedInfo] = useState(null);
   const ws = useRef(null);
   const currentUrlIdx = useRef(0);
+  const connTimeout = useRef(null);
 
   // Подключение к NCALayer при открытии
   useEffect(() => {
@@ -31,6 +35,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
       currentUrlIdx.current = 0;
       connectNCALayer();
     } else {
+      clearTimeout(connTimeout.current);
       if (ws.current) {
         ws.current.close();
         ws.current = null;
@@ -40,23 +45,33 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
 
   const connectNCALayer = () => {
     setNcaStatus('checking');
+    clearTimeout(connTimeout.current);
     try {
       if (ws.current) {
-        ws.current.close();
+        try { ws.current.close(); } catch (e) {}
       }
       
       const targetUrl = NCALAYER_URLS[currentUrlIdx.current] || NCALAYER_URLS[0];
       ws.current = new WebSocket(targetUrl);
+
+      connTimeout.current = setTimeout(() => {
+        if (ws.current && ws.current.readyState !== WebSocket.OPEN) {
+          tryNextUrl();
+        }
+      }, 1200);
       
       ws.current.onopen = () => {
+        clearTimeout(connTimeout.current);
         setNcaStatus('connected');
       };
 
       ws.current.onclose = () => {
+        clearTimeout(connTimeout.current);
         tryNextUrl();
       };
 
       ws.current.onerror = () => {
+        clearTimeout(connTimeout.current);
         tryNextUrl();
       };
 
@@ -97,7 +112,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
   const tryNextUrl = () => {
     if (currentUrlIdx.current < NCALAYER_URLS.length - 1) {
       currentUrlIdx.current += 1;
-      setTimeout(connectNCALayer, 200);
+      setTimeout(connectNCALayer, 150);
     } else {
       setNcaStatus('not_running');
     }
@@ -207,7 +222,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
                   </p>
 
                   <div style={{ background: '#ffffff', border: '1px solid #fda4af', borderRadius: '8px', padding: '0.75rem', marginBottom: '1rem', textAlign: 'left', fontSize: '0.78rem', color: '#9f1239' }}>
-                    <strong>💡 Если NCALayer запущен, но не подключается (HTTPS порт):</strong><br />
+                    <strong>💡 Если NCALayer запущен, но не подключается на HTTPS:</strong><br />
                     Откройте ссылку ниже, нажмите <em>«Дополнительно»</em> → <em>«Перейти на сайт 127.0.0.1 (небезопасно)»</em> для разрешения сертификата NCALayer:<br />
                     <a href="https://127.0.0.1:13579/" target="_blank" rel="noreferrer" style={{ color: '#0284c7', fontWeight: 700, wordBreak: 'break-all', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.3rem' }}>
                       https://127.0.0.1:13579/ <ExternalLink size={12} />
