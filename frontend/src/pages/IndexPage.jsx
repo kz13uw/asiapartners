@@ -323,7 +323,6 @@ const IndexPage = () => {
       <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#ffffff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-
             <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.6rem' }}>
               Почему выбирают нашу платформу
             </h2>
@@ -347,6 +346,153 @@ const IndexPage = () => {
                 <h3 style={{ margin: '0 0 0.45rem', fontSize: '0.975rem', fontWeight: 800, color: '#0f172a' }}>{title}</h3>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.65 }}>{desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════ VISUAL INSTRUCTIONS WITH PORTAL SCREENSHOTS ════════════════════ */}
+      <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#f1f5f9' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span style={{ background: 'rgba(43,138,196,0.1)', color: '#2B8AC4', fontSize: '0.78rem', fontWeight: 800, padding: '0.35rem 0.9rem', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Интерактивное руководство
+            </span>
+            <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 900, color: '#0f172a', margin: '0.75rem 0 0.5rem' }}>
+              Инструкция и скриншоты работы с порталом
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '600px', margin: '0 auto' }}>
+              Подробный наглядный интерфейс процедур для Поставщиков и Заказчиков
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '1.75rem' }}>
+            {/* Step 1 Card Screenshot */}
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+              <div style={{ background: 'linear-gradient(135deg,#0a2133,#163A54)', borderRadius: '12px', padding: '1.25rem', color: '#ffffff', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#FFAF00' }}>ЭКРАН 1: АВТОРИЗАЦИЯ И ЭЦП</span>
+                  <ShieldCheck size={16} color="#38bdf8" />
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '8px', padding: '0.75rem', fontSize: '0.8rem' }}>
+                  <div style={{ fontWeight: 700, color: '#ffffff' }}>🔑 Вход через NCALayer (ЭЦП НУЦ РК)</div>
+                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.73rem', marginTop: '0.2rem' }}>Сертификат: AUTH_RSA_2026.p12 (Касенов М.А.)</div>
+                </div>
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.4rem' }}>1. Авторизация и ЭЦП</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                Поставщик выбирает ключи ЭЦП НУЦ РК. Система автоматически проверяет ИИН/БИН и верифицирует профиль организации без бумажных справок.
+              </p>
+            </div>
+
+            {/* Step 2 Card Screenshot */}
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Опубликован</span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>№ T00000049</span>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', marginBottom: '0.5rem' }}>Поставка строительных материалов</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
+                  <span style={{ fontWeight: 800, color: '#163A54', fontSize: '0.95rem' }}>150 100 000 ₸</span>
+                  <button className="btn btn-primary btn-sm" style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}>Подать ценовое</button>
+                </div>
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.4rem' }}>2. Выбор лотов и подача ценового</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                В открытом реестре поставщик просматривает спецификацию лотов (Товары или Услуги) и указывает свое ценовое предложение.
+              </p>
+            </div>
+
+            {/* Step 3 Card Screenshot */}
+            <div style={{ background: '#ffffff', borderRadius: '20px', border: '1px solid #cbd5e1', padding: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+              <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
+                <div style={{ color: '#166534', fontWeight: 800, fontSize: '0.85rem', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🏛️ Протокол Итогов Опубликован
+                </div>
+                <div style={{ background: '#ffffff', borderRadius: '6px', padding: '0.5rem 0.75rem', fontSize: '0.75rem', color: '#15803d', fontWeight: 700, border: '1px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>🏆 Победитель: ТОО "СтройКом"</span>
+                  <span>142 595 000 ₸</span>
+                </div>
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.4rem' }}>3. Подведение итогов и Протокол</h3>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6, margin: 0 }}>
+                После подведения итогов формируется двуязычный Протокол в формате PDF с автоматическим штампом ЭЦП НУЦ РК.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════ EXPANDED FAQ SECTION ════════════════════ */}
+      <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: '#ffffff' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span style={{ background: 'rgba(255,175,0,0.12)', color: '#d97706', fontSize: '0.78rem', fontWeight: 800, padding: '0.35rem 0.9rem', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              База знаний портала
+            </span>
+            <h2 style={{ fontSize: 'clamp(1.6rem,3vw,2.2rem)', fontWeight: 900, color: '#0f172a', margin: '0.75rem 0 0.5rem' }}>
+              Часто задаваемые вопросы и ответы (FAQ)
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '540px', margin: '0 auto' }}>
+              Все о правилах участия, регистрации, ЭЦП и проведении процедур ЗЦП
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {[
+              {
+                q: "1. Кто может участвовать в закупках холдинга Asia Partners?",
+                a: "В закупках могут принимать участие любые юридические лица (ТОО, АО) и индивидуальные предприниматели (ИП) Республики Казахстан, а также компании-нерезиденты, имеющие валидную ЭЦП НУЦ РК."
+              },
+              {
+                q: "2. Нужна ли платная подписка или регистрация на портале?",
+                a: "Нет! Регистрация на портале и участие во всех закупках группы Asia Partners являются БЕСПЛАТНЫМИ. Никаких скрытых комиссий с поставщиков не взимается."
+              },
+              {
+                q: "3. Чем отличается форма создания для «Товаров» от «Услуг и Работ»?",
+                a: "Для Товаров указываются условия поставки по Инкотермс (DDP, EXW и др.), процент авансирования и срок доставки в днях. Для Услуг и Работ указываются даты начала/завершения работ и гарантийный срок в месяцах."
+              },
+              {
+                q: "4. Как происходит процедура «Запрос ценовых предложений» (ЗЦП)?",
+                a: "Организатор публично размещает закупку. Поставщики подают 1 закрытое ценовое предложение. После срока окончания приема комиссия рассматривает заявки (Допускает / Отклоняет), и система автоматизированно выявляет победителя с наименьшей ценой."
+              },
+              {
+                q: "5. Как подписываются документы и Протоколы итогов?",
+                a: "Все юридически значимые действия подписываются ЭЦП НУЦ РК (ГОСТ 34.310-2015). Протокол итогов мгновенно сохраняется в готовом PDF-формате с проверкой штампа цифровой подписи."
+              },
+              {
+                q: "6. Можно ли изменить или отозвать поданую заявку?",
+                a: "Да. До момента наступления срока окончания приема заявок поставщик имеет право в личном кабинете отозвать свое ценовое предложение и подать новое."
+              },
+              {
+                q: "7. Где просмотреть свои сохраненные и опубликованные тендеры организатора?",
+                a: "Черновики закупок сохраняются в привязке к вашему ID пользователя в меню «Черновики тендеров». Опубликованные закупки отображаются в вашем Главном Кабинете Заказчика."
+              },
+              {
+                q: "8. Что делать при возникновении технических вопросов по NCALayer или ЭЦП?",
+                a: "Убедитесь, что приложение NCALayer запущено на вашем компьютере. При любых вопросах вы можете обратиться в нашу службу поддержки: info@asiapartners.kz."
+              }
+            ].map((faq, index) => (
+              <details 
+                key={index}
+                style={{ 
+                  background: '#f8fafc', 
+                  border: '1.5px solid #e2e8f0', 
+                  borderRadius: '14px', 
+                  padding: '1.1rem 1.4rem', 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+              >
+                <summary style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a', outline: 'none', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{faq.q}</span>
+                  <span style={{ fontSize: '1.2rem', color: '#2B8AC4', fontWeight: 900 }}>+</span>
+                </summary>
+                <p style={{ marginTop: '0.85rem', fontSize: '0.88rem', color: '#475569', lineHeight: 1.7, borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem', marginBottom: 0 }}>
+                  {faq.a}
+                </p>
+              </details>
             ))}
           </div>
         </div>
