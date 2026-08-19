@@ -364,7 +364,13 @@ h1, h2, h3, h4, h5, h6 {
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
     overflow-x: auto;
+    display: block;
   }
+
+  table {
+    min-width: 600px;
+  }
+
   th, td { padding: 0.65rem 0.5rem; font-size: 0.82rem; }
   
   .btn { 
@@ -380,11 +386,32 @@ h1, h2, h3, h4, h5, h6 {
     width: 95vw !important;
     margin: 0.5rem !important;
     border-radius: 12px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
   }
 
   /* Form controls touch optimization */
   .form-control {
-    min-height: 40px;
+    min-height: 42px;
     font-size: 15px;
   }
+
+  /* Responsive Tabs */
+  .tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 0.65rem !important; }
+  h1 { font-size: 1.4rem !important; }
+  h2 { font-size: 1.25rem !important; }
+  h3 { font-size: 1.1rem !important; }
+  .btn { width: 100%; justify-content: center; }
+  .form-group { margin-bottom: 0.85rem; }
+  .container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
 }
