@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://asia:asia_pass@db:5432/asia_procurement"
-    DATABASE_URL_SYNC: str = "postgresql://asia:asia_pass@db:5432/asia_procurement"
+    DATABASE_URL: str = "postgresql+asyncpg://asia:asia_super_secret_pass@db:5432/asia_procurement"
+    DATABASE_URL_SYNC: str = "postgresql://asia:asia_super_secret_pass@db:5432/asia_procurement"
 
     # Redis
     REDIS_URL: str = "redis://redis:6379/0"
