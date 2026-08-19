@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
 
 const NCALAYER_URLS = [
+  'wss://ncalayer.pki.gov.kz:13579/',
   'wss://127.0.0.1:13579/',
   'wss://localhost:13579/',
   'wss://127.0.0.1:13580/',
@@ -125,7 +126,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
       return;
     }
     setStep(2);
-    const dataToSign = "AsiaPartners_AuthData_" + Date.now();
+    const dataToSign = btoa("AsiaPartners_AuthData_" + Date.now());
     const requestPayload = {
       module: "kz.gov.pki.knca.commonUtils",
       method: "createCMSSignatureFromData",
