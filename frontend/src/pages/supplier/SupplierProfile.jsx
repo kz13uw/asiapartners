@@ -7,6 +7,24 @@ import { useCompany } from '../../hooks/useCompany';
 const SupplierProfile = () => {
   const { company, loading } = useCompany();
   const [profile, setProfile] = useState(null);
+  const [ustavDoc, setUstavDoc] = useState(() => {
+    try {
+      const saved = localStorage.getItem('profile_ustav_doc');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return { name: 'Устав ТОО', date: '10.02.2024', status: 'uploaded' };
+  });
+
+  const [egovDoc, setEgovDoc] = useState(() => {
+    try {
+      const saved = localStorage.getItem('profile_egov_doc');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
+
+  const ustavFileRef = React.useRef(null);
+  const egovFileRef = React.useRef(null);
 
   useEffect(() => {
     if (company) {
@@ -28,6 +46,65 @@ const SupplierProfile = () => {
     if (profile) {
       setProfile(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleUstavClick = () => {
+    if (ustavFileRef.current) ustavFileRef.current.click();
+  };
+
+  const handleEgovClick = () => {
+    if (egovFileRef.current) egovFileRef.current.click();
+  };
+
+  const addToVault = (docName, category, format) => {
+    try {
+      const savedVault = localStorage.getItem('supplier_vault_docs');
+      let vault = savedVault ? JSON.parse(savedVault) : [];
+      const newVaultItem = {
+        id: Date.now(),
+        name: docName,
+        category: category,
+        date: new Date().toLocaleDateString('ru-RU'),
+        size: '1.5 МБ',
+        format: format
+      };
+      vault = [newVaultItem, ...vault];
+      localStorage.setItem('supplier_vault_docs', JSON.stringify(vault));
+    } catch (e) {}
+  };
+
+  const handleUstavChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const toastId = toast.loading(`Загрузка файла "${file.name}"...`);
+    setTimeout(() => {
+      const docData = {
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        date: new Date().toLocaleDateString('ru-RU'),
+        status: 'uploaded'
+      };
+      setUstavDoc(docData);
+      localStorage.setItem('profile_ustav_doc', JSON.stringify(docData));
+      addToVault(docData.name, 'Учредительные', file.name.split('.').pop()?.toUpperCase() || 'PDF');
+      toast.success(`Устав "${file.name}" успешно обновлен и сохранен!`, { id: toastId });
+    }, 600);
+  };
+
+  const handleEgovChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const toastId = toast.loading(`Загрузка файла "${file.name}"...`);
+    setTimeout(() => {
+      const docData = {
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        date: new Date().toLocaleDateString('ru-RU'),
+        status: 'uploaded'
+      };
+      setEgovDoc(docData);
+      localStorage.setItem('profile_egov_doc', JSON.stringify(docData));
+      addToVault(docData.name, 'Справка eGov', file.name.split('.').pop()?.toUpperCase() || 'PDF');
+      toast.success(`Справка E-gov "${file.name}" успешно загружена!`, { id: toastId });
+    }, 600);
   };
 
   const handleSubmit = async (e) => {
@@ -58,6 +135,10 @@ const SupplierProfile = () => {
 
   return (
     <div className="fade-in">
+      {/* Hidden File Inputs */}
+      <input type="file" ref={ustavFileRef} onChange={handleUstavChange} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.zip,.jpg,.png" />
+      <input type="file" ref={egovFileRef} onChange={handleEgovChange} style={{ display: 'none' }} accept=".pdf,.doc,.docx,.zip,.jpg,.png" />
+
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', lineHeight: 1.2, margin: 0 }}>Профиль и Реквизиты Контрагента</h1>
       </div>
@@ -122,27 +203,63 @@ const SupplierProfile = () => {
             <p className="text-secondary text-sm" style={{ marginBottom: '1.5rem' }}>Загрузите отсканированные копии документов для участия в крупных тендерах (до 15 МБ).</p>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+              {/* Card 1: Устав */}
               <div style={{ border: '1px solid var(--pk-success)', padding: '1.5rem', borderRadius: 'var(--pk-radius-md)', background: '#defbe6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <FileText size={32} color="var(--pk-success)" />
                   <div>
-                    <div style={{ fontWeight: 600, color: '#198038' }}>Устав ТОО</div>
-                    <div className="text-sm">Загружен 10.02.2024</div>
+                    <div style={{ fontWeight: 600, color: '#198038' }}>{ustavDoc.name}</div>
+                    <div className="text-sm">Загружен {ustavDoc.date}</div>
                   </div>
                 </div>
-                <button type="button" className="btn btn-outline" style={{ borderColor: 'var(--pk-success)', background: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><RefreshCcw size={16} /> Обновить</button>
+                <button 
+                  type="button" 
+                  onClick={handleUstavClick}
+                  className="btn btn-outline" 
+                  style={{ borderColor: 'var(--pk-success)', background: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                >
+                  <RefreshCcw size={16} /> Обновить
+                </button>
               </div>
               
-              <div style={{ border: '1px solid var(--pk-border)', padding: '1.5rem', borderRadius: 'var(--pk-radius-md)', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <Upload size={32} color="var(--pk-text-secondary)" />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>Справка E-gov (egov.kz)</div>
-                    <div className="text-sm text-secondary">Необязательно</div>
+              {/* Card 2: E-gov */}
+              {egovDoc ? (
+                <div style={{ border: '1px solid var(--pk-success)', padding: '1.5rem', borderRadius: 'var(--pk-radius-md)', background: '#defbe6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <FileText size={32} color="var(--pk-success)" />
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#198038' }}>{egovDoc.name}</div>
+                      <div className="text-sm">Загружен {egovDoc.date}</div>
+                    </div>
                   </div>
+                  <button 
+                    type="button" 
+                    onClick={handleEgovClick}
+                    className="btn btn-outline" 
+                    style={{ borderColor: 'var(--pk-success)', background: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                  >
+                    <RefreshCcw size={16} /> Обновить
+                  </button>
                 </div>
-                <button type="button" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Upload size={16} /> Загрузить</button>
-              </div>
+              ) : (
+                <div style={{ border: '1px solid var(--pk-border)', padding: '1.5rem', borderRadius: 'var(--pk-radius-md)', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <Upload size={32} color="var(--pk-text-secondary)" />
+                    <div>
+                      <div style={{ fontWeight: 600 }}>Справка E-gov (egov.kz)</div>
+                      <div className="text-sm text-secondary">Необязательно</div>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleEgovClick}
+                    className="btn btn-primary btn-sm" 
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                  >
+                    <Upload size={16} /> Загрузить
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
