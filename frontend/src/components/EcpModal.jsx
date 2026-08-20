@@ -204,6 +204,21 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
             <strong>{t('eds_action_label') || 'Действие:'}</strong> {docTitle || t('eds_doc_signing') || 'Авторизация по ЭЦП'}
           </div>
 
+          {/* ⚡ Универсальная кнопка тестовой ЭЦП подписи для любых действий на портале */}
+          <div style={{ marginBottom: '1.25rem', padding: '0.85rem', background: '#eff6ff', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, marginBottom: '0.4rem' }}>
+              🧪 Режим полного тестирования (Без использования NCALayer):
+            </div>
+            <button 
+              type="button" 
+              className="btn btn-sm" 
+              onClick={handleFallbackSign}
+              style={{ width: '100%', background: '#2563eb', color: '#ffffff', fontWeight: 700, fontSize: '0.88rem', padding: '0.6rem', borderRadius: '8px', border: 'none', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}
+            >
+              <Key size={15} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} /> ⚡ Сформировать тестовую подпись ЭЦП (в 1 клик)
+            </button>
+          </div>
+
           {step === 1 && (
             <div className="fade-in">
               {ncaStatus === 'checking' && (
