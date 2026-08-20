@@ -408,7 +408,7 @@ async def publish_tender(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
-    if tender.status != TenderStatus.DRAFT:
+    if tender.status not in [TenderStatus.DRAFT, TenderStatus.ACCEPTING]:
         raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
     tender.status = TenderStatus.ACCEPTING

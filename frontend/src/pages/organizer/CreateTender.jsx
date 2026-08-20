@@ -434,9 +434,9 @@ const CreateTender = () => {
 
       let tenderResId = editingId;
       if (editingId) {
-        await tendersAPI.update(editingId, payload);
+        await tendersAPI.update(editingId, { ...payload, status: 'draft' });
       } else {
-        const res = await tendersAPI.create(payload);
+        const res = await tendersAPI.create({ ...payload, status: 'draft' });
         tenderResId = res.data.id;
       }
       setCreatedTenderId(tenderResId);
