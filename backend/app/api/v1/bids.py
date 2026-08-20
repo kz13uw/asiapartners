@@ -176,7 +176,8 @@ async def get_bids_by_tender(
             selectinload(Bid.items), 
             selectinload(Bid.documents), 
             selectinload(Bid.supplier), 
-            selectinload(Bid.company)
+            selectinload(Bid.company),
+            selectinload(Bid.tender)
         ).where(Bid.tender_id == tender_id).order_by(Bid.price.asc())
     )
     bids = result.scalars().all()

@@ -181,9 +181,61 @@ async def init_db(clean_all: bool = False):
                 ]
                 for t_item in sample_tenders:
                     db.add(t_item)
+                await db.flush()
+
+                # 4. Тестовые заявки поставщиков для проверки Вскрытия / Оценки
+                from app.models.models import BidStatus
+                supplier_user = (await db.execute(select(User).where(User.email == "supplier@asia.kz"))).scalar_one_or_none()
+                if not supplier_user:
+                    supplier_user = User(
+                        username="supplier@asia.kz",
+                        full_name="ТОО СтройСервис Азия",
+                        email="supplier@asia.kz",
+                        hashed_password=get_password_hash("admin123"),
+                        role=UserRole.SUPPLIER,
+                        status=UserStatus.ACTIVE,
+                        iin_bin="987654321012"
+                    )
+                    db.add(supplier_user)
+                    await db.flush()
+
+                supplier_comp = (await db.execute(select(Company).where(Company.bin == "987654321012"))).scalar_one_or_none()
+                if not supplier_comp:
+                    supplier_comp = Company(
+                        bin="987654321012",
+                        full_name="ТОО СтройСервис Азия",
+                        legal_form="ТОО",
+                        address="г. Семей, ул. Ауэзова 12",
+                        phone="+7 7222 55 44 33",
+                        email="supplier@asia.kz",
+                        director_name="Касымов Асхат Берикович",
+                        is_accredited=True,
+                        owner_id=supplier_user.id
+                    )
+                    db.add(supplier_comp)
+                    await db.flush()
+
+                b1 = Bid(
+                    tender_id=sample_tenders[0].id,
+                    supplier_id=supplier_user.id,
+                    company_id=supplier_comp.id,
+                    price=14200000.0,
+                    status=BidStatus.SUBMITTED,
+                    eds_hash="demo_bid_signature_001"
+                )
+                b2 = Bid(
+                    tender_id=sample_tenders[1].id,
+                    supplier_id=supplier_user.id,
+                    company_id=supplier_comp.id,
+                    price=43500000.0,
+                    status=BidStatus.SUBMITTED,
+                    eds_hash="demo_bid_signature_002"
+                )
+                db.add(b1)
+                db.add(b2)
                 await db.commit()
 
-            print("База данных проинициализирована! Учетные записи и тестовые закупки созданы.")
+            print("База данных проинициализирована! Учетные записи, закупки и заявки созданы.")
     except Exception as e:
         print(f"[DB SEED NOTICE] Skipped seed: {e}")
 
