@@ -167,37 +167,10 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     req_director = payload.director_name
     req_comp_name = payload.company_name
 
-    # Ищем или создаем компанию
-    company = None
-    if company_bin:
-        res = await db.execute(select(Company).where(Company.bin == company_bin))
-        company = res.scalar_one_or_none()
-        if not company:
-            # [P0-FIX] Не ставим owner_id=1; будем пользовать None до получения user.id
-            company = Company(
-                bin=company_bin,
-                full_name=req_comp_name or f"ТОО {company_bin}",
-                legal_form="ТОО",
-                address=req_address,
-                phone=req_phone,
-                email=req_email,
-                director_name=req_director,
-                is_accredited=True,
-                owner_id=None  # Будет заполнен после создания пользователя
-            )
-            db.add(company)
-            await db.flush()
-        else:
-            if req_address: company.address = req_address
-            if req_phone: company.phone = req_phone
-            if req_email: company.email = req_email
-            if req_director: company.director_name = req_director
-            company.is_accredited = True
-
-    # Ищем или создаем пользователя
+    # 1. Ищем или создаем пользователя
     res = await db.execute(select(User).where(User.iin_bin == iin))
     user = res.scalar_one_or_none()
-    is_new_user = False  # флаг первого входа — фронтенд покажет форму доп. данных
+    is_new_user = False
     
     if not user:
         is_new_user = True  # новый пользователь — показать форму регистрации
@@ -212,21 +185,40 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         db.add(user)
         await db.flush()
         user.account_code = generate_account_code(user.id, user.role)
-        
-        # Если создали компанию, назначаем этого пользователя владельцем
-        if company:
-            company.owner_id = user.id
     else:
         if req_email: user.email = req_email
         if req_phone: user.phone = req_phone
         if req_director: user.full_name = req_director
 
+    # 2. Ищем или создаем компанию с привязкой к пользователю
+    company = None
+    if company_bin:
+        res = await db.execute(select(Company).where(Company.bin == company_bin))
+        company = res.scalar_one_or_none()
+        if not company:
+            company = Company(
+                bin=company_bin,
+                full_name=req_comp_name or f"ТОО {company_bin}",
+                legal_form="ТОО",
+                address=req_address,
+                phone=req_phone,
+                email=req_email,
+                director_name=req_director,
+                is_accredited=True,
+                owner_id=user.id
+            )
+            db.add(company)
+            await db.flush()
+        else:
+            if req_address: company.address = req_address
+            if req_phone: company.phone = req_phone
+            if req_email: company.email = req_email
+            if req_director: company.director_name = req_director
+            if company.owner_id is None: company.owner_id = user.id
+            company.is_accredited = True
+
     if not user.account_code:
         user.account_code = generate_account_code(user.id, user.role)
-
-    # [P0-FIX] Теперь корректно присваиваем owner_id компании реальному пользователю
-    if company and (company.owner_id is None or company.owner_id == 1):
-        company.owner_id = user.id
 
     user.last_login = datetime.utcnow()
     await db.commit()

@@ -131,7 +131,7 @@ class Company(Base):
     director_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     director_iin: Mapped[Optional[str]] = mapped_column(String(12), nullable=True)
     is_accredited: Mapped[bool] = mapped_column(Boolean, default=False)
-    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    owner_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     users: Mapped[list[User]] = relationship("User", back_populates="company", foreign_keys=[owner_id])

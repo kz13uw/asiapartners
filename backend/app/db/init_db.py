@@ -115,7 +115,75 @@ async def init_db(clean_all: bool = False):
                     exist_cat.name = cat_data["name"]
 
             await db.commit()
-            print("База данных проинициализирована! Учетные записи (admin, info@asiapartners.kz, supplier@asia.kz) готовыми с паролем admin123.")
+
+            # 3. Тестовые закупки для демонстрации
+            from app.models.models import TenderMethod, TenderStatus
+            from datetime import timedelta, datetime
+
+            tenders_count = (await db.execute(select(Tender))).scalars().all()
+            if not tenders_count:
+                organizer = (await db.execute(select(User).where(User.username == "info@asiapartners.kz"))).scalar_one_or_none()
+                org_id = organizer.id if organizer else 1
+                org_code = organizer.computed_account_code if organizer else "ORG00000002"
+                materials_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "materials"))).scalar_one_or_none()
+                construction_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "construction"))).scalar_one_or_none()
+                agri_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "agri_goods"))).scalar_one_or_none()
+
+                sample_tenders = [
+                    Tender(
+                        number="TNK-2026-001",
+                        title="Поставка портландцемента М500 для объектов холдинга",
+                        description="Закупка портландцемента марки М500 Д0 в объеме 500 тонн для объектов строительства холдинга Asia Partners.",
+                        subject_type=TenderSubjectType.GOODS,
+                        category_id=materials_cat.id if materials_cat else 1,
+                        method=TenderMethod.ZCP,
+                        start_price=15000000.0,
+                        current_lowest_price=15000000.0,
+                        status=TenderStatus.ACCEPTING,
+                        deadline_at=datetime.utcnow() + timedelta(days=10),
+                        delivery_place="г. Семей, ул. Кабанбай Батыра 42",
+                        organizer_id=org_id,
+                        organizer_code=org_code,
+                        published_at=datetime.utcnow()
+                    ),
+                    Tender(
+                        number="TNK-2026-002",
+                        title="Строительно-монтажные работы по возведению складского комплекса",
+                        description="Выполнение комплекса СМР по объекту 'Складской логистический терминал Asia Partners'.",
+                        subject_type=TenderSubjectType.SERVICES_WORKS,
+                        category_id=construction_cat.id if construction_cat else 2,
+                        method=TenderMethod.ZCP,
+                        start_price=45000000.0,
+                        current_lowest_price=45000000.0,
+                        status=TenderStatus.ACCEPTING,
+                        deadline_at=datetime.utcnow() + timedelta(days=14),
+                        delivery_place="ВКО, г. Семей, Промзона",
+                        organizer_id=org_id,
+                        organizer_code=org_code,
+                        published_at=datetime.utcnow()
+                    ),
+                    Tender(
+                        number="TNK-2026-003",
+                        title="Поставка комплексных минеральных удобрений и агрохимии",
+                        description="Закупка аммофоса и селитры аммиачной для посевной кампании агропредприятий холдинга.",
+                        subject_type=TenderSubjectType.GOODS,
+                        category_id=agri_cat.id if agri_cat else 3,
+                        method=TenderMethod.ZCP,
+                        start_price=8500000.0,
+                        current_lowest_price=8500000.0,
+                        status=TenderStatus.ACCEPTING,
+                        deadline_at=datetime.utcnow() + timedelta(days=7),
+                        delivery_place="Абайская область, Бородулихинский район",
+                        organizer_id=org_id,
+                        organizer_code=org_code,
+                        published_at=datetime.utcnow()
+                    ),
+                ]
+                for t_item in sample_tenders:
+                    db.add(t_item)
+                await db.commit()
+
+            print("База данных проинициализирована! Учетные записи и тестовые закупки созданы.")
     except Exception as e:
         print(f"[DB SEED NOTICE] Skipped seed: {e}")
 
