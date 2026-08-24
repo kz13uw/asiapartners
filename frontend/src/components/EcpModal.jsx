@@ -6,6 +6,28 @@ import { useTranslation } from '../store/useLanguageStore';
 
 import { edsAPI } from '../api';
 
+export const formatErrorMessage = (err) => {
+  if (!err) return 'Произошла неизвестная ошибка';
+  if (typeof err === 'string') return err;
+  if (Array.isArray(err)) {
+    return err.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : '';
+        return field ? `Поле «${field}»: ${item.msg}` : (item.msg || JSON.stringify(item));
+      }
+      return String(item);
+    }).join('; ');
+  }
+  if (typeof err === 'object') {
+    if (err.msg) return err.msg;
+    if (err.detail) return formatErrorMessage(err.detail);
+    if (err.message) return err.message;
+    return JSON.stringify(err);
+  }
+  return String(err);
+};
+
 // NCALayer WebSocket endpoints (пробуем по порядку)
 const NCALAYER_URLS = [
   'wss://127.0.0.1:13579/',
@@ -135,7 +157,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             }
 
             setStep(4);
-            const errMsg = response.message || response.responseObject?.errorCode || 'Подписание отменено пользователем или выбран неверный ключ.';
+            const errMsg = formatErrorMessage(response.message || response.responseObject?.errorCode || 'Подписание отменено пользователем или выбран неверный ключ.');
             setErrorMessage(errMsg);
             return;
           }
@@ -155,10 +177,11 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                 toast.success('✅ Подпись ЭЦП верифицирована сервером!');
               }
             } catch (e) {
-              const errDetail = e.response?.data?.detail || e.message;
-              toast.error(`Ошибка верификации: ${errDetail}`);
+              const rawDetail = e.response?.data?.detail || e.message;
+              const formattedMsg = formatErrorMessage(rawDetail);
+              toast.error(`Ошибка верификации: ${formattedMsg}`);
               setStep(4);
-              setErrorMessage(errDetail);
+              setErrorMessage(formattedMsg);
               return;
             }
           }
@@ -404,7 +427,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--pk-danger)', fontWeight: 600, marginBottom: '0.25rem', fontSize: '0.85rem' }}>
                   <AlertTriangle size={18} /> {t('eds_error_title') || 'Ошибка подписи ЭЦП'}
                 </div>
-                <p style={{ margin: 0, fontSize: '0.8rem' }}>{errorMessage}</p>
+                <p style={{ margin: 0, fontSize: '0.8rem' }}>{formatErrorMessage(errorMessage)}</p>
               </div>
               <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', padding: '0.7rem' }} onClick={() => setStep(1)}>
                 {t('eds_try_again_btn') || 'Попробовать снова'}
