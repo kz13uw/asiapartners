@@ -6,15 +6,17 @@ import { useTranslation } from '../store/useLanguageStore';
 
 import { edsAPI } from '../api';
 
+// NCALayer WebSocket endpoints (пробуем по порядку)
 const NCALAYER_URLS = [
-  'wss://ncalayer.pki.gov.kz:13579/',
   'wss://127.0.0.1:13579/',
   'wss://localhost:13579/',
-  'wss://127.0.0.1:13580/',
-  'wss://localhost:13580/',
   'ws://127.0.0.1:13579/',
-  'ws://localhost:13579/'
+  'ws://localhost:13579/',
 ];
+
+// Хранилище по requestId для сопоставления запросов и ответов NCALayer
+let _ncaRequestId = 1;
+const _ncaPendingRequests = {};
 
 const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', targetId = null }) => {
   const { lang, t } = useTranslation();
@@ -83,30 +85,52 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       ws.current.onmessage = async (event) => {
         try {
           const response = JSON.parse(event.data);
-          if (response.code === '500' || response.code === '400' || response.result === 'NONE') {
+          console.log('[NCALayer] response:', response);
+
+          // NCALayer v2: поле result содержит подпись
+          // NCALayer v1: поле responseObject.result
+          const signedCms = response.result 
+            || response.responseObject?.cms 
+            || response.responseObject?.result
+            || null;
+
+          const errorCode = response.code || response.status;
+          const isError = errorCode === '500' || errorCode === '400' 
+            || response.result === 'NONE' 
+            || response.status === 'NONE'
+            || !signedCms;
+
+          if (isError && response.status !== undefined) {
             setStep(4);
-            setErrorMessage('Подписание отменено пользователем или выбран неверный ключ ЭЦП.');
+            const errMsg = response.message || response.responseObject?.errorCode || 'Подписание отменено или выбран неверный ключ.';
+            setErrorMessage(errMsg);
             return;
           }
 
-          if (response.result) {
+          if (signedCms) {
             setStep(3);
-            setSignedData(response.result);
-            
+            setSignedData(signedCms);
+
+            // Верифицируем на бэкенде
             try {
               if (activeSession?.connection_id) {
-                const res = await edsAPI.verifySession(activeSession.connection_id, response.result);
+                const res = await edsAPI.verifySession(activeSession.connection_id, signedCms);
                 setParsedInfo(res.data);
-                toast.success('Сессия подписи ' + activeSession.connection_id + ' привязана и подтверждена!');
+                const company = res.data?.subject_name || '';
+                toast.success(`✅ ЭЦП верифицирована! ${company}`);
               } else {
-                toast.success('Подпись ЭЦП верифицирована сервером!');
+                toast.success('✅ Подпись ЭЦП верифицирована сервером!');
               }
             } catch (e) {
-              console.warn("Notice: Backend session verification response", e);
+              const errDetail = e.response?.data?.detail || e.message;
+              toast.error(`Ошибка верификации: ${errDetail}`);
+              setStep(4);
+              setErrorMessage(errDetail);
+              return;
             }
           }
         } catch (err) {
-          console.error("NCALayer parsing error", err);
+          console.error('[NCALayer] parse error:', err);
         }
       };
     } catch (e) {
@@ -131,29 +155,38 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
 
     setStep(2);
+    let nonceToSign = 'AsiaPartners_AuthData_' + Date.now();
+
     try {
-      // Архитектура 2: Создаем карточку сессии на бэкенде с connection_id и nonce
+      // Архитектура 2: создаём сессию на бэкенде, получаем nonce
       const sessRes = await edsAPI.createSession(action, targetId);
       const sessData = sessRes.data;
       setActiveSession(sessData);
-
-      const dataToSign = btoa(sessData.nonce || ("AsiaPartners_AuthData_" + Date.now()));
-      const requestPayload = {
-        module: "kz.gov.pki.knca.commonUtils",
-        method: "createCMSSignatureFromData",
-        args: ["PKCS12", "SIGNATURE", dataToSign, true]
-      };
-      ws.current.send(JSON.stringify(requestPayload));
+      nonceToSign = sessData.nonce;
+      console.log('[EDS] Session created:', sessData.connection_id, 'nonce:', nonceToSign);
     } catch (err) {
-      console.warn("Notice: fallback signature prompt", err);
-      const dataToSign = btoa("AsiaPartners_AuthData_" + Date.now());
-      const requestPayload = {
-        module: "kz.gov.pki.knca.commonUtils",
-        method: "createCMSSignatureFromData",
-        args: ["PKCS12", "SIGNATURE", dataToSign, true]
-      };
-      ws.current.send(JSON.stringify(requestPayload));
+      console.warn('[EDS] Session creation failed, using local nonce:', err);
     }
+
+    // Отправляем запрос в NCALayer
+    // Метод createCMSSignatureFromBase64: данные передаются как Base64-строка
+    const dataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
+    const requestId = String(_ncaRequestId++);
+
+    const requestPayload = {
+      module: 'kz.gov.pki.knca.commonUtils',
+      method: 'createCMSSignatureFromBase64',
+      requestId,
+      args: [
+        'PKCS12',      // storageType: PKCS12 (файловый .p12) или CryptoProvider (аппаратный)
+        'SIGNATURE',   // keyType
+        dataToSign,    // data (Base64 строка данных для подписи)
+        true           // detach: true = отсоединённая подпись (CMS без вложенных данных)
+      ]
+    };
+
+    console.log('[NCALayer] → Sending request:', JSON.stringify(requestPayload));
+    ws.current.send(JSON.stringify(requestPayload));
   };
 
   const handleFallbackSign = async () => {
