@@ -34,6 +34,12 @@ def require_role(*roles: UserRole):
     return checker
 
 
+def strip_tz(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is not None and getattr(dt, "tzinfo", None) is not None:
+        return dt.replace(tzinfo=None)
+    return dt
+
+
 def get_tender_options():
     return [
         selectinload(Tender.lots),
@@ -138,6 +144,9 @@ async def create_tender(
 
     try:
         tender_data = body.model_dump(exclude={"lots", "qual_requirements", "documents"})
+        if tender_data.get("deadline_at"):
+            tender_data["deadline_at"] = strip_tz(tender_data["deadline_at"])
+
         org_code = current_user.computed_account_code
         tender = Tender(
             **tender_data,
@@ -198,8 +207,8 @@ async def create_tender(
                     incoterms=lot_item.incoterms or "DDP",
                     delivery_days_type=lot_item.delivery_days_type or "calendar",
                     delivery_days_count=lot_item.delivery_days_count,
-                    service_start_date=lot_item.service_start_date,
-                    service_end_date=lot_item.service_end_date,
+                    service_start_date=strip_tz(lot_item.service_start_date),
+                    service_end_date=strip_tz(lot_item.service_end_date),
                     warranty_months=lot_item.warranty_months,
                     delivery_place=lot_item.delivery_place or body.delivery_place
                 )
@@ -344,6 +353,8 @@ async def update_tender(
         raise HTTPException(status_code=400, detail="Редактирование возможно только для черновиков")
 
     update_data = body.model_dump(exclude_unset=True)
+    if "deadline_at" in update_data and update_data["deadline_at"]:
+        update_data["deadline_at"] = strip_tz(update_data["deadline_at"])
 
     # Handle lots update
     if 'lots' in update_data:
@@ -370,8 +381,8 @@ async def update_tender(
                     incoterms=lot_item.get('incoterms') or "DDP",
                     delivery_days_type=lot_item.get('delivery_days_type') or "calendar",
                     delivery_days_count=lot_item.get('delivery_days_count'),
-                    service_start_date=lot_item.get('service_start_date'),
-                    service_end_date=lot_item.get('service_end_date'),
+                    service_start_date=strip_tz(lot_item.get('service_start_date')),
+                    service_end_date=strip_tz(lot_item.get('service_end_date')),
                     warranty_months=lot_item.get('warranty_months'),
                     delivery_place=lot_item.get('delivery_place') or tender.delivery_place
                 )
