@@ -16,9 +16,11 @@ async def init_db(clean_all: bool = False):
     should_clean = clean_all or os.getenv("CLEAN_DB_ON_START", "false").lower() == "true"
     try:
         async with engine.begin() as conn:
+            if should_clean:
+                await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
     except Exception as e:
-        print(f"[DB INIT NOTICE] Skipped auto create_all: {e}")
+        print(f"[DB INIT NOTICE] Skipped auto schema sync: {e}")
 
     try:
         async with AsyncSessionLocal() as db:
