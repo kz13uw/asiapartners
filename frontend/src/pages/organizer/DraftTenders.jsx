@@ -49,6 +49,7 @@ const DraftTenders = () => {
           deadline_at: draftItem.deadline_at || new Date(Date.now() + 14*86400000).toISOString(),
           delivery_place: draftItem.delivery_place || null,
           requires_license: !!draftItem.requires_license,
+          status: 'draft',
           lots: (draftItem.lots || []).map((l, idx) => ({
             lot_number: l.lot_number || (idx + 1),
             title: l.title || draftItem.title,
@@ -75,12 +76,28 @@ const DraftTenders = () => {
       navigate('/organizer/dashboard');
     } catch (e) {
       console.error(e);
-      toast.error(e.response?.data?.detail || 'Ошибка публикации черновика');
+      toast.error(getCleanErrorMessage(e, 'Ошибка публикации черновика'));
     } finally {
       setPublishingId(null);
       setShowEdsModal(false);
       setSelectedTenderForEds(null);
     }
+  };
+
+  const getCleanErrorMessage = (error, defaultMsg) => {
+    const detail = error.response?.data?.detail;
+    if (!detail) return error.message || defaultMsg;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail.map(err => {
+        const field = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : '';
+        return field ? `Поле «${field}»: ${err.msg}` : err.msg;
+      }).join('; ');
+    }
+    if (typeof detail === 'object') {
+      return JSON.stringify(detail);
+    }
+    return defaultMsg;
   };
 
   const handleDeleteDraft = async (id, title) => {
