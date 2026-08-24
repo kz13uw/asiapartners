@@ -62,18 +62,6 @@ services:
         condition: service_healthy
 
   # ==============================
-  # NCANode (ГОСТ ЭЦП Сервис НУЦ РК)
-  # ==============================
-  ncanode:
-    image: abshkd/ncanode:latest
-    container_name: asia_ncanode_prod
-    restart: always
-    ports:
-      - "14579:14579"
-    environment:
-      - NCANODE_CHECK_OCSP=true
-
-  # ==============================
   # React Frontend + Nginx (Боевой)
   # ==============================
   frontend:
