@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 
@@ -9,6 +9,7 @@ const AdminLoginPage = () => {
   const { login } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -50,14 +51,38 @@ const AdminLoginPage = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>Пароль</label>
             </div>
-            <input 
-              type="password" 
-              className="form-control" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" 
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="form-control" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••" 
+                required
+                style={{ paddingRight: '2.75rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0,
+                  zIndex: 2
+                }}
+                title={showPassword ? "Скрыть пароль" : "Показать пароль"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', justifyContent: 'center' }} disabled={isLoading}>
