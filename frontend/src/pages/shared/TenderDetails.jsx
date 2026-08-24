@@ -22,7 +22,8 @@ const TenderDetails = () => {
   const location = useLocation();
   const { user } = useAuthStore();
   
-  const isSupplierCabinet = location.pathname.startsWith('/supplier/');
+  const isSupplierUser = user?.role === 'supplier' || user?.role === 'PO';
+  const isSupplierCabinet = location.pathname.startsWith('/supplier') || isSupplierUser;
   
   const [tender, setTender] = useState(null);
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'lots', 'docs', 'protocols', 'contracts', 'appeals'
@@ -246,7 +247,11 @@ const TenderDetails = () => {
   const pubDate = tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '2026-08-24 23:44:51';
   const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : '2026-08-25 08:44:27';
   const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '2026-08-27 09:44:35';
-  const totalSum = formatPriceKzt(tender.start_price || tender.budget || 3204310.35);
+  const backLinkTarget = isSupplierCabinet
+    ? '/supplier/tenders'
+    : user?.role === 'organizer'
+    ? '/organizer/dashboard'
+    : '/public-tenders';
 
   return (
     <div className="fade-in container" style={{ padding: '1.5rem 1rem', maxWidth: '1280px' }}>
@@ -254,7 +259,7 @@ const TenderDetails = () => {
       {/* Кнопка "Назад в реестр" */}
       <div style={{ marginBottom: '1rem' }}>
         <Link 
-          to="/public-tenders" 
+          to={backLinkTarget} 
           className="btn btn-outline btn-sm" 
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#475569', borderColor: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}
         >
