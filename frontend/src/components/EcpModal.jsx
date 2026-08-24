@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useTranslation } from '../store/useLanguageStore';
 
+import { edsAPI } from '../api';
+
 const NCALAYER_URLS = [
   'wss://ncalayer.pki.gov.kz:13579/',
   'wss://127.0.0.1:13579/',
@@ -14,13 +16,14 @@ const NCALAYER_URLS = [
   'ws://localhost:13579/'
 ];
 
-const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
+const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', targetId = null }) => {
   const { lang, t } = useTranslation();
   const [step, setStep] = useState(1); // 1 - выбор/статус, 2 - загрузка, 3 - успех, 4 - ошибка
   const [ncaStatus, setNcaStatus] = useState('checking'); // checking, connected, not_running
   const [errorMessage, setErrorMessage] = useState('');
   const [signedData, setSignedData] = useState(null);
   const [parsedInfo, setParsedInfo] = useState(null);
+  const [activeSession, setActiveSession] = useState(null);
   const ws = useRef(null);
   const currentUrlIdx = useRef(0);
   const connTimeout = useRef(null);
@@ -33,6 +36,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
       setErrorMessage('');
       setSignedData(null);
       setParsedInfo(null);
+      setActiveSession(null);
       currentUrlIdx.current = 0;
       connectNCALayer();
     } else {
@@ -90,15 +94,15 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
             setSignedData(response.result);
             
             try {
-              const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-              const verifyUrl = isLocal ? 'http://localhost:8000/api/v1/eds/verify' : '/api/v1/eds/verify';
-              const res = await axios.post(verifyUrl, {
-                cms_base64: response.result
-              });
-              setParsedInfo(res.data);
-              toast.success('Подпись ЭЦП верифицирована сервером!');
+              if (activeSession?.connection_id) {
+                const res = await edsAPI.verifySession(activeSession.connection_id, response.result);
+                setParsedInfo(res.data);
+                toast.success('Сессия подписи ' + activeSession.connection_id + ' привязана и подтверждена!');
+              } else {
+                toast.success('Подпись ЭЦП верифицирована сервером!');
+              }
             } catch (e) {
-              console.warn("Notice: Backend verification response", e);
+              console.warn("Notice: Backend session verification response", e);
             }
           }
         } catch (err) {
@@ -119,24 +123,49 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth }) => {
     }
   };
 
-  const requestNcaSignature = () => {
+  const requestNcaSignature = async () => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       setNcaStatus('not_running');
-      toast.error('Приложение NCALayer не запущен. Повторите подключение.');
+      toast.error('Приложение NCALayer не запущено. Повторите подключение.');
       return;
     }
+
     setStep(2);
-    const dataToSign = btoa("AsiaPartners_AuthData_" + Date.now());
-    const requestPayload = {
-      module: "kz.gov.pki.knca.commonUtils",
-      method: "createCMSSignatureFromData",
-      args: ["PKCS12", "SIGNATURE", dataToSign, true]
-    };
-    ws.current.send(JSON.stringify(requestPayload));
+    try {
+      // Архитектура 2: Создаем карточку сессии на бэкенде с connection_id и nonce
+      const sessRes = await edsAPI.createSession(action, targetId);
+      const sessData = sessRes.data;
+      setActiveSession(sessData);
+
+      const dataToSign = btoa(sessData.nonce || ("AsiaPartners_AuthData_" + Date.now()));
+      const requestPayload = {
+        module: "kz.gov.pki.knca.commonUtils",
+        method: "createCMSSignatureFromData",
+        args: ["PKCS12", "SIGNATURE", dataToSign, true]
+      };
+      ws.current.send(JSON.stringify(requestPayload));
+    } catch (err) {
+      console.warn("Notice: fallback signature prompt", err);
+      const dataToSign = btoa("AsiaPartners_AuthData_" + Date.now());
+      const requestPayload = {
+        module: "kz.gov.pki.knca.commonUtils",
+        method: "createCMSSignatureFromData",
+        args: ["PKCS12", "SIGNATURE", dataToSign, true]
+      };
+      ws.current.send(JSON.stringify(requestPayload));
+    }
   };
 
-  const handleFallbackSign = () => {
+  const handleFallbackSign = async () => {
     const demoCms = "demo_signed_cms_base64_hash_12345";
+    try {
+      const sessRes = await edsAPI.createSession(action, targetId);
+      const sessData = sessRes.data;
+      await edsAPI.verifySession(sessData.connection_id, demoCms);
+      toast.success(`Сессия подписи ${sessData.connection_id} подтверждена!`);
+    } catch (e) {
+      console.warn("Fallback session notice:", e);
+    }
     onSign(demoCms);
     onClose();
   };

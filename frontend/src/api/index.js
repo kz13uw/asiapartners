@@ -125,8 +125,17 @@ export const categoriesAPI = {
 export const notificationsAPI = {
   list: () => API.get('/notifications'),
   markRead: (id) => API.patch(`/notifications/${id}/read`),
-  markAllRead: () => API.post('/notifications/read-all'),
   delete: (id) => API.delete(`/notifications/${id}`),
+};
+
+// ===== EDS SESSIONS (Архитектура 2) =====
+export const edsAPI = {
+  createSession: (action = 'auth', targetId = null) => 
+    API.post('/eds/session', { action, target_id: targetId }),
+  verifySession: (connectionId, cmsBase64, extraData = {}) => 
+    API.post('/eds/verify-session', { connection_id: connectionId, cms_base64: cmsBase64, ...extraData }),
+  getSessionStatus: (connectionId) => 
+    API.get(`/eds/session/${connectionId}`),
 };
 
 export default API;

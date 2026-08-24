@@ -422,3 +422,21 @@ class Notification(Base):
 
     user: Mapped[User] = relationship("User")
 
+
+class EdsSession(Base):
+    __tablename__ = "eds_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    connection_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    nonce: Mapped[str] = mapped_column(String(128))
+    action: Mapped[str] = mapped_column(String(50), default="auth") # auth, publish_tender, submit_bid, sign_protocol
+    target_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="pending") # pending, signed, verified, expired
+    cms_base64: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    iin_bin: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    subject_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
