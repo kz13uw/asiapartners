@@ -250,12 +250,15 @@ const TenderDetails = () => {
   const totalSum = formatPriceKzt(tender.start_price || tender.budget || 3204310.35);
   const handleBackNavigation = (e) => {
     if (e) e.preventDefault();
-    const token = localStorage.getItem('access_token');
-    const isAuthenticated = !!token || !!user;
-    if (isAuthenticated) {
-      navigate('/tenders');
+    if (window.history.length > 1) {
+      navigate(-1);
     } else {
-      navigate('/public-tenders');
+      const token = localStorage.getItem('access_token');
+      if (token || user) {
+        navigate('/supplier/dashboard');
+      } else {
+        navigate('/public-tenders');
+      }
     }
   };
 
