@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -143,7 +144,15 @@ async def submit_bid(
     await cache_manager.delete("tenders:*")
 
     from sqlalchemy.orm import selectinload
-    res_bid = await db.execute(select(Bid).options(selectinload(Bid.items), selectinload(Bid.documents)).where(Bid.id == bid.id))
+    res_bid = await db.execute(
+        select(Bid).options(
+            selectinload(Bid.items),
+            selectinload(Bid.documents),
+            selectinload(Bid.tender),
+            selectinload(Bid.supplier),
+            selectinload(Bid.company)
+        ).where(Bid.id == bid.id)
+    )
     return res_bid.scalar_one()
 
 
@@ -231,7 +240,7 @@ async def update_bid_status(
 @router.post("/tender/{tender_id}/protocol", summary="Сформировать и подписать протокол итогов по лотам")
 async def generate_protocol(
     tender_id: int,
-    eds_hash: str,
+    eds_hash: Optional[str] = "demo_protocol_signature",
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN)),
 ):
