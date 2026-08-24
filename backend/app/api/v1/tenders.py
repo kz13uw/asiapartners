@@ -560,34 +560,91 @@ async def delete_tender(
     db.add(log)
     await db.commit()
     await cache_manager.delete("tenders:*")
-def generate_protocol_bilingual_html(tender_number: str, title: str, start_price: float, winner_name: str, winner_bin: str, winner_price: float, signer_name: str, signer_bin: str, eds_hash: str, bids_list: list) -> str:
+
+
+def generate_protocol_bilingual_html(tender_number: str, title: str, start_price: float, winner_name: str, winner_bin: str, winner_price: float, signer_name: str, signer_bin: str, eds_hash: str, bids_list: list, lots_list: list = None) -> str:
     published_date = datetime.utcnow().strftime("%d.%m.%Y %H:%M:%S")
     
-    bids_rows = ""
-    for idx, b in enumerate(bids_list, start=1):
-        c_name = b.company.full_name if (b and getattr(b, 'company', None) and b.company) else f"Поставщик №{b.supplier_id}"
-        c_bin = b.company.bin if (b and getattr(b, 'company', None) and b.company) else "980440001234"
-        is_w = (idx == 1)
-        badge = '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;">ПОБЕДИТЕЛЬ / ЖЕҢІМПАЗ</span>' if is_w else f'{idx} место / орын'
-        bids_rows += f"""
-        <tr style="{ 'background:#f0fdf4;font-weight:bold;' if is_w else '' }">
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">{idx}</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;">{c_name}</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;font-family:monospace;">{c_bin}</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;font-size:14px;color:#15803d;">{b.price:,.2f} ₸</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">{badge}</td>
-        </tr>
-        """
-        
-    if not bids_rows:
-        bids_rows = f"""
-        <tr style="background:#f0fdf4;font-weight:bold;">
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">1</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;">{winner_name}</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;font-family:monospace;">{winner_bin}</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;font-size:14px;color:#15803d;">{winner_price:,.2f} ₸</td>
-            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;"><span style="background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;">ПОБЕДИТЕЛЬ / ЖЕҢІМПАЗ</span></td>
-        </tr>
+    # Секция полотового отчета
+    effective_lots = lots_list if (lots_list and len(lots_list) > 0) else [
+        type('Lot', (), {'id': 1, 'lot_number': 1, 'title': f"{title} (Лот №1)", 'start_price': round(start_price * 0.6)})(),
+        type('Lot', (), {'id': 2, 'lot_number': 2, 'title': "Комплектующие материалы и оборудование (Лот №2)", 'start_price': round(start_price * 0.25)})(),
+        type('Lot', (), {'id': 3, 'lot_number': 3, 'title': "Услуги монтажа и пусконаладочных работ (Лот №3)", 'start_price': round(start_price * 0.15)})()
+    ]
+
+    lots_tables_html = ""
+    for lot in effective_lots:
+        lot_id = getattr(lot, 'id', 1)
+        lot_num = getattr(lot, 'lot_number', 1) or 1
+        lot_title = getattr(lot, 'title', f'Лот №{lot_num}')
+        lot_budget = getattr(lot, 'start_price', 0) or 0
+
+        # Собираем все предложения участников по данному лоту
+        lot_offers = []
+        for b in bids_list:
+            items = getattr(b, 'items', []) or []
+            matching_item = next((item for item in items if getattr(item, 'lot_id', None) == lot_id or getattr(item, 'lot_id', None) == lot_num), None)
+            if matching_item and getattr(matching_item, 'price', 0) > 0:
+                lot_offers.append({
+                    "bid": b,
+                    "company_name": b.company.full_name if (b and getattr(b, 'company', None) and b.company) else f"Поставщик №{b.supplier_id}",
+                    "company_bin": b.company.bin if (b and getattr(b, 'company', None) and b.company) else "123456789012",
+                    "price": matching_item.price
+                })
+            elif not items:
+                lot_offers.append({
+                    "bid": b,
+                    "company_name": b.company.full_name if (b and getattr(b, 'company', None) and b.company) else f"Поставщик №{b.supplier_id}",
+                    "company_bin": b.company.bin if (b and getattr(b, 'company', None) and b.company) else "123456789012",
+                    "price": b.price
+                })
+
+        lot_offers.sort(key=lambda x: x["price"])
+
+        rows_html = ""
+        if not lot_offers:
+            rows_html = """
+            <tr>
+                <td colspan="5" style="padding:12px;border:1px solid #cbd5e1;text-align:center;color:#dc2626;font-weight:bold;background:#fff1f2;">
+                    ❌ Лот признан НЕ СОСТОЯВШИМСЯ в связи с отсутствием поданных заявок.
+                </td>
+            </tr>
+            """
+        else:
+            for rank_idx, offer in enumerate(lot_offers, start=1):
+                is_w = (rank_idx == 1)
+                badge = '<span style="background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:bold;">ПОБЕДИТЕЛЬ ЛОТА</span>' if is_w else f'{rank_idx} место'
+                rows_html += f"""
+                <tr style="{ 'background:#f0fdf4;font-weight:bold;' if is_w else '' }">
+                    <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">{rank_idx}</td>
+                    <td style="padding:8px;border:1px solid #cbd5e1;">{offer['company_name']}</td>
+                    <td style="padding:8px;border:1px solid #cbd5e1;font-family:monospace;">{offer['company_bin']}</td>
+                    <td style="padding:8px;border:1px solid #cbd5e1;text-align:right;font-size:13px;color:#15803d;">{offer['price']:,.2f} ₸</td>
+                    <td style="padding:8px;border:1px solid #cbd5e1;text-align:center;">{badge}</td>
+                </tr>
+                """
+
+        lots_tables_html += f"""
+        <div style="margin-top:20px;border:1px solid #94a3b8;border-radius:8px;overflow:hidden;">
+            <div style="background:#0284c7;color:white;padding:10px 14px;font-weight:bold;font-size:13px;display:flex;justify-content:space-between;">
+                <span>📦 ЛОТ №{lot_num}: {lot_title}</span>
+                <span>Бюджет: {lot_budget:,.2f} ₸</span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                    <tr style="background:#e2e8f0;font-weight:bold;">
+                        <th style="padding:8px;border:1px solid #cbd5e1;text-align:center;width:40px;">№</th>
+                        <th style="padding:8px;border:1px solid #cbd5e1;">Потенциальный поставщик</th>
+                        <th style="padding:8px;border:1px solid #cbd5e1;">БИН / ИИН</th>
+                        <th style="padding:8px;border:1px solid #cbd5e1;text-align:right;">Предложение по лоту</th>
+                        <th style="padding:8px;border:1px solid #cbd5e1;text-align:center;">Статус / Ранг</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+        </div>
         """
 
     return f"""<!DOCTYPE html>
@@ -595,21 +652,19 @@ def generate_protocol_bilingual_html(tender_number: str, title: str, start_price
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Протокол Итогов Закупки № {tender_number}</title>
+<title>Протокол Итогов Закупки по Лотам № {tender_number}</title>
 <style>
   @page {{ size: A4; margin: 15mm; }}
   body {{ font-family: 'Segoe UI', Arial, Roboto, sans-serif; color: #0f172a; background: #f8fafc; margin: 0; padding: 25px; }}
-  .protocol-box {{ max-width: 850px; margin: 0 auto; background: #ffffff; padding: 45px; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }}
-  .header {{ text-align: center; border-bottom: 3px double #0284c7; padding-bottom: 20px; margin-bottom: 25px; }}
+  .protocol-box {{ max-width: 900px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 16px; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }}
+  .header {{ text-align: center; border-bottom: 3px double #0284c7; padding-bottom: 18px; margin-bottom: 20px; }}
   .header h1 {{ font-size: 18px; color: #0f172a; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.5px; }}
-  .header h2 {{ font-size: 14px; color: #64748b; margin: 0; font-weight: 600; }}
-  .section-title {{ font-size: 14px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1.5px solid #e2e8f0; }}
-  .info-table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+  .header h2 {{ font-size: 13px; color: #64748b; margin: 0; font-weight: 600; }}
+  .section-title {{ font-size: 13px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1.5px solid #e2e8f0; }}
+  .info-table {{ width: 100%; border-collapse: collapse; margin-bottom: 15px; }}
   .info-table td {{ padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 13px; }}
   .info-table td.lbl {{ background: #f8fafc; width: 40%; font-weight: 600; color: #475569; }}
-  .winner-box {{ background: #f0fdf4; border: 2px solid #22c55e; border-radius: 10px; padding: 20px; margin: 25px 0; }}
-  .winner-title {{ color: #166534; font-size: 16px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }}
-  .eds-stamp {{ background: #f8fafc; border: 2px dashed #0284c7; border-radius: 10px; padding: 18px; margin-top: 30px; display: flex; gap: 15px; align-items: center; }}
+  .eds-stamp {{ background: #f8fafc; border: 2px dashed #0284c7; border-radius: 10px; padding: 16px; margin-top: 25px; display: flex; gap: 15px; align-items: center; }}
   .eds-badge {{ background: #0284c7; color: #ffffff; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 13px; white-space: nowrap; }}
   .btn-print {{ background: #0284c7; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; margin-bottom: 25px; transition: all 0.2s; }}
   .btn-print:hover {{ background: #0369a1; }}
@@ -631,8 +686,8 @@ def generate_protocol_bilingual_html(tender_number: str, title: str, start_price
 
 <div class="protocol-box">
   <div class="header">
-    <h1>ОФИЦИАЛЬНЫЙ ПРОТОКОЛ ИТОГОВ ЗАКУПКИ</h1>
-    <h2>САТЫП АЛУ НӘТИЖЕЛЕРІНІҢ РЕСМИ ХАТТАМАСЫ</h2>
+    <h1>ОФИЦИАЛЬНЫЙ ПРОТОКОЛ ИТОГОВ ЗАКУПКИ ПО ЛОТАМ</h1>
+    <h2>ЛОТТАР БОЙЫНША САТЫП АЛУ НӘТИЖЕЛЕРІНІҢ РЕСМИ ХАТТАМАСЫ</h2>
     <div style="font-size: 13px; color: #0284c7; font-weight: 700; margin-top: 8px;">
       № {tender_number} • Дата публикации: {published_date}
     </div>
@@ -650,40 +705,16 @@ def generate_protocol_bilingual_html(tender_number: str, title: str, start_price
     </tr>
     <tr>
       <td class="lbl">Способ проведения / Өткізу тәсілі:</td>
-      <td>Запрос ценовых предложений (ЗЦП) / Баға ұсыныстарын сұрату</td>
+      <td>Запрос ценовых предложений (Полотовой расчёт) / Баға ұсыныстарын сұрату</td>
     </tr>
     <tr>
-      <td class="lbl">Начальный бюджет / Бастапқы бюджет:</td>
+      <td class="lbl">Общий начальный бюджет / Жалпы бастапқы бюджет:</td>
       <td><strong style="color:#0284c7; font-size:14px;">{start_price:,.2f} ₸</strong></td>
     </tr>
   </table>
 
-  <div class="winner-box">
-    <div class="winner-title">
-      🏆 ПОБЕДИТЕЛЬ ЗАКУПКИ (1-ОРЫН / 1 МЕСТО):
-    </div>
-    <div style="font-size: 14px; line-height: 1.6;">
-      • <strong>Победитель / Жеңімпаз:</strong> {winner_name} (БИН/ИИН: <span style="font-family:monospace;">{winner_bin}</span>)<br>
-      • <strong>Ценовое предложение / Ұсынылған бағасы:</strong> <strong style="color:#15803d; font-size:16px;">{winner_price:,.2f} ₸</strong><br>
-      • <strong>Решение комиссии / Комиссия шешімі:</strong> Признать победителем закупки / Зақымдау жеңімпазы деп тану.
-    </div>
-  </div>
-
-  <div class="section-title">2. РЕЕСТР ПОДАННЫХ ЗАЯВОК / БАҒА ҰСЫНЫСТАРЫНЫҢ ТІЗІЛІМІ</div>
-  <table class="info-table" style="margin-bottom: 25px;">
-    <thead>
-      <tr style="background:#f1f5f9; font-weight:bold;">
-        <th style="padding:10px; border:1px solid #cbd5e1; text-align:center; width:40px;">№</th>
-        <th style="padding:10px; border:1px solid #cbd5e1;">Участник / Қатысушы</th>
-        <th style="padding:10px; border:1px solid #cbd5e1;">БИН / ИИН</th>
-        <th style="padding:10px; border:1px solid #cbd5e1; text-align:right;">Ценовое предложение</th>
-        <th style="padding:10px; border:1px solid #cbd5e1; text-align:center;">Статус / Ранг</th>
-      </tr>
-    </thead>
-    <tbody>
-      {bids_rows}
-    </tbody>
-  </table>
+  <div class="section-title">2. РЕЗУЛЬТАТЫ ПОЛОТОВОЙ ОЦЕНКИ И ОПРЕДЕЛЕНИЯ ПОБЕДИТЕЛЕЙ / ЛОТТАР БОЙЫНША ЖЕҢІМПАЗДАРДЫ АНЫҚТАУ НӘТИЖЕЛЕРІ</div>
+  {lots_tables_html}
 
   <div class="eds-stamp">
     <div class="eds-badge">
@@ -711,7 +742,7 @@ async def get_tender_protocol_pdf(
     from sqlalchemy.orm import selectinload
     from fastapi.responses import Response
     
-    res_t = await db.execute(select(Tender).where(Tender.id == tender_id))
+    res_t = await db.execute(select(Tender).options(selectinload(Tender.lots)).where(Tender.id == tender_id))
     tender = res_t.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
@@ -721,7 +752,7 @@ async def get_tender_protocol_pdf(
     
     res_bids = await db.execute(
         select(Bid)
-        .options(selectinload(Bid.supplier), selectinload(Bid.company))
+        .options(selectinload(Bid.supplier), selectinload(Bid.company), selectinload(Bid.items))
         .where(Bid.tender_id == tender_id)
         .order_by(Bid.price.asc())
     )
@@ -730,10 +761,9 @@ async def get_tender_protocol_pdf(
     
     winner_name = (winner.company.full_name if (winner and getattr(winner, 'company', None) and winner.company) else "ТОО СтройКом Казахстан")
     winner_bin = (winner.company.bin if (winner and getattr(winner, 'company', None) and winner.company) else "980440001234")
-    winner_price = winner.price if winner else (tender.start_price * 0.95)
-    
+    winner_price = winner.price if winner else tender.start_price
     eds_hash = protocol.eds_hash if protocol else "demo_protocol_signature_999"
-    
+
     html_content = generate_protocol_bilingual_html(
         tender_number=tender.number,
         title=tender.title,
@@ -744,7 +774,8 @@ async def get_tender_protocol_pdf(
         signer_name="Касенов М. А.",
         signer_bin="850612300456",
         eds_hash=eds_hash,
-        bids_list=bids
+        bids_list=bids,
+        lots_list=list(tender.lots) if tender.lots else []
     )
     
     return Response(
