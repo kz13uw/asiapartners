@@ -175,7 +175,7 @@ class Tender(Base):
     delivery_place: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     organizer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     organizer_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, index=True)
-    eds_hash: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)       # хэш подписи публикации
+    eds_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)       # хэш подписи публикации
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     # 📜 Квалификационный отбор и Лицензирование
@@ -275,14 +275,14 @@ class Bid(Base):
     is_anti_dumping_flag: Mapped[bool] = mapped_column(Boolean, default=False)       # Флаг демпинга
     status: Mapped[BidStatus] = mapped_column(Enum(BidStatus), default=BidStatus.SUBMITTED)
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    eds_hash: Mapped[str] = mapped_column(String(256))                               # хэш подписи заявки
+    eds_hash: Mapped[Text] = mapped_column(Text)                               # хэш подписи заявки
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # 🔄 Модуль 4: Версионирование и Отзыв заявки с ЭЦП
     version: Mapped[int] = mapped_column(Integer, default=1)
     revocation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    revocation_eds_hash: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    revocation_eds_hash: Mapped[Optional[Text]] = mapped_column(Text, nullable=True)
 
     tender: Mapped[Tender] = relationship("Tender", back_populates="bids")
     supplier: Mapped[User] = relationship("User", back_populates="bids")

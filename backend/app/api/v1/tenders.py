@@ -426,6 +426,7 @@ async def publish_tender(
     tender.published_at = datetime.utcnow()
 
     log = AuditLog(user_id=current_user.id, action="PUBLISH_TENDER", entity_type="tender", entity_id=tender.id)
+    db.add(log)
     await db.commit()
     await cache_manager.delete("tenders:*")
     res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
