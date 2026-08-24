@@ -135,32 +135,26 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     import re
     from app.models.models import Company, UserRole, generate_account_code
 
-    # Декодируем Base64 строку в сырые байты (ASN.1 DER) - упрощенно для PoC
-    try:
-        der_bytes = base64.b64decode(payload.cms_base64)
-        raw_text = der_bytes.decode('utf-8', errors='ignore')
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Неверный формат подписи CMS")
+    from app.core.kalkan_verifier import verify_and_parse_cms
 
-    # Ищем ИИН и БИН
-    iin_match = re.search(r'IIN(\d{12})', raw_text)
-    bin_match = re.search(r'BIN(\d{12})', raw_text)
-    
-    iin = iin_match.group(1) if iin_match else None
-    company_bin = bin_match.group(1) if bin_match else None
-    is_demo = "demo" in payload.cms_base64.lower()
+    parsed = verify_and_parse_cms(payload.cms_base64)
+    if not parsed.get("valid"):
+        raise HTTPException(status_code=400, detail=parsed.get("error", "Неверный штамп ЭЦП"))
 
-    if not iin and is_demo:
-        iin = "123456789012"
-        company_bin = "987654321012"
-        subject_name = "ТОО Asia Поставщик (Демо)"
-    elif not company_bin and not is_demo:
+    is_demo = payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345"
+    company_bin = parsed.get("bin") or ("210440012345" if is_demo else None)
+    iin = parsed.get("iin") or ("850101400823" if is_demo else None)
+
+    if not company_bin and not is_demo:
         raise HTTPException(
             status_code=400,
             detail="❌ К авторизации и участию в закупках допускаются ТОЛЬКО ЭЦП Юридических лиц (ТОО, АО, ИП, КТ). Предоставленный сертификат принадлежит физическому лицу и не содержит БИН организации."
         )
+
+    if is_demo:
+        subject_name = payload.company_name or "ТОО Asia Procurement (Демо)"
     else:
-        subject_name = "Пользователь НУЦ РК"
+        subject_name = parsed.get("company_name") or payload.company_name or "Пользователь НУЦ РК"
 
     req_address = payload.company_address or payload.address
     req_phone = payload.phone
