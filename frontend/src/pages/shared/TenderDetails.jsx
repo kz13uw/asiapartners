@@ -813,7 +813,7 @@ const TenderDetails = () => {
                             </div>
                             <div>
                               <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                                Спецификация / Аналог товара по лоту №{lot.lot_number || idx + 1}:
+                                Техническая спецификация по лоту №{lot.lot_number || idx + 1}:
                               </label>
                               <textarea
                                 className="form-control"
