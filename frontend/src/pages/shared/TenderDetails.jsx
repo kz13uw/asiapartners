@@ -240,14 +240,14 @@ const TenderDetails = () => {
     );
   }
 
-  const tenderNumber = tender.number || `17522776-${tender.id}`;
-  const tenderTitle = tender.title || 'Приобретение интерактивной панели';
+  const tenderNumber = tender.number || `${tender.id}`;
+  const tenderTitle = tender.title || 'Наименование закупки не указано';
   const isGoods = tender.subject_type === 'goods';
-  const organizerName = tender.company_name || tender.organizer_name || '250840008054 КГУ "Общеобразовательная школа № 215" Управления образования города Алматы';
-  const pubDate = tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '2026-08-24 23:44:51';
-  const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : '2026-08-25 08:44:27';
-  const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '2026-08-27 09:44:35';
-  const totalSum = formatPriceKzt(tender.start_price || tender.budget || 3204310.35);
+  const organizerName = tender.organizer?.company?.full_name || tender.company_name || tender.organizer_name || tender.organizer?.full_name || 'Организатор закупки';
+  const pubDate = tender.published_at ? new Date(tender.published_at).toLocaleString('ru-RU') : (tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '—');
+  const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : (tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '—');
+  const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '—';
+  const totalSum = formatPriceKzt(tender.start_price || tender.budget || 0);
   const handleBackNavigation = (e) => {
     if (e) e.preventDefault();
     if (window.history.length > 1) {
@@ -394,7 +394,7 @@ const TenderDetails = () => {
                           Тип закупки
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                          Первая закупка
+                          {tender.purchase_type || 'Первичная закупка'}
                         </td>
                       </tr>
 
@@ -421,7 +421,7 @@ const TenderDetails = () => {
                           Юр. адрес организатора
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                          751410000, KAZAKHSTAN, г. Алматы, ул. ЛЕВИТАНА, д. 20, оф. 4
+                          {tender.organizer?.company?.address || tender.organizer_address || tender.delivery_place || 'Республика Казахстан'}
                         </td>
                       </tr>
 
@@ -468,7 +468,7 @@ const TenderDetails = () => {
                           ФИО представителя
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>
-                          ОРАЗАЛИЕВА ЖАНАР МАУТХАНОВНА
+                          {tender.organizer?.full_name || tender.contact_person || 'Представитель Заказчика'}
                         </td>
                       </tr>
 
@@ -477,7 +477,7 @@ const TenderDetails = () => {
                           Должность
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                          Руководитель
+                          {tender.organizer?.position || 'Ответственный сотрудник'}
                         </td>
                       </tr>
 
@@ -486,7 +486,7 @@ const TenderDetails = () => {
                           E-Mail
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600, wordBreak: 'break-word' }}>
-                          Orazalieva1976@mail.ru
+                          {tender.organizer?.email || tender.contact_email || '—'}
                         </td>
                       </tr>
                     </tbody>
