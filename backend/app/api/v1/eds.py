@@ -109,9 +109,9 @@ async def verify_eds_session(
     if not parsed.get("valid"):
         raise HTTPException(status_code=400, detail=parsed.get("error", "Неверный штамп ЭЦП"))
 
-    is_demo = "demo" in payload.cms_base64.lower()
-    company_bin = parsed.get("bin") or ("987654321012" if is_demo else None)
-    iin = parsed.get("iin") or "850101400823"
+    is_demo = payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345"
+    company_bin = parsed.get("bin") or ("210440012345" if is_demo else None)
+    iin = parsed.get("iin") or ("850101400823" if is_demo else None)
 
     # 🔒 Строгая проверка: К закупкам допускаются ТОЛЬКО Юридические лица (наличие БИН компании)
     if not company_bin and not is_demo:
@@ -120,7 +120,10 @@ async def verify_eds_session(
             detail="❌ К авторизации и участию в закупках допускаются ТОЛЬКО ЭЦП Юридических лиц (ТОО, АО, ИП, КТ). Предоставленный сертификат принадлежит физическому лицу и не содержит БИН организации."
         )
 
-    subject_name = parsed.get("company_name") or payload.company_name or "ТОО Asia Procurement"
+    if is_demo:
+        subject_name = payload.company_name or "ТОО Asia Procurement (Демо)"
+    else:
+        subject_name = (parsed.get("company_name") if parsed.get("is_legal_entity") else None) or payload.company_name or "Пользователь НУЦ РК"
 
     sess.cms_base64 = payload.cms_base64
     sess.iin_bin = company_bin or iin
