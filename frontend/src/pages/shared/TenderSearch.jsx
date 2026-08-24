@@ -152,7 +152,7 @@ const TenderSearch = () => {
                     {tnd.delivery_place || 'Не указано'}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                    <Link to={isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`} className="btn btn-primary btn-sm" style={{ padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <Link to={isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/app/tenders/${tnd.id}`} className="btn btn-primary btn-sm" style={{ padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
                       <Eye size={14} /> {t('btn_view') || 'Просмотр'}
                     </Link>
                   </td>

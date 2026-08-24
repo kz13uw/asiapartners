@@ -151,7 +151,7 @@ const TenderRegistryTable = ({
             const tenderNumber = tnd.number || tnd.tender_number || `17522776-${tnd.id}`;
             const detailUrl = tnd.status === 'draft' 
               ? `/organizer/tenders/${tnd.id}/edit` 
-              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
+              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/app/tenders/${tnd.id}`);
             const organizerName = tnd.company_name || tnd.organizer_name || 'КГУ "Общеобразовательная школа № 215" Управления образования города Алматы';
             const lotName = tnd.lot_name || tnd.title || 'Панель интерактивная';
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');

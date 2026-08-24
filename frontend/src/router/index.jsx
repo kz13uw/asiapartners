@@ -102,7 +102,17 @@ const AppRouter = () => {
           </ProtectedRoute>
         } />
         <Route path="/supplier/tenders/:id" element={
-          <ProtectedRoute allowedRoles={['supplier']}>
+          <ProtectedRoute allowedRoles={['supplier', 'organizer', 'admin', 'monitoring', 'commission']}>
+            <TenderDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/organizer/tenders/:id" element={
+          <ProtectedRoute allowedRoles={['organizer', 'admin', 'monitoring', 'commission']}>
+            <TenderDetails />
+          </ProtectedRoute>
+        } />
+        <Route path="/app/tenders/:id" element={
+          <ProtectedRoute allowedRoles={['supplier', 'organizer', 'admin', 'monitoring', 'commission']}>
             <TenderDetails />
           </ProtectedRoute>
         } />
