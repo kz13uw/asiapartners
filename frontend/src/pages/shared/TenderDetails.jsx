@@ -76,7 +76,7 @@ const TenderDetails = () => {
       });
       setLotPrices(initPrices);
       setLotSpecs(initSpecs);
-      setBidPrice(Math.round(total * 0.95));
+      setBidPrice(total);
     }
   }, [tender]);
 
@@ -89,7 +89,7 @@ const TenderDetails = () => {
     }
     setSelectedLotIds(nextIds);
     const total = nextIds.reduce((sum, idKey) => sum + Number(lotPrices[idKey] || 0), 0);
-    setBidPrice(total ? Math.round(total * 0.95) : '');
+    setBidPrice(total || '');
   };
 
   const loadVaultDocs = () => {
@@ -134,7 +134,7 @@ const TenderDetails = () => {
       const res = await tendersAPI.get(id);
       setTender(res.data);
       if (res.data.start_price && (!res.data.lots || res.data.lots.length <= 1)) {
-        setBidPrice(Math.round(res.data.start_price * 0.95));
+        setBidPrice(res.data.start_price);
       }
 
       if (user?.role === 'supplier') {
