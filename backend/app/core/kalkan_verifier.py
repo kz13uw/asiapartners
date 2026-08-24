@@ -317,11 +317,130 @@ def _try_parse_with_openssl(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
 
 
 # ── ОСНОВНАЯ ФУНКЦИЯ ───────────────────────────────────────────────────────────
-def verify_and_parse_cms(cms_base64: str) -> Dict[str, Any]:
+# ── NCANode HTTP REST API Verifier ─────────────────────────────────────────────
+def _try_ncanode_http(cms_base64: str, required_key_usage: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    Верификация CMS-подписи через NCANode REST API (v2 / v3).
+    NCANode проверяет математическую подпись ГОСТ, статус OCSP / CRL в НУЦ РК,
+    а также возвращает профиль сертификата (ИИН, БИН, наименование, KeyUsage).
+    """
+    ncanode_url = os.environ.get("NCANODE_URL", "http://ncanode:14579").rstrip("/")
+    urls_to_try = [ncanode_url, "http://localhost:14579", "http://127.0.0.1:14579"]
+
+    clean_cms = cms_base64.strip().replace('\n', '').replace('\r', '').replace(' ', '')
+
+    for base_url in urls_to_try:
+        # 1. Попытка v2 API: POST / с методом cms.verify
+        try:
+            import urllib.request
+            req_body = json.dumps({
+                "version": "2.0",
+                "method": "cms.verify",
+                "params": {
+                    "cms": clean_cms,
+                    "checkOcsp": True,
+                    "checkCrl": False
+                }
+            }).encode('utf-8')
+
+            req = urllib.request.Request(
+                f"{base_url}/",
+                data=req_body,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                if resp.status == 200:
+                    resp_data = json.loads(resp.read().decode('utf-8'))
+                    if resp_data.get("status") == 0 and resp_data.get("result"):
+                        res = resp_data["result"]
+                        cert = res.get("cert", {}) or (res.get("signers", [{}])[0].get("cert", {}) if res.get("signers") else {})
+                        subject = cert.get("subject", {}) or {}
+
+                        bin_val = subject.get("bin")
+                        iin_val = subject.get("iin")
+                        cn_val = subject.get("commonName")
+                        org_val = subject.get("organization") or subject.get("commonName")
+                        key_usage = cert.get("keyUsage") or "SIGN"
+                        is_valid = res.get("valid", True)
+
+                        if required_key_usage and key_usage and required_key_usage.upper() not in key_usage.upper():
+                            return {
+                                "valid": False,
+                                "error": f"Тип ключа ЭЦП ({key_usage}) не соответствует требуемому ({required_key_usage})"
+                            }
+
+                        logger.info("NCANode verified: BIN=%s, IIN=%s, org=%s, valid=%s", bin_val, iin_val, org_val, is_valid)
+                        return {
+                            "valid": is_valid,
+                            "bin": bin_val,
+                            "iin": iin_val,
+                            "company_name": org_val,
+                            "common_name": cn_val,
+                            "subject_type": "legal_entity" if bin_val else "individual",
+                            "is_legal_entity": bool(bin_val),
+                            "signature_valid": is_valid,
+                            "key_usage": key_usage,
+                            "source": "ncanode_http_v2"
+                        }
+        except Exception as e:
+            logger.debug("NCANode v2 call to %s failed: %s", base_url, e)
+
+        # 2. Попытка v3 REST API: POST /cms/verify
+        try:
+            import urllib.request
+            req_body_v3 = json.dumps({
+                "cms": clean_cms,
+                "checkOcsp": True
+            }).encode('utf-8')
+
+            req3 = urllib.request.Request(
+                f"{base_url}/cms/verify",
+                data=req_body_v3,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req3, timeout=3) as resp:
+                if resp.status == 200:
+                    res = json.loads(resp.read().decode('utf-8'))
+                    cert = res.get("cert", {}) or (res.get("signers", [{}])[0].get("cert", {}) if res.get("signers") else {})
+                    subject = cert.get("subject", {}) or {}
+
+                    bin_val = subject.get("bin")
+                    iin_val = subject.get("iin")
+                    cn_val = subject.get("commonName")
+                    org_val = subject.get("organization") or subject.get("commonName")
+                    is_valid = res.get("valid", True)
+
+                    logger.info("NCANode v3 verified: BIN=%s, IIN=%s, org=%s", bin_val, iin_val, org_val)
+                    return {
+                        "valid": is_valid,
+                        "bin": bin_val,
+                        "iin": iin_val,
+                        "company_name": org_val,
+                        "common_name": cn_val,
+                        "subject_type": "legal_entity" if bin_val else "individual",
+                        "is_legal_entity": bool(bin_val),
+                        "signature_valid": is_valid,
+                        "source": "ncanode_http_v3"
+                    }
+        except Exception as e:
+            logger.debug("NCANode v3 call to %s failed: %s", base_url, e)
+
+    return None
+
+
+# ── ОСНОВНАЯ ФУНКЦИЯ ───────────────────────────────────────────────────────────
+def verify_and_parse_cms(cms_base64: str, required_key_usage: Optional[str] = None) -> Dict[str, Any]:
     """
     Верификация CMS Base64-подписи НУЦ РК.
 
-    Цепочка: KalkanJava → asn1crypto → openssl → regex
+    Цепочка верификации:
+        1. NCANode REST API (микросервис NCANode)
+        2. KalkanCrypt Java (kalkan.jar)
+        3. asn1crypto
+        4. openssl CLI
+        5. Regex fallback
 
     Returns dict:
         valid: bool
@@ -329,7 +448,7 @@ def verify_and_parse_cms(cms_base64: str) -> Dict[str, Any]:
         iin: str | None      — ИИН физ. лица / представителя
         company_name: str    — Наименование организации
         is_legal_entity: bool
-        signature_valid: bool — Криптографически верифицирована (только через Java)
+        signature_valid: bool — Криптографически верифицирована
         source: str          — Какой метод верификации сработал
         error: str | None
     """
@@ -344,7 +463,12 @@ def verify_and_parse_cms(cms_base64: str) -> Dict[str, Any]:
     except Exception as e:
         return {"valid": False, "error": f"Неверный Base64: {e}"}
 
-    # ── 1. KalkanCrypt Java — единственный с ГОСТ и crypto-верификацией ──
+    # ── 0. NCANode HTTP REST API (Приоритетный микросервис) ───────────────
+    ncanode_res = _try_ncanode_http(clean, required_key_usage=required_key_usage)
+    if ncanode_res:
+        return ncanode_res
+
+    # ── 1. KalkanCrypt Java — локальная обёртка kalkan.jar ────────────────
     result = _try_kalkan_java(clean)
     if result:
         return result
