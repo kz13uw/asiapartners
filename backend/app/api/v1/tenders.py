@@ -18,11 +18,12 @@ router = APIRouter()
 def generate_tender_number(subject_type: str = "goods", tender_id: Optional[int] = None) -> str:
     subj = str(subject_type).lower()
     prefix = "U" if ("service" in subj or "work" in subj) else "T"
+    import time, random
+    ts = int(time.time()) % 100000
     if tender_id:
-        return f"{prefix}{tender_id:08d}"
-    import random
-    num = random.randint(10000000, 99999999)
-    return f"{prefix}{num}"
+        return f"{prefix}{ts:05d}{tender_id:04d}"
+    num = random.randint(1000, 9999)
+    return f"{prefix}{ts:05d}{num:04d}"
 
 
 def require_role(*roles: UserRole):
@@ -135,94 +136,100 @@ async def create_tender(
                 detail="Ошибка валидации: Запрещено объединять в одной закупке категории «Товары» и «Услуги / Работы»!"
             )
 
-    tender_data = body.model_dump(exclude={"lots", "qual_requirements", "documents"})
-    org_code = current_user.computed_account_code
-    tender = Tender(
-        **tender_data,
-        number=generate_tender_number(body.subject_type),
-        organizer_id=current_user.id,
-        organizer_code=org_code,
-    )
-    db.add(tender)
-    await db.flush()
+    try:
+        tender_data = body.model_dump(exclude={"lots", "qual_requirements", "documents"})
+        org_code = current_user.computed_account_code
+        tender = Tender(
+            **tender_data,
+            number=generate_tender_number(body.subject_type),
+            organizer_id=current_user.id,
+            organizer_code=org_code,
+        )
+        db.add(tender)
+        await db.flush()
 
-    tender.number = generate_tender_number(body.subject_type, tender.id)
-    await db.flush()
+        tender.number = generate_tender_number(body.subject_type, tender.id)
+        await db.flush()
 
-    from app.models.models import Lot, QualificationRequirement, TenderDocument
+        from app.models.models import Lot, QualificationRequirement, TenderDocument
 
-    if body.documents:
-        for doc in body.documents:
-            db.add(TenderDocument(
-                tender_id=tender.id,
-                doc_type=doc.get('category', 'ПСД'),
-                file_name=doc.get('name', 'Документ'),
-                file_path=f"/uploads/tenders/{tender.id}/" + doc.get('name', 'file'),
-                file_size=doc.get('size', 1024),
-                hash_sha256="demo_hash_" + str(tender.id),
-                uploaded_by=current_user.id
-            ))
+        if body.documents:
+            for doc in body.documents:
+                db.add(TenderDocument(
+                    tender_id=tender.id,
+                    doc_type=doc.get('category', 'ПСД'),
+                    file_name=doc.get('name', 'Документ'),
+                    file_path=f"/uploads/tenders/{tender.id}/" + doc.get('name', 'file'),
+                    file_size=doc.get('size', 1024),
+                    hash_sha256="demo_hash_" + str(tender.id),
+                    uploaded_by=current_user.id
+                ))
 
-    # Сохранение квалификационных требований
-    if body.qual_requirements:
-        for qr in body.qual_requirements:
-            db.add(QualificationRequirement(
-                tender_id=tender.id,
-                code=qr.code or "general",
-                title=qr.title,
-                description=qr.description,
-                is_mandatory=qr.is_mandatory if qr.is_mandatory is not None else True
-            ))
+        # Сохранение квалификационных требований
+        if body.qual_requirements:
+            for qr in body.qual_requirements:
+                db.add(QualificationRequirement(
+                    tender_id=tender.id,
+                    code=qr.code or "general",
+                    title=qr.title,
+                    description=qr.description,
+                    is_mandatory=qr.is_mandatory if qr.is_mandatory is not None else True
+                ))
 
-    # Сохранение входящих лотов
-    if body.lots and len(body.lots) > 0:
-        for idx, lot_item in enumerate(body.lots, 1):
+        # Сохранение входящих лотов
+        if body.lots and len(body.lots) > 0:
+            for idx, lot_item in enumerate(body.lots, 1):
+                lot = Lot(
+                    tender_id=tender.id,
+                    lot_number=lot_item.lot_number or idx,
+                    title=lot_item.title,
+                    description=lot_item.description,
+                    quantity=lot_item.quantity or 1.0,
+                    unit=lot_item.unit or "шт",
+                    unit_price=lot_item.unit_price,
+                    start_price=lot_item.start_price,
+                    vat_mode=lot_item.vat_mode or "include_vat",
+                    vat_rate=lot_item.vat_rate or 16.0,
+                    vat_amount=lot_item.vat_amount or 0.0,
+                    total_price_without_vat=lot_item.total_price_without_vat or 0.0,
+                    brand_or_equivalent=lot_item.brand_or_equivalent,
+                    is_equivalent_allowed=lot_item.is_equivalent_allowed if lot_item.is_equivalent_allowed is not None else True,
+                    advance_payment_pct=lot_item.advance_payment_pct or 0.0,
+                    incoterms=lot_item.incoterms or "DDP",
+                    delivery_days_type=lot_item.delivery_days_type or "calendar",
+                    delivery_days_count=lot_item.delivery_days_count,
+                    service_start_date=lot_item.service_start_date,
+                    service_end_date=lot_item.service_end_date,
+                    warranty_months=lot_item.warranty_months,
+                    delivery_place=lot_item.delivery_place or body.delivery_place
+                )
+                db.add(lot)
+        else:
             lot = Lot(
                 tender_id=tender.id,
-                lot_number=lot_item.lot_number or idx,
-                title=lot_item.title,
-                description=lot_item.description,
-                quantity=lot_item.quantity or 1.0,
-                unit=lot_item.unit or "шт",
-                unit_price=lot_item.unit_price,
-                start_price=lot_item.start_price,
-                vat_mode=lot_item.vat_mode or "include_vat",
-                vat_rate=lot_item.vat_rate or 16.0,
-                vat_amount=lot_item.vat_amount or 0.0,
-                total_price_without_vat=lot_item.total_price_without_vat or 0.0,
-                brand_or_equivalent=lot_item.brand_or_equivalent,
-                is_equivalent_allowed=lot_item.is_equivalent_allowed if lot_item.is_equivalent_allowed is not None else True,
-                advance_payment_pct=lot_item.advance_payment_pct or 0.0,
-                incoterms=lot_item.incoterms or "DDP",
-                delivery_days_type=lot_item.delivery_days_type or "calendar",
-                delivery_days_count=lot_item.delivery_days_count,
-                service_start_date=lot_item.service_start_date,
-                service_end_date=lot_item.service_end_date,
-                warranty_months=lot_item.warranty_months,
-                delivery_place=lot_item.delivery_place or body.delivery_place
+                lot_number=1,
+                title=body.title,
+                description=body.description,
+                quantity=1.0,
+                unit="лот",
+                start_price=body.start_price,
+                delivery_place=body.delivery_place
             )
             db.add(lot)
-    else:
-        lot = Lot(
-            tender_id=tender.id,
-            lot_number=1,
-            title=body.title,
-            description=body.description,
-            quantity=1.0,
-            unit="лот",
-            start_price=body.start_price,
-            delivery_place=body.delivery_place
-        )
-        db.add(lot)
 
-    log = AuditLog(user_id=current_user.id, action="CREATE_TENDER", entity_type="tender", entity_id=tender.id)
-    db.add(log)
-    await db.commit()
-    await cache_manager.delete("tenders:*")
+        log = AuditLog(user_id=current_user.id, action="CREATE_TENDER", entity_type="tender", entity_id=tender.id)
+        db.add(log)
+        await db.commit()
+        await cache_manager.delete("tenders:*")
 
-    from sqlalchemy.orm import selectinload
-    res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender.id))
-    return res.scalar_one()
+        from sqlalchemy.orm import selectinload
+        res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender.id))
+        return res.scalar_one()
+    except Exception as e:
+        await db.rollback()
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Ошибка создания закупки: {str(e)}")
 
 
 @router.post("/{tender_id}/duplicate", response_model=TenderOut, summary="Создать закупку копированием (Дублирование)")
@@ -421,31 +428,39 @@ async def publish_tender(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN)),
 ):
-    sig = None
-    if body and (body.cms_base64 or body.eds_hash):
-        sig = body.cms_base64 or body.eds_hash
-    elif eds_hash:
-        sig = eds_hash
-    else:
-        sig = "demo_eds_signature_bypassed"
+    try:
+        sig = None
+        if body and (body.cms_base64 or body.eds_hash):
+            sig = body.cms_base64 or body.eds_hash
+        elif eds_hash:
+            sig = eds_hash
+        else:
+            sig = "demo_eds_signature_bypassed"
 
-    result = await db.execute(select(Tender).where(Tender.id == tender_id))
-    tender = result.scalar_one_or_none()
-    if not tender:
-        raise HTTPException(status_code=404, detail="Тендер не найден")
-    if tender.status not in [TenderStatus.DRAFT, TenderStatus.ACCEPTING]:
-        raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
+        result = await db.execute(select(Tender).where(Tender.id == tender_id))
+        tender = result.scalar_one_or_none()
+        if not tender:
+            raise HTTPException(status_code=404, detail="Тендер не найден")
+        if tender.status not in [TenderStatus.DRAFT, TenderStatus.ACCEPTING]:
+            raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
-    tender.status = TenderStatus.ACCEPTING
-    tender.eds_hash = sig
-    tender.published_at = datetime.utcnow()
+        tender.status = TenderStatus.ACCEPTING
+        tender.eds_hash = sig
+        tender.published_at = datetime.utcnow()
 
-    log = AuditLog(user_id=current_user.id, action="PUBLISH_TENDER", entity_type="tender", entity_id=tender.id)
-    db.add(log)
-    await db.commit()
-    await cache_manager.delete("tenders:*")
-    res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
-    return res.scalar_one()
+        log = AuditLog(user_id=current_user.id, action="PUBLISH_TENDER", entity_type="tender", entity_id=tender.id)
+        db.add(log)
+        await db.commit()
+        await cache_manager.delete("tenders:*")
+        res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
+        return res.scalar_one()
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Ошибка публикации: {str(e)}")
 
 
 @router.post("/{tender_id}/cancel", response_model=TenderOut, summary="Отменить тендер с указанием причины (Отмена закупки)")
