@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Filter, Building2, Clock, Users, ArrowRight, Eye, ShieldCheck, Package } from 'lucide-react';
 import { tendersAPI } from '../../api';
 import { useTranslation } from '../../store/useLanguageStore';
+import { useAuthStore } from '../../store/authStore';
 
 const TenderSearch = () => {
   const { lang, t } = useTranslation();
+  const location = useLocation();
+  const { user } = useAuthStore();
+  const isSupplierUser = user?.role === 'supplier' || location.pathname.startsWith('/supplier/');
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,7 +152,7 @@ const TenderSearch = () => {
                     {tnd.delivery_place || 'Не указано'}
                   </td>
                   <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                    <Link to={`/tenders/${tnd.id}`} className="btn btn-primary btn-sm" style={{ padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <Link to={isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`} className="btn btn-primary btn-sm" style={{ padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
                       <Eye size={14} /> {t('btn_view') || 'Просмотр'}
                     </Link>
                   </td>

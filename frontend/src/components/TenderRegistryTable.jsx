@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Package, Clock, Eye, Edit3, Send, Copy, Ban, Trash2, ArrowRight } from 'lucide-react';
 import { useTranslation } from '../store/useLanguageStore';
+import { useAuthStore } from '../store/authStore';
 
 /**
  * Вспомогательная функция форматирования суммы в KZT (₸)
@@ -103,6 +104,9 @@ const TenderRegistryTable = ({
   emptyText = 'Закупки не найдены'
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const { user } = useAuthStore();
+  const isSupplierUser = userRole === 'supplier' || user?.role === 'supplier' || location.pathname.startsWith('/supplier/');
 
   if (loading) {
     return (
@@ -147,7 +151,7 @@ const TenderRegistryTable = ({
             const tenderNumber = tnd.number || tnd.tender_number || `17522776-${tnd.id}`;
             const detailUrl = tnd.status === 'draft' 
               ? `/organizer/tenders/${tnd.id}/edit` 
-              : (userRole === 'supplier' ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
+              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
             const organizerName = tnd.company_name || tnd.organizer_name || 'КГУ "Общеобразовательная школа № 215" Управления образования города Алматы';
             const lotName = tnd.lot_name || tnd.title || 'Панель интерактивная';
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
