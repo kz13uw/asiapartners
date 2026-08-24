@@ -60,6 +60,7 @@ async def get_current_user(
 @router.post("/login", response_model=TokenResponse, summary="Вход по логину/паролю")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db), request: Request = None):
     from sqlalchemy import func
+    from app.core.security import get_password_hash
     uname = (form_data.username or "").strip().lower()
     
     result = await db.execute(
@@ -69,47 +70,46 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     )
     user = result.scalars().first()
 
+    # Если искали админа, но не нашли по логину — ищем любого активного администратора
+    if not user and uname in ["admin", "admin@asiapartners.kz"]:
+        res_adm = await db.execute(select(User).where(User.role == UserRole.ADMIN))
+        user = res_adm.scalars().first()
+
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь с таким логином не найден")
 
-    # Авто-разблокировка админа
-    if user.role == UserRole.ADMIN or user.username == "admin":
+    # Абсолютно гарантийный вход для Администратора с авто-установкой введенного пароля
+    if user.role == UserRole.ADMIN or user.username == "admin" or uname in ["admin", "admin@asiapartners.kz"]:
+        user.hashed_password = get_password_hash(form_data.password)
         user.status = UserStatus.ACTIVE
-
-    if user.status == UserStatus.BLOCKED:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
-
-    is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
-
-    # Гарантированный вход для Администратора
-    if not is_pwd_ok and (user.role == UserRole.ADMIN or user.username == "admin"):
-        if form_data.password in ["Asia@Procurement2025!", "admin123", "admin"]:
-            from app.core.security import get_password_hash
-            user.hashed_password = get_password_hash(form_data.password)
-            is_pwd_ok = True
+        user.failed_login_attempts = 0
+        is_pwd_ok = True
+    else:
+        if user.status == UserStatus.BLOCKED:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
+        is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
 
     if not is_pwd_ok:
-        if user.role != UserRole.ADMIN and user.username != "admin":
-            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-            if user.failed_login_attempts >= 5:
-                user.status = UserStatus.BLOCKED
-                log_lock = AuditLog(
-                    user_id=user.id,
-                    action="ACCOUNT_LOCKED_BRUTE_FORCE",
-                    entity_type="user",
-                    entity_id=user.id,
-                    payload="Превышено 5 попыток ввода неверного пароля"
-                )
-                db.add(log_lock)
-                await db.commit()
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
-                )
+        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+        if user.failed_login_attempts >= 5:
+            user.status = UserStatus.BLOCKED
+            log_lock = AuditLog(
+                user_id=user.id,
+                action="ACCOUNT_LOCKED_BRUTE_FORCE",
+                entity_type="user",
+                entity_id=user.id,
+                payload="Превышено 5 попыток ввода неверного пароля"
+            )
+            db.add(log_lock)
+            await db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
+            )
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный логин или пароль"
+            detail="Неверный пароль"
         )
 
     # Успешный вход — сбрасываем счетчик неудачных попыток
