@@ -44,6 +44,30 @@ async def check_expired_tenders():
                     elif idx == 2:
                         bid.status = BidStatus.RUNNER_UP
                         logger.info(f"[BROKER] Тендер #{tender.id}: Резерв — Заявка #{bid.id} ({bid.price} ₸)")
+            else:
+                import json
+                logger.info(f"[BROKER] Тендер #{tender.id}: 0 заявок — Перевод в статус CANCELLED (Не состоялась)")
+                tender.status = TenderStatus.CANCELLED
+                tender.cancellation_reason = "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков"
+                
+                # Создаем протокол итогов о несостоявшейся закупке
+                failed_proto = Protocol(
+                    tender_id=tender.id,
+                    protocol_type="failed",
+                    protocol_content=json.dumps({
+                        "title": f"Протокол итогов (Закупка не состоялась) № P-FAILED-{tender.id}",
+                        "reason": "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков",
+                        "tender_number": tender.number,
+                        "tender_title": tender.title,
+                        "bids_count": 0,
+                        "status": "failed",
+                        "created_at": datetime.utcnow().isoformat()
+                    }, ensure_ascii=False),
+                    eds_hash=f"auto_failed_sig_{tender.id}",
+                    is_published=True,
+                    published_at=datetime.utcnow()
+                )
+                db.add(failed_proto)
 
         await db.commit()
 

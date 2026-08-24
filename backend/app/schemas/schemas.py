@@ -144,6 +144,7 @@ class BidItemCreate(BaseModel):
     price: float
     proposed_brand: Optional[str] = None
     is_equivalent: Optional[bool] = False
+    proposed_tech_spec: Optional[str] = None
 
 
 class BidItemOut(BidItemCreate):
@@ -245,6 +246,7 @@ class BidOut(BaseModel):
     is_anti_dumping_flag: bool = False
     status: BidStatus
     rejection_reason: Optional[str] = None
+    tech_spec_notes: Optional[str] = None
     eds_hash: str
     submitted_at: datetime
     version: int = 1
@@ -410,6 +412,7 @@ class TenderListOut(BaseModel):
 class BidCreate(BaseModel):
     tender_id: int
     price: Optional[float] = 0.0
+    tech_spec_notes: Optional[str] = None
     eds_hash: Optional[str] = "demo_bid_signature"
     items: Optional[list[BidItemCreate]] = []
     documents: Optional[list[BidDocumentCreate]] = []

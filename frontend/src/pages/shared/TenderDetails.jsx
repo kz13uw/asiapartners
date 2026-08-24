@@ -28,6 +28,10 @@ const TenderDetails = () => {
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'lots', 'docs', 'protocols', 'contracts', 'appeals'
   const [myBid, setMyBid] = useState(null);
   const [bidPrice, setBidPrice] = useState('');
+  const [techSpecNotes, setTechSpecNotes] = useState('');
+  const [selectedLotIds, setSelectedLotIds] = useState([]);
+  const [lotPrices, setLotPrices] = useState({});
+  const [lotSpecs, setLotSpecs] = useState({});
   const [supplierFiles, setSupplierFiles] = useState([]);
   const [vaultDocs, setVaultDocs] = useState([]);
   const [selectedVaultDocIds, setSelectedVaultDocIds] = useState([]);
@@ -38,6 +42,40 @@ const TenderDetails = () => {
     fetchTenderAndBids();
     loadVaultDocs();
   }, [id]);
+
+  useEffect(() => {
+    if (tender && tender.lots && tender.lots.length > 0) {
+      const allIds = tender.lots.map(l => l.id || 1);
+      setSelectedLotIds(allIds);
+      const initPrices = {};
+      const initSpecs = {};
+      let total = 0;
+      tender.lots.forEach((l, idx) => {
+        const lotId = l.id || idx + 1;
+        const priceVal = l.start_price || l.unit_price || 0;
+        initPrices[lotId] = priceVal;
+        initSpecs[lotId] = '';
+        total += priceVal;
+      });
+      setLotPrices(initPrices);
+      setLotSpecs(initSpecs);
+      if (tender.lots.length > 1) {
+        setBidPrice(Math.round(total * 0.95));
+      }
+    }
+  }, [tender]);
+
+  const toggleLotSelection = (lotId) => {
+    let nextIds = [];
+    if (selectedLotIds.includes(lotId)) {
+      nextIds = selectedLotIds.filter(i => i !== lotId);
+    } else {
+      nextIds = [...selectedLotIds, lotId];
+    }
+    setSelectedLotIds(nextIds);
+    const total = nextIds.reduce((sum, idKey) => sum + Number(lotPrices[idKey] || 0), 0);
+    setBidPrice(total ? Math.round(total * 0.95) : '');
+  };
 
   const loadVaultDocs = () => {
     try {
@@ -80,7 +118,7 @@ const TenderDetails = () => {
     try {
       const res = await tendersAPI.get(id);
       setTender(res.data);
-      if (res.data.start_price) {
+      if (res.data.start_price && (!res.data.lots || res.data.lots.length <= 1)) {
         setBidPrice(Math.round(res.data.start_price * 0.95));
       }
 
@@ -133,16 +171,30 @@ const TenderDetails = () => {
       toast.error(`Ваше ценовое предложение должно быть строго ниже стартовой суммы (${formatPriceKzt(tender.start_price)} ₸)`);
       return;
     }
+    if (tender?.lots && tender.lots.length > 1 && selectedLotIds.length === 0) {
+      toast.error('Выберите хотя бы 1 лот для участия в закупке');
+      return;
+    }
     setShowEdsModal(true);
   };
 
   const processBidSubmission = async (signedCms) => {
     setIsSubmitting(true);
     try {
+      const itemsPayload = (tender?.lots && tender.lots.length > 0)
+        ? selectedLotIds.map(lotId => ({
+            lot_id: lotId,
+            price: Number(lotPrices[lotId] || 0),
+            proposed_tech_spec: lotSpecs[lotId] || techSpecNotes || ""
+          }))
+        : [];
+
       const payload = {
         tender_id: tender.id,
         price: Number(bidPrice),
+        tech_spec_notes: techSpecNotes,
         eds_hash: signedCms || "demo_signed_hash_supplier_12345",
+        items: itemsPayload,
         documents: supplierFiles.map(f => ({
           file_name: f.name,
           doc_type: f.category,
@@ -154,7 +206,7 @@ const TenderDetails = () => {
 
       const res = await bidsAPI.submit(payload);
       setMyBid(res.data);
-      toast.success('Заявка и коммерческое предложение успешно подписаны ЭЦП и поданы!');
+      toast.success('Заявка и техническая спецификация успешно подписаны ЭЦП и поданы!');
       fetchTenderAndBids();
     } catch (error) {
       console.error(error);
@@ -545,15 +597,43 @@ const TenderDetails = () => {
                   Протоколы вскрытия заявки и подведения итогов подписываются ЭЦП KalkanCrypt.
                 </p>
                 
-                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id || 1}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП</div>
+                {tender.status === 'cancelled' || (tender.bids && tender.bids.length === 0 && new Date(tender.deadline_at) <= new Date()) ? (
+                  <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '8px', padding: '1.25rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#be123c', fontSize: '0.95rem' }}>
+                          Протокол итогов (Закупка не состоялась) № P-FAILED-{tender.id}
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#9f1239', marginTop: '0.25rem' }}>
+                          Причина: {tender.cancellation_reason || "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков."}
+                        </div>
+                      </div>
+                      <span className="badge" style={{ backgroundColor: '#ffe4e6', color: '#be123c', border: '1px solid #fecdd3', fontWeight: 800, padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.82rem' }}>
+                        ❌ Не состоялась (0 заявок)
+                      </span>
+                    </div>
+
+                    <a
+                      href={`/api/v1/tenders/${tender.id}/protocol/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline"
+                      style={{ background: '#ffffff', color: '#be123c', borderColor: '#fca5a5', fontWeight: 700, fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <FileText size={16} style={{ marginRight: '0.4rem' }} /> Скачать протокол итогов (PDF / HTML)
+                    </a>
                   </div>
-                  <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.3rem 0.6rem' }}>
-                    ✓ Подписан ЭЦП
-                  </span>
-                </div>
+                ) : (
+                  <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id || 1}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП</div>
+                    </div>
+                    <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.3rem 0.6rem' }}>
+                      ✓ Подписан ЭЦП
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -581,9 +661,69 @@ const TenderDetails = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitClick}>
+                  {/* Выбор лотов при наличии нескольких лотов в закупке */}
+                  {tender?.lots && tender.lots.length > 1 && (
+                    <div style={{ marginBottom: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem', background: '#f8fafc' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.4rem' }}>
+                        📦 Выберите лоты для подачи заявки ({selectedLotIds.length} из {tender.lots.length}):
+                      </label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
+                        {tender.lots.map((lot, idx) => {
+                          const lotId = lot.id || idx + 1;
+                          const isChecked = selectedLotIds.includes(lotId);
+                          return (
+                            <div 
+                              key={lotId} 
+                              style={{ padding: '0.55rem', border: `1px solid ${isChecked ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', background: isChecked ? '#ffffff' : '#f1f5f9' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => toggleLotSelection(lotId)}>
+                                <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                                <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f172a' }}>
+                                  Лот №{lot.lot_number || idx + 1}: {lot.title}
+                                </span>
+                              </div>
+                              {isChecked && (
+                                <div style={{ marginTop: '0.4rem', paddingLeft: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                  <div>
+                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>Цена по лоту (₸):</label>
+                                    <input
+                                      type="number"
+                                      className="form-control form-control-sm"
+                                      value={lotPrices[lotId] || ''}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setLotPrices(prev => ({ ...prev, [lotId]: val }));
+                                        const newPrices = { ...lotPrices, [lotId]: val };
+                                        const total = selectedLotIds.reduce((sum, idKey) => sum + Number(newPrices[idKey] || 0), 0);
+                                        setBidPrice(total ? Math.round(total * 0.95) : '');
+                                      }}
+                                      placeholder="Цена за данный лот"
+                                      style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1d4ed8' }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>Спецификация / Аналог товара по лоту:</label>
+                                    <textarea
+                                      className="form-control form-control-sm"
+                                      rows={2}
+                                      value={lotSpecs[lotId] || ''}
+                                      onChange={(e) => setLotSpecs(prev => ({ ...prev, [lotId]: e.target.value }))}
+                                      placeholder="Характеристики предлагаемого товара по лоту..."
+                                      style={{ fontSize: '0.76rem' }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ marginBottom: '1rem' }}>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
-                      Ваша цена (тенге):
+                      Общее ценовое предложение (тенге):
                     </label>
                     <input
                       type="number"
@@ -597,6 +737,21 @@ const TenderDetails = () => {
                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
                       Стартовая цена: {totalSum} ₸
                     </div>
+                  </div>
+
+                  {/* Редактируемое поле Технической спецификации / Предложения аналога */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
+                      📝 Техническая спецификация / Предложение аналогичного товара:
+                    </label>
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      placeholder="Укажите технические характеристики товара, ГОСТ, модель или предложите эквивалентный / аналогичный товар..."
+                      value={techSpecNotes}
+                      onChange={(e) => setTechSpecNotes(e.target.value)}
+                      style={{ fontSize: '0.82rem', resize: 'vertical' }}
+                    />
                   </div>
 
                   {/* Документы из Хранилища Поставщика */}

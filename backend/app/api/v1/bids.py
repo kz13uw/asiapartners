@@ -86,6 +86,7 @@ async def submit_bid(
         supplier_id=current_user.id,
         company_id=company.id,
         price=body.price or (sum(i.price for i in body.items) if body.items else tender.start_price * 0.95),
+        tech_spec_notes=body.tech_spec_notes,
         is_anti_dumping_flag=is_dumping,
         eds_hash=body.eds_hash or "demo_bid_signature",
     )
@@ -99,6 +100,9 @@ async def submit_bid(
                 bid_id=bid.id,
                 lot_id=item.lot_id,
                 price=item.price,
+                proposed_brand=item.proposed_brand,
+                is_equivalent=item.is_equivalent or False,
+                proposed_tech_spec=item.proposed_tech_spec,
                 status=BidStatus.SUBMITTED
             ))
 

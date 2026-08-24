@@ -121,6 +121,39 @@ async def get_tender(
     if tender.status == TenderStatus.DRAFT:
         if not current_user or (current_user.id != tender.organizer_id and current_user.role != UserRole.ADMIN):
             raise HTTPException(status_code=403, detail="Черновик закупки доступен только создавшему его организатору")
+
+    # Авто-проверка истечения срока и количества заявок
+    now = datetime.utcnow()
+    if tender.status in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED, TenderStatus.EVALUATION] and tender.deadline_at and tender.deadline_at <= now:
+        from app.models.models import Bid, BidStatus, Protocol
+        bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender_id, Bid.status != BidStatus.REJECTED))
+        bids = bids_res.scalars().all()
+        if not bids:
+            tender.status = TenderStatus.CANCELLED
+            tender.cancellation_reason = "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков"
+            
+            p_res = await db.execute(select(Protocol).where(Protocol.tender_id == tender_id, Protocol.protocol_type == "failed"))
+            if not p_res.scalar_one_or_none():
+                import json
+                failed_proto = Protocol(
+                    tender_id=tender_id,
+                    protocol_type="failed",
+                    protocol_content=json.dumps({
+                        "title": f"Протокол итогов (Закупка не состоялась) № P-FAILED-{tender_id}",
+                        "reason": "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков",
+                        "tender_number": tender.number,
+                        "tender_title": tender.title,
+                        "bids_count": 0,
+                        "status": "failed",
+                        "created_at": datetime.utcnow().isoformat()
+                    }, ensure_ascii=False),
+                    eds_hash=f"auto_failed_sig_{tender_id}",
+                    is_published=True,
+                    published_at=datetime.utcnow()
+                )
+                db.add(failed_proto)
+            await db.commit()
+
     return tender
 
 

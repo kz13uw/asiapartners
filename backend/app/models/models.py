@@ -275,6 +275,7 @@ class Bid(Base):
     is_anti_dumping_flag: Mapped[bool] = mapped_column(Boolean, default=False)       # Флаг демпинга
     status: Mapped[BidStatus] = mapped_column(Enum(BidStatus), default=BidStatus.SUBMITTED)
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    tech_spec_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)      # Техническая спецификация товара / аналога
     eds_hash: Mapped[Text] = mapped_column(Text)                               # хэш подписи заявки
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -302,9 +303,10 @@ class BidItem(Base):
     rank: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # 📦 Предложение эквивалентов / аналогов
+    # 📦 Предложение эквивалентов / аналогов и техническая спецификация
     proposed_brand: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_equivalent: Mapped[bool] = mapped_column(Boolean, default=False)
+    proposed_tech_spec: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     bid: Mapped[Bid] = relationship("Bid", back_populates="items")
     lot: Mapped[Lot] = relationship("Lot", back_populates="bid_items")
