@@ -827,9 +827,9 @@ const CreateTender = () => {
               </div>
 
               {/* Поля Наименования и Описания */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem', color: '#334155' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.3rem', color: '#334155' }}>
                     {formData.subject_type === 'goods' ? 'Наименование товара' : 'Наименование услуги / объема работ'} *
                   </label>
                   <input
@@ -840,6 +840,23 @@ const CreateTender = () => {
                     onChange={(e) => handleLotChange(index, 'title', e.target.value)}
                     required
                   />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.3rem', color: '#0369a1' }}>
+                    📌 Описание лота (Подробное техническое задание Заказчика)
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    placeholder="Укажите подробное техническое описание лота, требования к качеству, ГОСТ, стандартам и комплектации..."
+                    value={lot.description || ''}
+                    onChange={(e) => handleLotChange(index, 'description', e.target.value)}
+                    style={{ fontSize: '0.88rem' }}
+                  />
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    💡 Данное описание отображается в карточке лота при полотовом расчете и подаче заявок Поставщиками.
+                  </div>
                 </div>
               </div>
 
