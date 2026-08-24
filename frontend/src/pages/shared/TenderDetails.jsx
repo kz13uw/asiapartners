@@ -581,14 +581,14 @@ const TenderDetails = () => {
           )}
         </div>
 
-        {/* ПРАВАЯ ЧАСТЬ: ФОРМА ПОДАЧИ ЗАЯВКИ ПОСТАВЩИКОМ ИЛИ ВХОД ДЛЯ ГОСТЕЙ */}
-        <div className="card" style={{ padding: '1.25rem', border: '2px solid var(--pk-primary)', borderRadius: '10px' }}>
-          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: 'var(--pk-primary)', fontWeight: 800 }}>
-            ⚡ Подача ценового предложения
-          </h4>
+        {/* ПРАВАЯ ЧАСТЬ: ФОРМА ПОДАЧИ ЗАЯВКИ ПОСТАВЩИКОМ (ТОЛЬКО ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА) */}
+        {user?.role === 'supplier' && (
+          <div className="card" style={{ padding: '1.25rem', border: '2px solid var(--pk-primary)', borderRadius: '10px' }}>
+            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: 'var(--pk-primary)', fontWeight: 800 }}>
+              ⚡ Подача ценового предложения
+            </h4>
 
-          {user?.role === 'supplier' ? (
-            myBid ? (
+            {myBid ? (
               <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
                 <CheckCircle2 size={32} color="#15803d" style={{ margin: '0 auto 0.5rem' }} />
                 <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem' }}>Заявка успешно подана!</div>
@@ -666,28 +666,9 @@ const TenderDetails = () => {
                   <ShieldCheck size={18} style={{ marginRight: '0.4rem' }} /> Подать заявку по ЭЦП
                 </button>
               </form>
-            )
-          ) : (
-            <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
-              <p style={{ fontSize: '0.82rem', color: '#475569', marginBottom: '1rem', lineHeight: 1.4 }}>
-                Для подачи ценового предложения и участия в данной закупке требуется авторизация по ЭЦП Поставщика.
-              </p>
-              <button 
-                type="button" 
-                className="btn btn-primary"
-                onClick={() => setShowEdsModal(true)}
-                style={{ width: '100%', justifyContent: 'center', fontWeight: 800, padding: '0.65rem', fontSize: '0.88rem' }}
-              >
-                <ShieldCheck size={18} style={{ marginRight: '0.4rem' }} /> Войти по ЭЦП Поставщика
-              </button>
-              <div style={{ marginTop: '0.75rem' }}>
-                <Link to="/login" style={{ fontSize: '0.8rem', color: '#0284c7', textDecoration: 'none', fontWeight: 600 }}>
-                  Войти по логину и паролю
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
       </div>
 
