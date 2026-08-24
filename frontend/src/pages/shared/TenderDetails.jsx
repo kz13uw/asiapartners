@@ -47,9 +47,9 @@ const TenderDetails = () => {
   const effectiveLots = (tender?.lots && tender.lots.length > 0)
     ? tender.lots
     : [
-        { id: 1, lot_number: 1, title: `${tender?.title || 'Поставка оборудования'} (Лот №1)`, quantity: 1, unit: 'шт', unit_price: Math.round((tender?.start_price || 3000000) * 0.6), start_price: Math.round((tender?.start_price || 3000000) * 0.6), delivery_place: tender?.delivery_place || 'г. Алматы' },
-        { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', quantity: 1, unit: 'компл', unit_price: Math.round((tender?.start_price || 3000000) * 0.25), start_price: Math.round((tender?.start_price || 3000000) * 0.25), delivery_place: tender?.delivery_place || 'г. Алматы' },
-        { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и гарантийного обслуживания (Лот №3)', quantity: 1, unit: 'услуга', unit_price: Math.round((tender?.start_price || 3000000) * 0.15), start_price: Math.round((tender?.start_price || 3000000) * 0.15), delivery_place: tender?.delivery_place || 'г. Алматы' }
+        { id: 1, lot_number: 1, title: `${tender?.title || 'Поставка оборудования'} (Лот №1)`, description: tender?.description || 'Поставка основному наименованию продукции/оборудования по спецификации заказчика в полном объеме с предоставлением гарантии.', quantity: 1, unit: 'компл', unit_price: Math.round((tender?.start_price || 3000000) * 0.6), start_price: Math.round((tender?.start_price || 3000000) * 0.6), delivery_place: tender?.delivery_place || 'г. Алматы' },
+        { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', description: 'Поставка оригинальных комплектующих, расходных материалов и сопутствующих узлов по ГОСТ/СТ РК.', quantity: 1, unit: 'парти', unit_price: Math.round((tender?.start_price || 3000000) * 0.25), start_price: Math.round((tender?.start_price || 3000000) * 0.25), delivery_place: tender?.delivery_place || 'г. Алматы' },
+        { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и сервисного обслуживания (Лот №3)', description: 'Выполнение работ по доставке, установке, настройке оборудования и предоставление сервисного обслуживания.', quantity: 1, unit: 'услуга', unit_price: Math.round((tender?.start_price || 3000000) * 0.15), start_price: Math.round((tender?.start_price || 3000000) * 0.15), delivery_place: tender?.delivery_place || 'г. Алматы' }
       ];
 
   useEffect(() => {
@@ -57,9 +57,9 @@ const TenderDetails = () => {
       const lotsToUse = (tender.lots && tender.lots.length > 0)
         ? tender.lots
         : [
-            { id: 1, lot_number: 1, title: `${tender.title || 'Поставка оборудования'} (Лот №1)`, start_price: Math.round((tender.start_price || 3000000) * 0.6) },
-            { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', start_price: Math.round((tender.start_price || 3000000) * 0.25) },
-            { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и гарантийного обслуживания (Лот №3)', start_price: Math.round((tender.start_price || 3000000) * 0.15) }
+            { id: 1, lot_number: 1, title: `${tender.title || 'Поставка оборудования'} (Лот №1)`, description: tender.description || 'Поставка основных товаров по спецификации заказчика.', start_price: Math.round((tender.start_price || 3000000) * 0.6) },
+            { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', description: 'Поставка оригинальных комплектующих и материалов.', start_price: Math.round((tender.start_price || 3000000) * 0.25) },
+            { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и сервисного обслуживания (Лот №3)', description: 'Монтаж, пусконаладка и сервис.', start_price: Math.round((tender.start_price || 3000000) * 0.15) }
           ];
 
       const allIds = lotsToUse.map((l, idx) => l.id || idx + 1);
@@ -788,6 +788,24 @@ const TenderDetails = () => {
                           <span style={{ fontWeight: 800, fontSize: '0.9rem', color: isChecked ? '#1d4ed8' : '#334155' }}>
                             Лот №{lot.lot_number || idx + 1}: {lot.title}
                           </span>
+                        </div>
+
+                        {/* Описание лота от Заказчика */}
+                        <div style={{ marginTop: '0.4rem', paddingLeft: '1.75rem' }}>
+                          <div style={{ fontSize: '0.82rem', color: '#334155', background: isChecked ? '#f0f9ff' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '6px', borderLeft: '3px solid #0284c7', border: '1px solid #e2e8f0', lineHeight: 1.45 }}>
+                            <div style={{ fontWeight: 700, color: '#0369a1', fontSize: '0.78rem', marginBottom: '0.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>📌 Описание лота (Техническое задание Заказчика):</span>
+                              <span style={{ fontWeight: 600, color: '#64748b' }}>Бюджет: {formatPriceKzt(lot.start_price || lot.unit_price || 0)} ₸</span>
+                            </div>
+                            <div style={{ color: '#475569' }}>
+                              {lot.description || lot.technical_spec || lot.details || tender?.description || 'Поставка продукции / оказание услуг согласно техническому заданию заказчика.'}
+                            </div>
+                            {(lot.quantity || lot.unit) && (
+                              <div style={{ marginTop: '0.25rem', fontSize: '0.78rem', color: '#0e7490', fontWeight: 600 }}>
+                                📦 Объем: {lot.quantity || 1} {lot.unit || 'шт'} {lot.delivery_place ? `• Место поставки: ${lot.delivery_place}` : ''}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {isChecked && (
