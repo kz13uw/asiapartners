@@ -757,117 +757,115 @@ const TenderDetails = () => {
             </div>
 
             {/* Тело модальной формы */}
-            <form onSubmit={handleSubmitClick} style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                
-                {/* Блок 1: Полотовой выбор */}
-                <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1.1rem', background: '#f8fafc' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                      📦 Выберите лоты для участия ({selectedLotIds.length} из {effectiveLots.length}):
-                    </label>
-                    <span style={{ fontSize: '0.74rem', background: '#e0f2fe', color: '#0369a1', padding: '0.2rem 0.55rem', borderRadius: '4px', fontWeight: 700 }}>
-                      Полотовой расчёт
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '0 0 0.75rem 0' }}>
-                    Отметьте галочками нужные лоты, укажите цены и спецификации предлагаемого товара по каждому лоту:
-                  </p>
+            {/* Тело модальной формы (ПОСЛЕДОВАТЕЛЬНО СВЕРХУ ВНИЗ НА ВСЮ ШИРИНУ) */}
+            <form onSubmit={handleSubmitClick} style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              
+              {/* 1. БЛОК 1: Выбор лотов для участия (НА ВСЮ ШИРИНУ) */}
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem', background: '#f8fafc', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    📦 1. Выберите лоты для участия ({selectedLotIds.length} из {effectiveLots.length}):
+                  </label>
+                  <span style={{ fontSize: '0.76rem', background: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.6rem', borderRadius: '4px', fontWeight: 700 }}>
+                    Полотовой расчёт
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.85rem 0' }}>
+                  Отметьте галочками нужные лоты, укажите цены и спецификации предлагаемого товара по каждому лоту:
+                </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '320px', overflowY: 'auto', paddingRight: '0.2rem' }}>
-                    {effectiveLots.map((lot, idx) => {
-                      const lotId = lot.id || idx + 1;
-                      const isChecked = selectedLotIds.includes(lotId);
-                      return (
-                        <div 
-                          key={lotId} 
-                          style={{ padding: '0.75rem', border: `1px solid ${isChecked ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '8px', background: isChecked ? '#ffffff' : '#f1f5f9', boxShadow: isChecked ? '0 2px 4px rgba(59,130,246,0.08)' : 'none' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }} onClick={() => toggleLotSelection(lotId)}>
-                            <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-                            <span style={{ fontWeight: 700, fontSize: '0.86rem', color: isChecked ? '#1d4ed8' : '#334155' }}>
-                              Лот №{lot.lot_number || idx + 1}: {lot.title}
-                            </span>
-                          </div>
-
-                          {isChecked && (
-                            <div style={{ marginTop: '0.6rem', paddingLeft: '1.6rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', borderLeft: '3px solid #3b82f6' }}>
-                              <div>
-                                <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.2rem' }}>
-                                  Предложенная цена по лоту №{lot.lot_number || idx + 1} (₸):
-                                </label>
-                                <input
-                                  type="number"
-                                  className="form-control form-control-sm"
-                                  value={lotPrices[lotId] || ''}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setLotPrices(prev => ({ ...prev, [lotId]: val }));
-                                    const newPrices = { ...lotPrices, [lotId]: val };
-                                    const total = selectedLotIds.reduce((sum, idKey) => sum + Number(newPrices[idKey] || 0), 0);
-                                    setBidPrice(total ? Math.round(total * 0.95) : '');
-                                  }}
-                                  placeholder="Цена за лот"
-                                  style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1d4ed8' }}
-                                />
-                              </div>
-                              <div>
-                                <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.2rem' }}>
-                                  Спецификация / Аналог товара по лоту №{lot.lot_number || idx + 1}:
-                                </label>
-                                <textarea
-                                  className="form-control form-control-sm"
-                                  rows={2}
-                                  value={lotSpecs[lotId] || ''}
-                                  onChange={(e) => setLotSpecs(prev => ({ ...prev, [lotId]: e.target.value }))}
-                                  placeholder="Параметры предлагаемого товара по этому лоту..."
-                                  style={{ fontSize: '0.88rem' }}
-                                />
-                              </div>
-                            </div>
-                          )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                  {effectiveLots.map((lot, idx) => {
+                    const lotId = lot.id || idx + 1;
+                    const isChecked = selectedLotIds.includes(lotId);
+                    return (
+                      <div 
+                        key={lotId} 
+                        style={{ padding: '0.85rem 1rem', border: `1px solid ${isChecked ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '8px', background: isChecked ? '#ffffff' : '#f1f5f9', boxShadow: isChecked ? '0 2px 4px rgba(59,130,246,0.08)' : 'none', width: '100%', boxSizing: 'border-box' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer' }} onClick={() => toggleLotSelection(lotId)}>
+                          <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                          <span style={{ fontWeight: 800, fontSize: '0.9rem', color: isChecked ? '#1d4ed8' : '#334155' }}>
+                            Лот №{lot.lot_number || idx + 1}: {lot.title}
+                          </span>
                         </div>
-                      );
-                    })}
+
+                        {isChecked && (
+                          <div style={{ marginTop: '0.75rem', paddingLeft: '1.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', borderLeft: '3px solid #3b82f6', width: '100%', boxSizing: 'border-box' }}>
+                            <div>
+                              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
+                                Предложенная цена по лоту №{lot.lot_number || idx + 1} (₸):
+                              </label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                value={lotPrices[lotId] || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setLotPrices(prev => ({ ...prev, [lotId]: val }));
+                                  const newPrices = { ...lotPrices, [lotId]: val };
+                                  const total = selectedLotIds.reduce((sum, idKey) => sum + Number(newPrices[idKey] || 0), 0);
+                                  setBidPrice(total || '');
+                                }}
+                                placeholder="Укажите цену за лот"
+                                style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1d4ed8', maxWidth: '350px' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
+                                Спецификация / Аналог товара по лоту №{lot.lot_number || idx + 1}:
+                              </label>
+                              <textarea
+                                className="form-control"
+                                rows={2}
+                                value={lotSpecs[lotId] || ''}
+                                onChange={(e) => setLotSpecs(prev => ({ ...prev, [lotId]: e.target.value }))}
+                                placeholder="Укажите параметры предлагаемого товара по этому лоту..."
+                                style={{ fontSize: '0.85rem' }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. БЛОК 2: Итоговая сумма и техническая спецификация (ПОСЛЕДОВАТЕЛЬНО СВЕРХУ ВНИЗ) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem', background: '#f8fafc', width: '100%', boxSizing: 'border-box' }}>
+                  <label style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
+                    💰 2. Итоговое ценовое предложение (тенге):
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    className="form-control"
+                    value={bidPrice ? `${formatPriceKzt(bidPrice)} ₸` : '0.00 ₸'}
+                    style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1d4ed8', padding: '0.75rem 1rem', background: '#e0f2fe', borderColor: '#7dd3fc', cursor: 'not-allowed', width: '100%' }}
+                  />
+                  <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: '0.35rem', fontWeight: 600 }}>
+                    🔒 Поле нередактируемое (складывается автоматически из цен выбранных лотов выше).
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
+                    Стартовый бюджет закупки: <strong>{totalSum} ₸</strong>
                   </div>
                 </div>
 
-                {/* Блок 2: Общая цена & Общая спецификация */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1.1rem', background: '#f8fafc' }}>
-                    <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
-                      💰 Итоговое ценовое предложение (тенге):
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
-                      className="form-control"
-                      value={bidPrice ? `${formatPriceKzt(bidPrice)} ₸` : '0.00 ₸'}
-                      style={{ fontWeight: 800, fontSize: '1.2rem', color: '#1d4ed8', padding: '0.65rem 0.85rem', background: '#e0f2fe', borderColor: '#7dd3fc', cursor: 'not-allowed' }}
-                    />
-                    <div style={{ fontSize: '0.78rem', color: '#0369a1', marginTop: '0.35rem', fontWeight: 600 }}>
-                      🔒 Поле нередактируемое (складывается автоматически из цен выбранных лотов слева).
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                      Стартовый бюджет закупки: <strong>{totalSum} ₸</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1.1rem', background: '#ffffff', flex: 1 }}>
-                    <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
-                      📝 Общая техническая спецификация / Комментарий к закупке:
-                    </label>
-                    <textarea
-                      className="form-control"
-                      rows={5}
-                      placeholder="Укажите общие технические характеристики предлагаемых товаров/услуг, ГОСТ, гарантийный срок или коммерческие условия..."
-                      value={techSpecNotes}
-                      onChange={(e) => setTechSpecNotes(e.target.value)}
-                      style={{ fontSize: '0.85rem', resize: 'vertical' }}
-                    />
-                  </div>
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem', background: '#ffffff', width: '100%', boxSizing: 'border-box' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
+                    📝 Общая техническая спецификация / Комментарий к закупке:
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={4}
+                    placeholder="Укажите общие технические характеристики предлагаемых товаров/услуг, ГОСТ, гарантийный срок или коммерческие условия..."
+                    value={techSpecNotes}
+                    onChange={(e) => setTechSpecNotes(e.target.value)}
+                    style={{ fontSize: '0.85rem', resize: 'vertical' }}
+                  />
                 </div>
-
               </div>
 
               {/* Блок 3: Документы */}
