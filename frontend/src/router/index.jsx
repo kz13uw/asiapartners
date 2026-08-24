@@ -60,6 +60,7 @@ const AppRouter = () => {
         <Route path="/" element={<IndexPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/public-tenders" element={<PublicTenders />} />
+        <Route path="/tenders/:id" element={<TenderDetails />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
@@ -138,12 +139,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         } />
 
-        {/* Детали тендеров */}
-        <Route path="/tenders/:id" element={
-          <ProtectedRoute>
-            <TenderDetails />
-          </ProtectedRoute>
-        } />
+        {/* Аукционный зал */}
         <Route path="/tenders/:id/auction" element={
           <ProtectedRoute>
             <AuctionRoom />
