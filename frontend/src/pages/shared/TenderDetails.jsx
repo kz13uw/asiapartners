@@ -834,20 +834,21 @@ const TenderDetails = () => {
 
                 {/* Блок 2: Общая цена & Общая спецификация */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1.1rem', background: '#ffffff' }}>
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '1.1rem', background: '#f8fafc' }}>
                     <label style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
                       💰 Итоговое ценовое предложение (тенге):
                     </label>
                     <input
-                      type="number"
+                      type="text"
+                      readOnly
                       className="form-control"
-                      placeholder="Укажите итоговую сумму"
-                      value={bidPrice}
-                      onChange={(e) => setBidPrice(e.target.value)}
-                      style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--pk-primary)', padding: '0.65rem 0.85rem' }}
-                      required
+                      value={bidPrice ? `${formatPriceKzt(bidPrice)} ₸` : '0.00 ₸'}
+                      style={{ fontWeight: 800, fontSize: '1.2rem', color: '#1d4ed8', padding: '0.65rem 0.85rem', background: '#e0f2fe', borderColor: '#7dd3fc', cursor: 'not-allowed' }}
                     />
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.3rem' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#0369a1', marginTop: '0.35rem', fontWeight: 600 }}>
+                      🔒 Поле нередактируемое (складывается автоматически из цен выбранных лотов слева).
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
                       Стартовый бюджет закупки: <strong>{totalSum} ₸</strong>
                     </div>
                   </div>
