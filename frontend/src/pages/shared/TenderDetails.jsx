@@ -242,17 +242,17 @@ const TenderDetails = () => {
         </div>
       </div>
 
-      {/* Основной контент с боковой панелью подачи заявки */}
-      <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'supplier' ? '1fr 360px' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+      {/* Основной контент (строго фикс-размер без скачков ширины) */}
+      <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'supplier' ? 'minmax(0, 1fr) 340px' : 'minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start', width: '100%' }}>
         
         {/* ЛЕВАЯ ЧАСТЬ: ТАБЫ И СОДЕРЖИМОЕ ИЗ СКРИНШОТОВ */}
-        <div>
+        <div style={{ minWidth: 0, width: '100%' }}>
           {/* 3. НАВИГАЦИОННЫЕ ТАБЫ ИЗ СКРИНШОТА */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.2rem' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', marginBottom: '1.25rem', flexWrap: 'nowrap', overflowX: 'auto', gap: '0.2rem' }}>
             <button 
               type="button"
               onClick={() => setActiveTab('general')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'general' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'general' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'general' ? 700 : 500, color: activeTab === 'general' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
+              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'general' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'general' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'general' ? 700 : 500, color: activeTab === 'general' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >
               Общие сведения
             </button>
@@ -260,7 +260,7 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('lots')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'lots' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'lots' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'lots' ? 700 : 500, color: activeTab === 'lots' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
+              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'lots' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'lots' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'lots' ? 700 : 500, color: activeTab === 'lots' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >
               Лоты ({tender.lots?.length || 1})
             </button>
@@ -268,7 +268,7 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('docs')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'docs' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'docs' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'docs' ? 700 : 500, color: activeTab === 'docs' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
+              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'docs' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'docs' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'docs' ? 700 : 500, color: activeTab === 'docs' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >
               Документация
             </button>
@@ -276,7 +276,7 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('protocols')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'protocols' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'protocols' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'protocols' ? 700 : 500, color: activeTab === 'protocols' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
+              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'protocols' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'protocols' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'protocols' ? 700 : 500, color: activeTab === 'protocols' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
             >
               Протоколы
             </button>
@@ -284,20 +284,20 @@ const TenderDetails = () => {
 
           {/* TAB 1: ОБЩИЕ СВЕДЕНИЯ (ТОЧНАЯ КОПИЯ СКРИНШОТА 2) */}
           {activeTab === 'general' && (
-            <div className="fade-in">
+            <div className="fade-in" style={{ width: '100%', minWidth: 0 }}>
               {/* Таблица 1: Общие сведения */}
-              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
                 <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
                   Общие сведения
                 </div>
                 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Способ проведения закупки
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
                         Запрос ценовых предложений
                       </td>
                     </tr>
@@ -306,7 +306,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Тип закупки
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
                         Первая закупка
                       </td>
                     </tr>
@@ -315,7 +315,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Вид предмета закупок
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
                         {isGoods ? 'Товар' : 'Услуги / Работы'}
                       </td>
                     </tr>
@@ -324,7 +324,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Организатор
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 500 }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 500, wordBreak: 'break-word' }}>
                         {organizerName}
                       </td>
                     </tr>
@@ -333,7 +333,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Юр. адрес организатора
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
                         751410000, KAZAKHSTAN, г. Алматы, ул. ЛЕВИТАНА, д. 20, оф. 4
                       </td>
                     </tr>
@@ -369,18 +369,18 @@ const TenderDetails = () => {
               </div>
 
               {/* Таблица 2: Информация об организаторе */}
-              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
                 <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
                   Информация об организаторе
                 </div>
                 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                       <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         ФИО представителя
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600 }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>
                         ОРАЗАЛИЕВА ЖАНАР МАУТХАНОВНА
                       </td>
                     </tr>
@@ -389,7 +389,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         Должность
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
                         Руководитель
                       </td>
                     </tr>
@@ -398,7 +398,7 @@ const TenderDetails = () => {
                       <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                         E-Mail
                       </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600 }}>
+                      <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600, wordBreak: 'break-word' }}>
                         Orazalieva1976@mail.ru
                       </td>
                     </tr>
@@ -410,46 +410,46 @@ const TenderDetails = () => {
 
           {/* TAB 2: ЛОТЫ */}
           {activeTab === 'lots' && (
-            <div className="fade-in">
-              <div className="table-wrapper card" style={{ padding: 0, overflowX: 'auto', borderRadius: '8px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <div className="fade-in" style={{ width: '100%', minWidth: 0 }}>
+              <div className="table-wrapper card" style={{ padding: 0, overflowX: 'auto', borderRadius: '8px', width: '100%' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700, textAlign: 'left' }}>
-                      <th style={{ padding: '0.75rem 1rem' }}>№ Лота</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Наименование лота</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Кол-во</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Цена за ед., тг.</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Сумма, тг.</th>
-                      <th style={{ padding: '0.75rem 1rem' }}>Место поставки</th>
+                      <th style={{ padding: '0.75rem 0.75rem', width: '70px' }}>№ ЛОТА</th>
+                      <th style={{ padding: '0.75rem 0.75rem' }}>НАИМЕНОВАНИЕ ЛОТА</th>
+                      <th style={{ padding: '0.75rem 0.75rem', width: '85px' }}>КОЛ-ВО</th>
+                      <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>ЦЕНА ЗА ЕД., ТГ.</th>
+                      <th style={{ padding: '0.75rem 0.75rem', width: '130px' }}>СУММА, ТГ.</th>
+                      <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>МЕСТО ПОСТАВКИ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(tender.lots && tender.lots.length > 0 ? tender.lots : [{
                       lot_number: 1,
                       title: tenderTitle,
-                      quantity: 3,
-                      unit_price: 1068103.45,
-                      start_price: 3204310.35,
-                      delivery_place: 'г. Алматы, ул. Левитана, д. 20'
+                      quantity: 1,
+                      unit_price: tender.start_price || 1000000,
+                      start_price: tender.start_price || 1000000,
+                      delivery_place: 'Алматы'
                     }]).map((lot, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
+                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
                           {lot.lot_number || idx + 1}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>
+                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 600, color: '#0f172a', wordBreak: 'break-word' }}>
                           {lot.title}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700 }}>
-                          {lot.quantity} {lot.unit || 'шт'}
+                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700 }}>
+                          {lot.quantity} {lot.unit || 'лот'}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
+                        <td style={{ padding: '0.75rem 0.75rem', whiteSpace: 'nowrap' }}>
                           {formatPriceKzt(lot.unit_price)}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: '#15803d' }}>
+                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 800, color: '#15803d', whiteSpace: 'nowrap' }}>
                           {formatPriceKzt(lot.start_price)}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.8rem', color: '#475569' }}>
-                          {lot.delivery_place || 'г. Алматы'}
+                        <td style={{ padding: '0.75rem 0.75rem', fontSize: '0.8rem', color: '#475569', wordBreak: 'break-word' }}>
+                          {lot.delivery_place || 'Алматы'}
                         </td>
                       </tr>
                     ))}
