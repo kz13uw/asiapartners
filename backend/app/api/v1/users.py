@@ -101,15 +101,18 @@ async def change_my_password(
     db: AsyncSession = Depends(get_db),
 ):
     from app.core.security import verify_password, get_password_hash, validate_password_policy
-    if not current_user.hashed_password or not verify_password(body.old_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Неверно указан старый пароль")
+    if current_user.hashed_password and not verify_password(body.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Неверно указан текущий (старый) пароль")
     
-    is_valid, msg = validate_password_policy(body.new_password)
+    new_pwd = (body.new_password or "").strip()
+    is_valid, msg = validate_password_policy(new_pwd)
     if not is_valid:
         raise HTTPException(status_code=400, detail=msg)
 
-    current_user.hashed_password = get_password_hash(body.new_password)
+    current_user.hashed_password = get_password_hash(new_pwd)
     current_user.password_changed_at = datetime.utcnow()
+    current_user.failed_login_attempts = 0
+    current_user.status = UserStatus.ACTIVE
     db.add(current_user)
     await db.commit()
     return {"message": "Пароль успешно изменен"}
