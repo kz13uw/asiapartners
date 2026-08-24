@@ -194,7 +194,9 @@ async def init_db(clean_all: bool = False):
                     ),
                 ]
                 for t_item in sample_tenders:
-                    db.add(t_item)
+                    exist_t = (await db.execute(select(Tender).where(Tender.number == t_item.number))).scalar_one_or_none()
+                    if not exist_t:
+                        db.add(t_item)
                 await db.flush()
 
                 # 4. Тестовые заявки поставщиков для проверки Вскрытия / Оценки
