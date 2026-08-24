@@ -7,18 +7,12 @@ import { useTranslation } from '../../store/useLanguageStore';
 import toast from 'react-hot-toast';
 import TenderRegistryTable from '../../components/TenderRegistryTable';
 
-const initialSupplierDocs = [
-  { id: 1, name: 'Лицензия на СМР (1 категории)', category: 'Лицензии', date: '12.01.2024', size: '2.4 МБ', format: 'PDF' },
-  { id: 2, name: 'Справка об отсутствии налоговой задолженности', category: 'Налоги', date: '15.08.2024', size: '1.1 МБ', format: 'PDF' },
-  { id: 3, name: 'Свидетельство о государственной регистрации ТОО', category: 'Учредительные', date: '10.02.2024', size: '850 КБ', format: 'PDF' }
-];
-
 const getStoredDocs = () => {
   try {
     const saved = localStorage.getItem('supplier_vault_docs');
     if (saved) return JSON.parse(saved);
   } catch (e) {}
-  return initialSupplierDocs;
+  return [];
 };
 
 const SupplierDashboard = () => {

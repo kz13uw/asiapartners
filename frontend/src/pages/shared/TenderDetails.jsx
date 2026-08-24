@@ -98,14 +98,11 @@ const TenderDetails = () => {
       if (saved) {
         setVaultDocs(JSON.parse(saved));
       } else {
-        const defaultVault = [
-          { id: 1, name: 'Лицензия на СМР (1 категории)', category: 'Лицензии', date: '12.01.2024', size: '2.4 МБ', format: 'PDF' },
-          { id: 2, name: 'Справка об отсутствии налоговой задолженности', category: 'Налоги', date: '15.08.2024', size: '1.1 МБ', format: 'PDF' },
-          { id: 3, name: 'Свидетельство о государственной регистрации ТОО', category: 'Учредительные', date: '10.02.2024', size: '850 КБ', format: 'PDF' }
-        ];
-        setVaultDocs(defaultVault);
+        setVaultDocs([]);
       }
-    } catch (e) {}
+    } catch (e) {
+      setVaultDocs([]);
+    }
   };
 
   const toggleVaultDoc = (doc) => {
@@ -883,23 +880,29 @@ const TenderDetails = () => {
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
                       Выберите из вашего Хранилища:
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '140px', overflowY: 'auto' }}>
-                      {vaultDocs.map((doc) => {
-                        const isSelected = selectedVaultDocIds.includes(doc.id);
-                        return (
-                          <div 
-                            key={doc.id}
-                            onClick={() => toggleVaultDoc(doc)}
-                            style={{ padding: '0.5rem 0.75rem', border: `1px solid ${isSelected ? '#3b82f6' : '#cbd5e1'}`, background: isSelected ? '#eff6ff' : '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                          >
-                            <span style={{ fontWeight: 600, color: isSelected ? '#1d4ed8' : '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {doc.name}
-                            </span>
-                            {isSelected && <Check size={16} color="#1d4ed8" />}
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {vaultDocs && vaultDocs.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '140px', overflowY: 'auto' }}>
+                        {vaultDocs.map((doc) => {
+                          const isSelected = selectedVaultDocIds.includes(doc.id);
+                          return (
+                            <div 
+                              key={doc.id}
+                              onClick={() => toggleVaultDoc(doc)}
+                              style={{ padding: '0.5rem 0.75rem', border: `1px solid ${isSelected ? '#3b82f6' : '#cbd5e1'}`, background: isSelected ? '#eff6ff' : '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            >
+                              <span style={{ fontWeight: 600, color: isSelected ? '#1d4ed8' : '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {doc.name}
+                              </span>
+                              {isSelected && <Check size={16} color="#1d4ed8" />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '0.75rem', border: '1px dashed #cbd5e1', borderRadius: '6px', background: '#f8fafc', fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>
+                        📂 В вашем Хранилище пока нет документов. Вы можете загрузить их во вкладке «Документы» личного кабинета или выберите файлы с компьютера справа.
+                      </div>
+                    )}
                   </div>
 
                   <div>
