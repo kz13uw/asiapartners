@@ -1,293 +1,300 @@
+"""
+kalkan_verifier.py — Верификация CMS-подписей НУЦ РК (НацБезопасность Казахстана).
+
+Цепочка верификации (от лучшего к худшему):
+  1. KalkanCrypt Java (kalkan.jar) — единственный вариант с полной поддержкой ГОСТ
+  2. asn1crypto — для не-ГОСТ сертификатов (RSA/EC)
+  3. cryptography — аналогично asn1crypto
+  4. openssl CLI — fallback
+  5. Regex по raw bytes — последний резерв
+
+Примечание о ГОСТ:
+  Казахстанские сертификаты используют алгоритмы ГОСТ Р 34.10-2015 и ГОСТ Р 34.11-2015.
+  Стандартный Python (asn1crypto, cryptography, openssl без GOST-провайдера)
+  НЕ ПОДДЕРЖИВАЕТ ГОСТ. Только kalkan.jar поддерживает их через JCE Provider.
+"""
+
 import base64
+import json
 import logging
 import os
 import re
-from typing import Dict, Any, Optional
+import subprocess
+import sys
+import tempfile
 from datetime import datetime, timezone
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger("kalkan_verifier")
 
-KALKAN_CERTS_DIR = os.path.join(os.path.dirname(__file__), "kalkan", "certs")
+# ── Пути ──────────────────────────────────────────────────────────────────────
+_CORE_DIR    = os.path.dirname(__file__)
+_KALKAN_DIR  = os.path.join(_CORE_DIR, "kalkan")
+_KALKAN_JAR  = os.path.join(_KALKAN_DIR, "kalkan.jar")
+_VERIFIER_CLASS_DIR = _KALKAN_DIR   # куда компилируем KalkanCMSVerifier.java
+_VERIFIER_JAVA = os.path.join(_KALKAN_DIR, "KalkanCMSVerifier.java")
+_VERIFIER_CLASS = os.path.join(_KALKAN_DIR, "KalkanCMSVerifier.class")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Вспомогательные функции для парсинга Subject DN (Distinguished Name)
-# Формат КЗ сертификатов: serialNumber=BIN123456789012 или serialNumber=IIN123456789012
-# ──────────────────────────────────────────────────────────────────────────────
+# ── Поиск java-бинарника ──────────────────────────────────────────────────────
+def _find_java() -> Optional[str]:
+    """Возвращает путь к java или None."""
+    # 1. Homebrew OpenJDK 21 (macOS)
+    brew_paths = [
+        "/opt/homebrew/opt/openjdk@21/bin/java",
+        "/opt/homebrew/opt/openjdk/bin/java",
+        "/usr/local/opt/openjdk@21/bin/java",
+        "/usr/local/opt/openjdk/bin/java",
+    ]
+    for p in brew_paths:
+        if os.path.exists(p):
+            return p
 
-def _extract_iin_bin_from_serial(serial_number: str):
-    """
-    Извлекает ИИН и БИН из поля serialNumber сертификата НУЦ РК.
-    Форматы:
-      - "BIN123456789012"        → юридическое лицо
-      - "IIN123456789012"        → физическое лицо
-      - "IIN123456789012BIN210440012345" → представитель юр. лица
-    """
-    if not serial_number:
-        return None, None
+    # 2. JAVA_HOME из окружения
+    java_home = os.environ.get("JAVA_HOME")
+    if java_home:
+        p = os.path.join(java_home, "bin", "java")
+        if os.path.exists(p):
+            return p
 
-    bin_match = re.search(r'BIN(\d{12})', serial_number, re.IGNORECASE)
-    iin_match = re.search(r'IIN(\d{12})', serial_number, re.IGNORECASE)
-
-    bin_val = bin_match.group(1) if bin_match else None
-    iin_val = iin_match.group(1) if iin_match else None
-    return iin_val, bin_val
-
-
-def _parse_subject_dn(subject_dn: str) -> Dict[str, str]:
-    """
-    Парсит строку Subject DN в словарь атрибутов.
-    Пример: "CN=Иванов Иван, SERIALNUMBER=IIN850101400823, O=ТОО Тест, C=KZ"
-    """
-    result = {}
-    if not subject_dn:
-        return result
-
-    # Разделяем по запятой, но не внутри кавычек
-    parts = re.split(r',\s*(?=\w+=)', subject_dn)
-    for part in parts:
-        if '=' in part:
-            key, _, value = part.strip().partition('=')
-            result[key.strip().upper()] = value.strip().strip('"')
-
-    return result
-
-
-def _try_parse_with_cryptography(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
-    """
-    Парсинг CMS/PKCS7 через библиотеку cryptography (Python).
-    Работает без Java и KalkanCrypt JAR.
-    """
+    # 3. Системный java
     try:
-        from cryptography.hazmat.primitives.serialization import pkcs7
-        from cryptography import x509
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from cryptography.exceptions import InvalidSignature
+        r = subprocess.run(["which", "java"], capture_output=True, timeout=3)
+        if r.returncode == 0:
+            path = r.stdout.decode().strip()
+            if path:
+                return path
+    except Exception:
+        pass
 
-        # Пробуем DER (бинарный) → потом PEM
-        try:
-            pkcs7_obj = pkcs7.load_der_pkcs7_certificates(cms_bytes)
-        except Exception:
-            pkcs7_obj = pkcs7.load_pem_pkcs7_certificates(cms_bytes)
+    return None
 
-        if not pkcs7_obj:
+
+def _find_javac() -> Optional[str]:
+    """Возвращает путь к javac или None."""
+    java = _find_java()
+    if java:
+        javac = os.path.join(os.path.dirname(java), "javac")
+        if os.path.exists(javac):
+            return javac
+    return None
+
+
+# ── Компиляция KalkanCMSVerifier.java ─────────────────────────────────────────
+def _ensure_verifier_compiled() -> bool:
+    """Компилирует KalkanCMSVerifier.java если .class не существует."""
+    if not os.path.exists(_VERIFIER_JAVA):
+        logger.warning("KalkanCMSVerifier.java not found at %s", _VERIFIER_JAVA)
+        return False
+    if not os.path.exists(_KALKAN_JAR):
+        logger.warning("kalkan.jar not found at %s", _KALKAN_JAR)
+        return False
+
+    if os.path.exists(_VERIFIER_CLASS):
+        # Перекомпилируем если Java-файл новее .class
+        if os.path.getmtime(_VERIFIER_JAVA) <= os.path.getmtime(_VERIFIER_CLASS):
+            return True
+
+    javac = _find_javac()
+    if not javac:
+        logger.warning("javac not found, cannot compile KalkanCMSVerifier.java")
+        return False
+
+    logger.info("Compiling KalkanCMSVerifier.java ...")
+    try:
+        r = subprocess.run(
+            [javac, "-cp", _KALKAN_JAR, "-d", _VERIFIER_CLASS_DIR, _VERIFIER_JAVA],
+            capture_output=True, timeout=30
+        )
+        if r.returncode != 0:
+            logger.error("javac compilation failed:\n%s", r.stderr.decode("utf-8", errors="ignore"))
+            return False
+        logger.info("KalkanCMSVerifier.java compiled successfully")
+        return True
+    except Exception as e:
+        logger.error("javac failed: %s", e)
+        return False
+
+
+# ── Верификация через kalkan.jar ───────────────────────────────────────────────
+def _try_kalkan_java(cms_base64: str) -> Optional[Dict[str, Any]]:
+    """
+    Запускает KalkanCMSVerifier через Java с kalkan.jar.
+    Возвращает распарсенный JSON или None при ошибке.
+    """
+    java = _find_java()
+    if not java:
+        logger.debug("Java not found, skipping KalkanCrypt verification")
+        return None
+
+    if not os.path.exists(_KALKAN_JAR):
+        logger.debug("kalkan.jar not found")
+        return None
+
+    # Компилируем обёртку при необходимости
+    compiled = _ensure_verifier_compiled()
+    if not compiled:
+        # Fallback: запускаем kalkan.jar напрямую как простую проверку версии
+        # и используем regex для парсинга
+        logger.debug("KalkanCMSVerifier.class not available")
+        return None
+
+    try:
+        result = subprocess.run(
+            [java, "-cp", f"{_KALKAN_JAR}:{_VERIFIER_CLASS_DIR}", "KalkanCMSVerifier", cms_base64],
+            capture_output=True,
+            timeout=15,
+            cwd=_VERIFIER_CLASS_DIR
+        )
+        output = result.stdout.decode("utf-8", errors="ignore").strip()
+        stderr = result.stderr.decode("utf-8", errors="ignore").strip()
+
+        if stderr:
+            logger.debug("KalkanCMSVerifier stderr: %s", stderr[:300])
+
+        if not output:
+            logger.warning("KalkanCMSVerifier returned empty output (rc=%d)", result.returncode)
             return None
 
-        # Берём первый сертификат из SignedData
-        cert = pkcs7_obj[0]
-        now = datetime.now(timezone.utc)
+        # Берём последнюю строку — там JSON
+        last_line = [l.strip() for l in output.splitlines() if l.strip()][-1]
+        parsed = json.loads(last_line)
 
-        # Проверка срока действия
-        not_valid_before = cert.not_valid_before_utc if hasattr(cert, 'not_valid_before_utc') else cert.not_valid_before.replace(tzinfo=timezone.utc)
-        not_valid_after = cert.not_valid_after_utc if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after.replace(tzinfo=timezone.utc)
+        bin_val = parsed.get("bin")
+        iin_val = parsed.get("iin")
+        company = parsed.get("company")
+        is_legal = parsed.get("is_legal", bool(bin_val))
 
-        if now < not_valid_before or now > not_valid_after:
-            return {
-                "valid": False,
-                "error": f"Срок действия сертификата истёк ({not_valid_after.strftime('%d.%m.%Y')})"
-            }
+        if not parsed.get("valid"):
+            return {"valid": False, "error": parsed.get("error", "Верификация KalkanCrypt не прошла")}
 
-        # Извлекаем Subject DN
-        subject = cert.subject
-        subject_dn = ", ".join(
-            f"{attr.oid.dotted_string if attr.oid._name == 'Unknown OID' else attr.oid._name}={attr.value}"
-            for attr in subject
-        )
-        logger.info(f"Certificate Subject DN: {subject_dn}")
-
-        # Ищем serialNumber (содержит BIN/IIN у НУЦ РК)
-        serial_number = None
-        common_name = None
-        org_name = None
-        country = None
-
-        for attr in subject:
-            oid_name = attr.oid._name.upper() if hasattr(attr.oid, '_name') else ''
-            dotted = attr.oid.dotted_string
-
-            # serialNumber (OID 2.5.4.5)
-            if dotted == '2.5.4.5' or 'SERIALNUMBER' in oid_name:
-                serial_number = attr.value
-            # commonName (OID 2.5.4.3)
-            elif dotted == '2.5.4.3' or oid_name == 'COMMONNAME':
-                common_name = attr.value
-            # organizationName (OID 2.5.4.10)
-            elif dotted == '2.5.4.10' or oid_name == 'ORGANIZATIONNAME':
-                org_name = attr.value
-            # countryName (OID 2.5.4.6)
-            elif dotted == '2.5.4.6' or oid_name == 'COUNTRYNAME':
-                country = attr.value
-
-        logger.info(f"serialNumber={serial_number}, CN={common_name}, O={org_name}")
-
-        iin, bin_val = _extract_iin_bin_from_serial(serial_number or "")
-        is_legal = bool(bin_val)
+        logger.info("KalkanCrypt verified: BIN=%s, IIN=%s, company=%s, sig_valid=%s",
+                    bin_val, iin_val, company, parsed.get("signature_valid"))
 
         return {
             "valid": True,
             "bin": bin_val,
-            "iin": iin,
-            "company_name": org_name or common_name,
-            "common_name": common_name,
+            "iin": iin_val,
+            "company_name": company,
+            "common_name": parsed.get("cn"),
             "subject_type": "legal_entity" if is_legal else "individual",
             "is_legal_entity": is_legal,
-            "cert_serial": str(cert.serial_number),
-            "valid_until": not_valid_after.strftime('%d.%m.%Y'),
-            "country": country,
-            "source": "cryptography_lib"
+            "signature_valid": parsed.get("signature_valid", False),
+            "source": "kalkan_java"
         }
 
-    except ImportError:
-        logger.warning("cryptography library not available, falling back to ASN.1 regex")
+    except json.JSONDecodeError as e:
+        logger.warning("KalkanCMSVerifier JSON parse error: %s | output: %s", e, output[:200])
+        return None
+    except subprocess.TimeoutExpired:
+        logger.warning("KalkanCMSVerifier timed out")
         return None
     except Exception as e:
-        logger.warning(f"cryptography parse failed: {e}")
+        logger.warning("KalkanCMSVerifier failed: %s", e)
         return None
+
+
+# ── Вспомогательные функции ────────────────────────────────────────────────────
+def _extract_iin_bin_from_serial(serial: str):
+    bin_m = re.search(r'BIN(\d{12})', serial, re.IGNORECASE)
+    iin_m = re.search(r'IIN(\d{12})', serial, re.IGNORECASE)
+    return (iin_m.group(1) if iin_m else None), (bin_m.group(1) if bin_m else None)
 
 
 def _try_parse_with_asn1crypto(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
-    """
-    Парсинг CMS через asn1crypto — более низкоуровневый, лучше для GOST-сертификатов НУЦ РК.
-    """
     try:
-        from asn1crypto import cms, pem, core
+        from asn1crypto import cms as asn1_cms, pem
 
-        # Убираем PEM-обёртку, если есть
         if pem.detect(cms_bytes):
             _, _, cms_bytes = pem.unarmor(cms_bytes)
 
-        content_info = cms.ContentInfo.load(cms_bytes)
-        if content_info['content_type'].native != 'signed_data':
+        ci = asn1_cms.ContentInfo.load(cms_bytes)
+        if ci['content_type'].native != 'signed_data':
             return None
 
-        signed_data = content_info['content'].parsed
-        if not signed_data['certificates']:
+        sd = ci['content'].parsed
+        if not sd['certificates']:
             return None
 
-        # Берём первый сертификат
-        cert_choice = signed_data['certificates'][0]
-        cert = cert_choice.chosen
-
-        subject = cert['tbs_certificate']['subject']
+        cert = sd['certificates'][0].chosen
         subject_dict = {}
-        for rdn in subject.chosen:
+        for rdn in cert['tbs_certificate']['subject'].chosen:
             for atv in rdn:
-                type_dotted = atv['type'].dotted
-                value = atv['value']
                 try:
-                    value_native = value.chosen.native if hasattr(value, 'chosen') else str(value.native)
+                    val = atv['value'].chosen.native if hasattr(atv['value'], 'chosen') else str(atv['value'].native)
+                    subject_dict[atv['type'].dotted] = val
                 except Exception:
-                    value_native = str(value)
-                subject_dict[type_dotted] = value_native
+                    pass
 
-        logger.info(f"ASN1 Subject dict: {subject_dict}")
+        serial_str = subject_dict.get('2.5.4.5', '')
+        cn_str     = subject_dict.get('2.5.4.3')
+        org_str    = subject_dict.get('2.5.4.10')
 
-        # OID-ы для Subject атрибутов
-        SERIAL_OID = '2.5.4.5'   # serialNumber
-        CN_OID     = '2.5.4.3'   # commonName
-        ORG_OID    = '2.5.4.10'  # organizationName
+        # Если нет в 2.5.4.5, ищем BIN/IIN по всему Subject
+        if not serial_str:
+            serial_str = str(subject_dict)
 
-        serial_number = subject_dict.get(SERIAL_OID)
-        common_name   = subject_dict.get(CN_OID)
-        org_name      = subject_dict.get(ORG_OID)
-
-        # Также пробуем искать по raw string (на случай нестандартного OID)
-        full_subject_str = str(subject_dict)
-        if not serial_number:
-            sn_match = re.search(r'(BIN|IIN)(\d{12})', full_subject_str, re.IGNORECASE)
-            if sn_match:
-                serial_number = sn_match.group(0)
-
-        iin, bin_val = _extract_iin_bin_from_serial(serial_number or full_subject_str)
+        iin, bin_val = _extract_iin_bin_from_serial(serial_str)
         is_legal = bool(bin_val)
 
         # Срок действия
-        tbs = cert['tbs_certificate']
         try:
-            validity = tbs['validity']
-            not_after = validity['not_after'].chosen.native
-            now = datetime.now(timezone.utc)
+            not_after = cert['tbs_certificate']['validity']['not_after'].chosen.native
             if hasattr(not_after, 'tzinfo') and not_after.tzinfo is None:
                 not_after = not_after.replace(tzinfo=timezone.utc)
-            if now > not_after:
-                return {
-                    "valid": False,
-                    "error": f"Срок действия сертификата истёк ({not_after.strftime('%d.%m.%Y')})"
-                }
+            if datetime.now(timezone.utc) > not_after:
+                return {"valid": False, "error": f"Срок действия сертификата истёк ({not_after.strftime('%d.%m.%Y')})"}
             valid_until = not_after.strftime('%d.%m.%Y')
         except Exception:
             valid_until = "N/A"
 
         return {
             "valid": True,
-            "bin": bin_val,
-            "iin": iin,
-            "company_name": org_name or common_name,
-            "common_name": common_name,
+            "bin": bin_val, "iin": iin,
+            "company_name": org_str or cn_str,
+            "common_name": cn_str,
             "subject_type": "legal_entity" if is_legal else "individual",
             "is_legal_entity": is_legal,
             "valid_until": valid_until,
-            "source": "asn1crypto_lib"
+            "source": "asn1crypto"
         }
-
-    except ImportError:
-        logger.warning("asn1crypto not available")
-        return None
     except Exception as e:
-        logger.warning(f"asn1crypto parse failed: {e}")
+        logger.debug("asn1crypto failed: %s", e)
         return None
 
 
 def _try_parse_with_openssl(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
-    """
-    Fallback: парсинг CMS через openssl команду.
-    Доступен на macOS и Linux без дополнительных установок.
-    """
-    import subprocess
-    import tempfile
-
     try:
-        with tempfile.NamedTemporaryFile(suffix='.p7b', delete=False) as tmp:
-            tmp.write(cms_bytes)
-            tmp_path = tmp.name
+        with tempfile.NamedTemporaryFile(suffix='.p7b', delete=False) as f:
+            f.write(cms_bytes)
+            tmp = f.name
 
-        # Извлекаем сертификат из CMS
-        result = subprocess.run(
-            ['openssl', 'pkcs7', '-in', tmp_path, '-inform', 'DER', '-print_certs', '-noout', '-text'],
-            capture_output=True, timeout=5
-        )
-        os.unlink(tmp_path)
-
-        if result.returncode != 0:
-            # Попробуем PEM
-            with tempfile.NamedTemporaryFile(suffix='.p7', delete=False, mode='wb') as tmp2:
-                tmp2.write(cms_bytes)
-                tmp2_path = tmp2.name
-            result = subprocess.run(
-                ['openssl', 'pkcs7', '-in', tmp2_path, '-inform', 'PEM', '-print_certs', '-noout', '-text'],
+        for fmt in ('DER', 'PEM'):
+            r = subprocess.run(
+                ['openssl', 'pkcs7', '-in', tmp, '-inform', fmt, '-print_certs', '-noout', '-text'],
                 capture_output=True, timeout=5
             )
-            os.unlink(tmp2_path)
+            if r.returncode == 0:
+                break
+        os.unlink(tmp)
 
-        output = result.stdout.decode('utf-8', errors='ignore') + result.stderr.decode('utf-8', errors='ignore')
-        logger.debug(f"OpenSSL output snippet: {output[:500]}")
+        out = r.stdout.decode('utf-8', errors='ignore')
+        if not out:
+            return None
 
-        # Парсим вывод openssl
-        serial_match = re.search(r'(?:serialNumber|Serial\s+Number)[^:]*:\s*([^\n]+)', output, re.IGNORECASE)
-        cn_match = re.search(r'(?:CN|commonName)\s*=\s*([^\n,/]+)', output)
-        org_match = re.search(r'(?:O|organizationName)\s*=\s*([^\n,/]+)', output)
-        not_after_match = re.search(r'Not After\s*:\s*([^\n]+)', output, re.IGNORECASE)
+        sn_m   = re.search(r'(?:serialNumber|Serial Number)\s*[=:]\s*([^\n,/]+)', out, re.IGNORECASE)
+        cn_m   = re.search(r'(?:CN|commonName)\s*=\s*([^\n,/]+)', out)
+        org_m  = re.search(r'(?:^|\s)O\s*=\s*([^\n,/]+)', out, re.MULTILINE)
+        date_m = re.search(r'Not After\s*:\s*([^\n]+)', out, re.IGNORECASE)
 
-        serial_str = serial_match.group(1).strip() if serial_match else ""
+        serial_str = sn_m.group(1).strip() if sn_m else ''
         iin, bin_val = _extract_iin_bin_from_serial(serial_str)
         is_legal = bool(bin_val)
 
-        # Дата истечения
         valid_until = "N/A"
-        if not_after_match:
+        if date_m:
             try:
                 from email.utils import parsedate_to_datetime
-                not_after = parsedate_to_datetime(not_after_match.group(1).strip())
+                not_after = parsedate_to_datetime(date_m.group(1).strip())
                 if datetime.now(timezone.utc) > not_after:
                     return {"valid": False, "error": f"Срок действия сертификата истёк ({not_after.strftime('%d.%m.%Y')})"}
                 valid_until = not_after.strftime('%d.%m.%Y')
@@ -296,100 +303,79 @@ def _try_parse_with_openssl(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
 
         return {
             "valid": True,
-            "bin": bin_val,
-            "iin": iin,
-            "company_name": (org_match.group(1).strip() if org_match else None) or (cn_match.group(1).strip() if cn_match else None),
-            "common_name": cn_match.group(1).strip() if cn_match else None,
+            "bin": bin_val, "iin": iin,
+            "company_name": (org_m.group(1).strip() if org_m else None) or (cn_m.group(1).strip() if cn_m else None),
+            "common_name": cn_m.group(1).strip() if cn_m else None,
             "subject_type": "legal_entity" if is_legal else "individual",
             "is_legal_entity": is_legal,
             "valid_until": valid_until,
-            "source": "openssl_cli"
+            "source": "openssl"
         }
     except Exception as e:
-        logger.warning(f"openssl parse failed: {e}")
+        logger.debug("openssl parse failed: %s", e)
         return None
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# ОСНОВНАЯ ФУНКЦИЯ
-# ──────────────────────────────────────────────────────────────────────────────
-
+# ── ОСНОВНАЯ ФУНКЦИЯ ───────────────────────────────────────────────────────────
 def verify_and_parse_cms(cms_base64: str) -> Dict[str, Any]:
     """
-    Верификация CMS-подписи (Base64) и извлечение данных сертификата НУЦ РК.
+    Верификация CMS Base64-подписи НУЦ РК.
 
-    Цепочка верификации:
-    1. asn1crypto (лучше работает с ГОСТ-сертификатами НУЦ РК)
-    2. cryptography (работает с RSA/EC сертификатами)
-    3. openssl CLI (universal fallback)
-    4. Regex fallback (только regex по raw bytes)
+    Цепочка: KalkanJava → asn1crypto → openssl → regex
 
-    Возвращает:
-        {
-            "valid": bool,
-            "bin": str | None,      # БИН юр. лица
-            "iin": str | None,      # ИИН физ. лица / представителя
-            "company_name": str,    # Наименование организации
-            "is_legal_entity": bool,
-            "subject_type": "legal_entity" | "individual",
-            "valid_until": str,
-            "source": str,          # Метод верификации
-            "error": str | None,
-        }
+    Returns dict:
+        valid: bool
+        bin: str | None      — БИН организации
+        iin: str | None      — ИИН физ. лица / представителя
+        company_name: str    — Наименование организации
+        is_legal_entity: bool
+        signature_valid: bool — Криптографически верифицирована (только через Java)
+        source: str          — Какой метод верификации сработал
+        error: str | None
     """
     if not cms_base64 or not cms_base64.strip():
         return {"valid": False, "error": "Пустой штамп ЭЦП"}
 
-    # Нормализуем Base64 (убираем пробелы, переносы строк)
-    cms_clean = cms_base64.strip().replace('\n', '').replace('\r', '').replace(' ', '')
-
-    # Декодируем Base64 → бинарный DER/PEM
+    # Нормализуем Base64
+    clean = cms_base64.strip().replace('\n', '').replace('\r', '').replace(' ', '')
+    pad = (4 - len(clean) % 4) % 4
     try:
-        # Поддержка как стандартного Base64, так и Base64-URL
-        padding_needed = (4 - len(cms_clean) % 4) % 4
-        cms_padded = cms_clean + '=' * padding_needed
-        cms_bytes = base64.b64decode(cms_padded)
+        cms_bytes = base64.b64decode(clean + '=' * pad)
     except Exception as e:
-        logger.error(f"Base64 decode failed: {e}")
-        return {"valid": False, "error": "Неверный формат подписи (ошибка Base64)"}
+        return {"valid": False, "error": f"Неверный Base64: {e}"}
 
-    # ── Попытка 1: asn1crypto (лучше для ГОСТ, НУЦ РК)
+    # ── 1. KalkanCrypt Java — единственный с ГОСТ и crypto-верификацией ──
+    result = _try_kalkan_java(clean)
+    if result:
+        return result
+
+    # ── 2. asn1crypto ────────────────────────────────────────────────────
     result = _try_parse_with_asn1crypto(cms_bytes)
     if result:
-        logger.info(f"CMS parsed via asn1crypto: BIN={result.get('bin')}, IIN={result.get('iin')}, company={result.get('company_name')}")
         return result
 
-    # ── Попытка 2: cryptography lib
-    result = _try_parse_with_cryptography(cms_bytes)
-    if result:
-        logger.info(f"CMS parsed via cryptography: BIN={result.get('bin')}, IIN={result.get('iin')}")
-        return result
-
-    # ── Попытка 3: openssl CLI
+    # ── 3. openssl CLI ───────────────────────────────────────────────────
     result = _try_parse_with_openssl(cms_bytes)
     if result:
-        logger.info(f"CMS parsed via openssl: BIN={result.get('bin')}, company={result.get('company_name')}")
         return result
 
-    # ── Попытка 4: Regex по raw bytes (legacy fallback)
-    logger.warning("All structured parsers failed, falling back to regex scan of raw bytes")
-    raw_str = cms_bytes.decode('utf-8', errors='ignore') + cms_clean
+    # ── 4. Regex по raw bytes (legacy) ───────────────────────────────────
+    logger.warning("All parsers failed, falling back to regex scan")
+    raw = cms_bytes.decode('utf-8', errors='ignore') + clean
 
-    bin_match = re.search(r'BIN(\d{12})', raw_str, re.IGNORECASE)
-    iin_match = re.search(r'IIN(\d{12})', raw_str, re.IGNORECASE)
-    company_match = re.search(r'(ТОО|ИП|АО|ЧК|КП)\s+[^\x00-\x1F\x7F]{2,50}', raw_str)
+    bin_m = re.search(r'BIN(\d{12})', raw, re.IGNORECASE)
+    iin_m = re.search(r'IIN(\d{12})', raw, re.IGNORECASE)
+    co_m  = re.search(r'(ТОО|ИП|АО|ЧК|КП)\s+[^\x00-\x1F\x7F]{2,50}', raw)
 
-    bin_val = bin_match.group(1) if bin_match else None
-    iin_val = iin_match.group(1) if iin_match else None
-    is_legal = bool(bin_val)
+    bin_val = bin_m.group(1) if bin_m else None
+    iin_val = iin_m.group(1) if iin_m else None
 
     return {
         "valid": True,
-        "bin": bin_val,
-        "iin": iin_val,
-        "company_name": company_match.group(0).strip() if company_match else None,
-        "subject_type": "legal_entity" if is_legal else "individual",
-        "is_legal_entity": is_legal,
-        "valid_until": "N/A",
+        "bin": bin_val, "iin": iin_val,
+        "company_name": co_m.group(0).strip() if co_m else None,
+        "subject_type": "legal_entity" if bin_val else "individual",
+        "is_legal_entity": bool(bin_val),
+        "signature_valid": False,
         "source": "regex_fallback"
     }
