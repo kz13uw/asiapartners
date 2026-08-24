@@ -113,26 +113,25 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           const response = JSON.parse(event.data);
           console.log('[NCALayer] response:', response);
 
-          let signedCms = null;
-
-          // 1. Стандарт NCALayer 2.0 (kz.gov.pki.knca.basics):
-          // { status: true, body: { result: { signatures: ["MII..."] } } }
-          if (response.status === true && response.body?.result) {
-            const res = response.body.result;
-            if (res.signatures && Array.isArray(res.signatures) && res.signatures.length > 0) {
-              signedCms = res.signatures[0];
-            } else if (typeof res === 'string') {
-              signedCms = res;
+          const extractCmsString = (val) => {
+            if (!val) return null;
+            if (typeof val === 'string' && val.trim().length > 10) return val.trim();
+            if (Array.isArray(val) && val.length > 0) return extractCmsString(val[0]);
+            if (typeof val === 'object' && val !== null) {
+              if (val.signatures && Array.isArray(val.signatures) && val.signatures.length > 0) {
+                return extractCmsString(val.signatures[0]);
+              }
+              if (typeof val.cms === 'string') return val.cms.trim();
+              if (val.result) return extractCmsString(val.result);
+              if (val.responseObject) return extractCmsString(val.responseObject);
             }
-          }
+            return null;
+          };
 
-          // 2. Стандарт NCALayer 1.0 (commonUtils):
-          if (!signedCms) {
-            signedCms = response.result 
-              || response.responseObject?.cms 
-              || response.responseObject?.result
-              || null;
-          }
+          const signedCms = extractCmsString(response.body?.result)
+            || extractCmsString(response.responseObject)
+            || extractCmsString(response.result)
+            || extractCmsString(response);
 
           // Проверка ошибок и отмены подписи
           const isExplicitError = response.status === false 

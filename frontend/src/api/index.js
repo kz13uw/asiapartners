@@ -132,8 +132,14 @@ export const notificationsAPI = {
 export const edsAPI = {
   createSession: (action = 'auth', targetId = null) => 
     API.post('/eds/session', { action, target_id: targetId }),
-  verifySession: (connectionId, cmsBase64, extraData = {}) => 
-    API.post('/eds/verify-session', { connection_id: connectionId, cms_base64: cmsBase64, ...extraData }),
+  verifySession: (connectionId, cmsBase64, extraData = {}) => {
+    let cmsStr = cmsBase64;
+    if (typeof cmsStr !== 'string') {
+      if (Array.isArray(cmsStr) && cmsStr.length > 0) cmsStr = cmsStr[0];
+      else if (typeof cmsStr === 'object' && cmsStr !== null) cmsStr = cmsStr.cms_base64 || cmsStr.cms || cmsStr.signatures?.[0] || '';
+    }
+    return API.post('/eds/verify-session', { connection_id: connectionId, cms_base64: String(cmsStr || ''), ...extraData });
+  },
   getSessionStatus: (connectionId) => 
     API.get(`/eds/session/${connectionId}`),
 };
