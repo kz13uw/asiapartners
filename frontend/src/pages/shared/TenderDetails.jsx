@@ -832,7 +832,7 @@ const TenderDetails = () => {
                 </div>
               </div>
 
-              {/* 2. БЛОК 2: Итоговая сумма и техническая спецификация (ПОСЛЕДОВАТЕЛЬНО СВЕРХУ ВНИЗ) */}
+              {/* 2. БЛОК 2: Итоговая сумма (ПОСЛЕДОВАТЕЛЬНО СВЕРХУ ВНИЗ) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
                 <div style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem', background: '#f8fafc', width: '100%', boxSizing: 'border-box' }}>
                   <label style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
@@ -851,20 +851,6 @@ const TenderDetails = () => {
                   <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
                     Стартовый бюджет закупки: <strong>{totalSum} ₸</strong>
                   </div>
-                </div>
-
-                <div style={{ border: '1px solid #cbd5e1', borderRadius: '12px', padding: '1.25rem', background: '#ffffff', width: '100%', boxSizing: 'border-box' }}>
-                  <label style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
-                    📝 Общая техническая спецификация / Комментарий к закупке:
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={4}
-                    placeholder="Укажите общие технические характеристики предлагаемых товаров/услуг, ГОСТ, гарантийный срок или коммерческие условия..."
-                    value={techSpecNotes}
-                    onChange={(e) => setTechSpecNotes(e.target.value)}
-                    style={{ fontSize: '0.85rem', resize: 'vertical' }}
-                  />
                 </div>
               </div>
 
