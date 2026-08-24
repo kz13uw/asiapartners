@@ -70,6 +70,10 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       ws.current.onopen = () => {
         clearTimeout(connTimeout.current);
         setNcaStatus('connected');
+        // 🚀 АВТОМАТИЧЕСКИЙ ВЫЗОВ NCALayer сразу при подключении!
+        setTimeout(() => {
+          requestNcaSignature();
+        }, 50);
       };
 
       ws.current.onclose = () => {
@@ -295,26 +299,12 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             <strong>{t('eds_action_label') || 'Действие:'}</strong> {docTitle || t('eds_doc_signing') || 'Авторизация по ЭЦП'}
           </div>
 
-          {/* ⚡ Универсальная кнопка тестовой ЭЦП подписи для любых действий на портале */}
-          <div style={{ marginBottom: '1.25rem', padding: '0.85rem', background: '#eff6ff', border: '1px dashed #3b82f6', borderRadius: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, marginBottom: '0.4rem' }}>
-              🧪 Режим полного тестирования (Без использования NCALayer):
-            </div>
-            <button 
-              type="button" 
-              className="btn btn-sm" 
-              onClick={handleFallbackSign}
-              style={{ width: '100%', background: '#2563eb', color: '#ffffff', fontWeight: 700, fontSize: '0.88rem', padding: '0.6rem', borderRadius: '8px', border: 'none', boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}
-            >
-              <Key size={15} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} /> ⚡ Сформировать тестовую подпись ЭЦП (в 1 клик)
-            </button>
-          </div>
-
           {step === 1 && (
             <div className="fade-in">
               {ncaStatus === 'checking' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--pk-text-secondary)', padding: '1rem 0', justifyContent: 'center' }}>
-                  <Loader2 className="spinner" size={20} /> Проверка подключения к NCALayer...
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', color: 'var(--pk-text-secondary)', padding: '1.5rem 0', justifyContent: 'center' }}>
+                  <Loader2 className="spinner" size={28} color="var(--pk-primary)" />
+                  <div style={{ fontSize: '0.9rem', color: '#334155' }}>Подключение к NCALayer...</div>
                 </div>
               )}
 
@@ -354,29 +344,29 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                       onClick={handleFallbackSign}
                       style={{ marginTop: '0.4rem', backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.8rem', border: '1px dashed #cbd5e1' }}
                     >
-                      <Key size={13} style={{ marginRight: '0.3rem' }} /> Войти с тестовой ЭЦП (для проверки)
+                      <Key size={13} style={{ marginRight: '0.3rem' }} /> Войти с демо-ЭЦП (для проверки)
                     </button>
                   </div>
                 </div>
               )}
 
               {ncaStatus === 'connected' && (
-                <div>
-                  <p style={{ marginBottom: '1rem', fontSize: '0.85rem', color: '#475569' }}>
-                    Приложение NCALayer подключено. Выберите ваш ключ ЭЦП (PKCS12 *.p12):
-                  </p>
-                  <div 
-                    onClick={requestNcaSignature}
-                    style={{ border: '2px dashed var(--pk-primary)', backgroundColor: 'var(--pk-primary-light)', borderRadius: '12px', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.85rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    <div style={{ background: 'var(--pk-bg-surface)', padding: '0.6rem', borderRadius: '50%', border: '1px solid var(--pk-primary)' }}>
-                      <HardDrive size={24} color="var(--pk-primary)" />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--pk-primary)' }}>Выбрать ключ ЭЦП (PKCS12)</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--pk-text-secondary)' }}>Нажмите для выбора файла *.p12 в окне NCALayer</div>
-                    </div>
+                <div style={{ textAlign: 'center', padding: '1.25rem 0' }}>
+                  <Loader2 className="spinner" size={32} color="var(--pk-primary)" style={{ margin: '0 auto 0.75rem' }} />
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginBottom: '0.25rem' }}>
+                    Вызывается окно NCALayer...
                   </div>
+                  <div style={{ fontSize: '0.82rem', color: '#64748b', marginBottom: '1rem' }}>
+                    Выберите файл Вашего ключа ЭЦП (.p12) во всплывающем окне приложения NCALayer.
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary btn-sm"
+                    onClick={requestNcaSignature}
+                    style={{ fontWeight: 600, padding: '0.5rem 1rem' }}
+                  >
+                    <HardDrive size={15} style={{ marginRight: '0.4rem' }} /> Выбрать ключ ЭЦП (Открыть NCALayer)
+                  </button>
                 </div>
               )}
             </div>
@@ -385,8 +375,10 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           {step === 2 && (
             <div className="fade-in" style={{ textAlign: 'center', padding: '1.5rem 0' }}>
               <Loader2 className="spinner" size={40} color="var(--pk-primary)" style={{ margin: '0 auto 1rem', animation: 'spin 1s linear infinite' }} />
-              <h4 style={{ margin: '0 0 0.25rem 0' }}>Ожидание подписи в NCALayer...</h4>
-              <p className="text-secondary" style={{ margin: 0, fontSize: '0.85rem' }}>Введите пароль от Вашего ключа ЭЦП в всплывающем окне NCALayer</p>
+              <h4 style={{ margin: '0 0 0.25rem 0', color: '#0f172a' }}>Ожидание подписи в NCALayer...</h4>
+              <p className="text-secondary" style={{ margin: 0, fontSize: '0.85rem' }}>
+                Выберите файл `.p12` и введите пароль от ключа ЭЦП в окне приложения NCALayer
+              </p>
               <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
             </div>
           )}
