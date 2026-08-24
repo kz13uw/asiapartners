@@ -3,7 +3,7 @@ from sqlalchemy import select, delete as sql_delete
 from app.db.session import AsyncSessionLocal, engine, Base
 from app.models.models import (
     User, UserRole, UserStatus, Company, ProcurementCategory,
-    Tender, Bid, BidDocument, TenderDocument, Protocol, Contract, AuditLog
+    Tender, Lot, Bid, BidItem, BidDocument, TenderDocument, Protocol, Contract, AuditLog
 )
 from app.core.security import get_password_hash
 
@@ -21,19 +21,21 @@ async def init_db(clean_all: bool = False):
     try:
         async with AsyncSessionLocal() as db:
             if should_clean:
-                # Полная очистка всех данных
+                # Полная очистка всех данных (с учетом внешних ключей)
+                await db.execute(sql_delete(Contract))
+                await db.execute(sql_delete(Protocol))
+                await db.execute(sql_delete(BidItem))
                 await db.execute(sql_delete(BidDocument))
                 await db.execute(sql_delete(Bid))
                 await db.execute(sql_delete(TenderDocument))
-                await db.execute(sql_delete(Protocol))
-                await db.execute(sql_delete(Contract))
+                await db.execute(sql_delete(Lot))
                 await db.execute(sql_delete(Tender))
                 await db.execute(sql_delete(Company))
                 await db.execute(sql_delete(AuditLog))
                 await db.execute(sql_delete(User))
                 await db.commit()
 
-            admin_pwd = os.getenv("ADMIN_PASSWORD", "admin123")
+            admin_pwd = os.getenv("ADMIN_PASSWORD", "Asia@Procurement2025!")
             seed_test_users = os.getenv("SEED_TEST_DATA", "false").lower() == "true"
 
             # 1. Системные пользователи всех ролей
@@ -72,7 +74,7 @@ async def init_db(clean_all: bool = False):
                     "username": "supplier@asia.kz",
                     "full_name": "ТОО СтройСервис Азия",
                     "email": "supplier@asia.kz",
-                    "hashed_password": get_password_hash("admin123"),
+                    "hashed_password": get_password_hash(admin_pwd),
                     "role": UserRole.SUPPLIER,
                     "status": UserStatus.ACTIVE,
                     "iin_bin": "987654321012"

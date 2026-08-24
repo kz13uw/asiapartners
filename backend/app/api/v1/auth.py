@@ -70,31 +70,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     )
     user = result.scalars().first()
 
-    # Если пользователя нет в базе — создаем его автоматически с переданным паролем
     if not user:
-        role = UserRole.ADMIN if ("admin" in uname) else (UserRole.SUPPLIER if ("supplier" in uname) else UserRole.ORGANIZER)
-        full_name = "Главный Администратор" if role == UserRole.ADMIN else ("ТОО Поставщик Азия" if role == UserRole.SUPPLIER else "ТОО Организатор Азия")
-        user = User(
-            username=uname.split("@")[0],
-            email=uname if "@" in uname else f"{uname}@asiapartners.kz",
-            role=role,
-            full_name=full_name,
-            status=UserStatus.ACTIVE,
-            hashed_password=get_password_hash(form_data.password or "Asia@Procurement2025!")
-        )
-        db.add(user)
-        await db.flush()
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
 
-    # Авто-разблокировка аккаунта при каждой попытке входа
-    user.status = UserStatus.ACTIVE
-    user.failed_login_attempts = 0
+    if user.status == UserStatus.BLOCKED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
 
     is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
-
-    # Мастер-авторизация и авто-обновление пароля при любом вводе
-    if not is_pwd_ok:
-        user.hashed_password = get_password_hash(form_data.password)
-        is_pwd_ok = True
 
     if not is_pwd_ok:
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
@@ -116,7 +98,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный пароль"
+            detail="Неверный логин или пароль"
         )
 
     # Успешный вход — сбрасываем счетчик неудачных попыток
