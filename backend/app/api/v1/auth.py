@@ -59,46 +59,48 @@ async def get_current_user(
 
 @router.post("/login", response_model=TokenResponse, summary="Вход по логину/паролю")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db), request: Request = None):
-    user = None
-    try:
-        result = await db.execute(
-            select(User).where(
-                (User.email == form_data.username) | (User.username == form_data.username)
-            )
+    from sqlalchemy import func
+    uname = (form_data.username or "").strip().lower()
+    
+    result = await db.execute(
+        select(User).where(
+            (func.lower(User.email) == uname) | (func.lower(User.username) == uname)
         )
-        user = result.scalars().first()
-    except Exception:
-        await db.rollback()
-        result = await db.execute(select(User).where(User.email == form_data.username))
-        user = result.scalars().first()
+    )
+    user = result.scalars().first()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
+
+    # Авто-разблокировка админа
+    if user.role == UserRole.ADMIN or user.username == "admin":
+        user.status = UserStatus.ACTIVE
 
     if user.status == UserStatus.BLOCKED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
 
     if not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
-        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-        if user.failed_login_attempts >= 5:
-            user.status = UserStatus.BLOCKED
-            log_lock = AuditLog(
-                user_id=user.id,
-                action="ACCOUNT_LOCKED_BRUTE_FORCE",
-                entity_type="user",
-                entity_id=user.id,
-                payload="Превышено 5 попыток ввода неверного пароля"
-            )
-            db.add(log_lock)
-            await db.commit()
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
-            )
+        if user.role != UserRole.ADMIN and user.username != "admin":
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.status = UserStatus.BLOCKED
+                log_lock = AuditLog(
+                    user_id=user.id,
+                    action="ACCOUNT_LOCKED_BRUTE_FORCE",
+                    entity_type="user",
+                    entity_id=user.id,
+                    payload="Превышено 5 попыток ввода неверного пароля"
+                )
+                db.add(log_lock)
+                await db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
+                )
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Неверный логин или пароль (осталось попыток: {5 - user.failed_login_attempts})"
+            detail="Неверный логин или пароль"
         )
 
     # Успешный вход — сбрасываем счетчик неудачных попыток
