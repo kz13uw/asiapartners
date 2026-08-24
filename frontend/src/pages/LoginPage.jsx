@@ -247,27 +247,6 @@ const LoginPage = () => {
                 >
                   🔑 Выбрать ключ ЭЦП (NCALayer) и Войти
                 </button>
-                
-                <button 
-                  type="button" 
-                  className="btn" 
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.8rem', 
-                    justifyContent: 'center', 
-                    fontSize: '0.95rem', 
-                    borderRadius: '10px', 
-                    fontWeight: 600,
-                    marginTop: '0.85rem',
-                    background: '#f8fafc',
-                    color: '#334155',
-                    border: '1px dashed #94a3b8'
-                  }}
-                  onClick={() => handleEdsSuccess("demo_signed_cms_base64_hash_12345")}
-                  disabled={isLoading}
-                >
-                  ⚡ Мгновенный тестовый вход Поставщика (Демо)
-                </button>
               </div>
             )
           ) : (
