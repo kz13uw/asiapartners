@@ -65,7 +65,7 @@ services:
   # NCANode (ГОСТ ЭЦП Сервис НУЦ РК)
   # ==============================
   ncanode:
-    image: ncanode/ncanode:latest
+    image: abshkd/ncanode:latest
     container_name: asia_ncanode_prod
     restart: always
     ports:
