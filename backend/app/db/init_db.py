@@ -3,7 +3,9 @@ from sqlalchemy import select, delete as sql_delete
 from app.db.session import AsyncSessionLocal, engine, Base
 from app.models.models import (
     User, UserRole, UserStatus, Company, ProcurementCategory,
-    Tender, Lot, Bid, BidItem, BidDocument, TenderDocument, Protocol, Contract, AuditLog
+    Tender, Lot, QualificationRequirement, TenderDocument,
+    Bid, BidItem, BidDocument, SupplierDocument, Protocol, Contract,
+    AuditLog, UserCertificate, CategorySubscription, Notification, EdsSession, TokenBlacklist
 )
 from app.core.security import get_password_hash
 
@@ -21,17 +23,24 @@ async def init_db(clean_all: bool = False):
     try:
         async with AsyncSessionLocal() as db:
             if should_clean:
-                # Полная очистка всех данных (с учетом внешних ключей)
+                # Полная очистка всех данных (с учетом всех внешних ключей)
                 await db.execute(sql_delete(Contract))
                 await db.execute(sql_delete(Protocol))
                 await db.execute(sql_delete(BidItem))
                 await db.execute(sql_delete(BidDocument))
+                await db.execute(sql_delete(SupplierDocument))
                 await db.execute(sql_delete(Bid))
                 await db.execute(sql_delete(TenderDocument))
+                await db.execute(sql_delete(QualificationRequirement))
                 await db.execute(sql_delete(Lot))
                 await db.execute(sql_delete(Tender))
                 await db.execute(sql_delete(Company))
                 await db.execute(sql_delete(AuditLog))
+                await db.execute(sql_delete(UserCertificate))
+                await db.execute(sql_delete(CategorySubscription))
+                await db.execute(sql_delete(Notification))
+                await db.execute(sql_delete(EdsSession))
+                await db.execute(sql_delete(TokenBlacklist))
                 await db.execute(sql_delete(User))
                 await db.commit()
 
