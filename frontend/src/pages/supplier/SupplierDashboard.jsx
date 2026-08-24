@@ -5,6 +5,7 @@ import { tendersAPI } from '../../api';
 import { useAuthStore } from '../../store/authStore';
 import { useTranslation } from '../../store/useLanguageStore';
 import toast from 'react-hot-toast';
+import TenderRegistryTable from '../../components/TenderRegistryTable';
 
 const initialSupplierDocs = [
   { id: 1, name: 'Лицензия на СМР (1 категории)', category: 'Лицензии', date: '12.01.2024', size: '2.4 МБ', format: 'PDF' },
@@ -198,94 +199,26 @@ const SupplierDashboard = () => {
         {activeTab === 'tenders' && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ margin: 0 }}>Текущие заявки</h4>
-              <div className="search-box" style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--pk-text-secondary)' }} />
-                <input type="text" className="form-control form-control-sm" placeholder="Поиск по номеру..." style={{ paddingLeft: '2rem' }} />
-              </div>
+              <h4 style={{ margin: 0 }}>Реестр моих заявок</h4>
             </div>
-            
-            <div className="table-wrapper">
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid var(--pk-border)', textAlign: 'left' }}>
-                    <th style={{ padding: '1rem' }}>№ Тендера</th>
-                    <th>Наименование</th>
-                    <th>Статус лота</th>
-                    <th>Мой статус</th>
-                    <th>Действие</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myBids.map((item, index) => {
-                    const targetTenderId = item.tender_id || item.tender?.id || item.id;
-                    const tenderNumber = item.tender?.number || item.number || `LOT-2026-00${targetTenderId}`;
-                    const tenderTitle = item.tender?.title || item.title || 'Поставка материалов';
-                    const tenderStatus = item.tender?.status || item.status || 'published';
-                    const isRevoked = item.status === 'recalled' || item.status === 'rejected';
 
-                    return (
-                      <tr key={item.id || index} style={{ borderBottom: '1px solid var(--pk-border)' }}>
-                        <td style={{ padding: '1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--pk-primary)' }}>
-                          {tenderNumber}
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{tenderTitle}</div>
-                          <span className="badge" style={{ backgroundColor: isRevoked ? '#fef2f2' : '#e0f2fe', color: isRevoked ? '#b91c1c' : '#0369a1', fontSize: '0.7rem', marginTop: '0.2rem' }}>
-                            Версия заявки: V{item.version || (isRevoked ? '1.0 (Отозвана)' : '1.0 (Подписано ЭЦП)')}
-                          </span>
-                        </td>
-                        <td>
-                          {tenderStatus === 'published' || tenderStatus === 'accepting' ? (
-                            <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
-                          ) : tenderStatus === 'evaluation' ? (
-                            <span className="badge badge-warning" style={{ backgroundColor: '#d97706', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Рассмотрение</span>
-                          ) : tenderStatus === 'completed' ? (
-                            <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Завершен</span>
-                          ) : tenderStatus === 'cancelled' ? (
-                            <span className="badge" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отменен</span>
-                          ) : (
-                            <span className="badge badge-success" style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Прием заявок</span>
-                          )}
-                        </td>
-                        <td>
-                          {isRevoked ? (
-                            <span className="badge badge-warning" style={{ backgroundColor: '#ef4444', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Отозвана</span>
-                          ) : (
-                            <span className="badge badge-primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem' }}>Заявка подана</span>
-                          )}
-                        </td>
-                        <td style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem' }}>
-                          <Link to={`/tenders/${targetTenderId}`} className="btn btn-outline btn-sm" style={{ fontWeight: 600 }}>Детали</Link>
-                          {!isRevoked && (tenderStatus === 'published' || tenderStatus === 'accepting') ? (
-                            <button
-                              className="btn btn-outline btn-sm"
-                              style={{ color: '#ef4444', borderColor: '#fca5a5', fontWeight: 600 }}
-                              onClick={() => handleRevokeClick(item.id, targetTenderId, tenderTitle, tenderStatus)}
-                              title="Отозвать заявку с ЭЦП"
-                            >
-                              🔄 Отозвать
-                            </button>
-                          ) : isRevoked && (tenderStatus === 'published' || tenderStatus === 'accepting') ? (
-                            <Link
-                              to={`/tenders/${targetTenderId}`}
-                              className="btn btn-primary btn-sm"
-                              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a', fontWeight: 700 }}
-                              title="Повторно подать новую версию заявки V2"
-                            >
-                              ✏️ Подать V2
-                            </Link>
-                          ) : null}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {myBids.length === 0 && (
-                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Нет поданных заявок</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <TenderRegistryTable 
+              tenders={myBids.map(item => ({
+                id: item.tender_id || item.tender?.id || item.id,
+                number: item.tender?.number || item.number || `TND-${item.id}`,
+                title: item.tender?.title || item.title || 'Поставка продукции',
+                company_name: item.tender?.company_name || item.tender?.organizer_name || 'ТОО "Asia Partners"',
+                lot_name: item.tender?.title || 'Лот по закупке',
+                category_name: item.status === 'recalled' ? 'Заявка отозвана' : 'Заявка активна (Подписано ЭЦП)',
+                quantity: item.tender?.quantity || 1,
+                start_price: item.price || item.tender?.start_price || item.tender?.budget || 0,
+                procurement_method: item.tender?.procurement_method || 'zcp',
+                status: item.tender?.status || 'published'
+              }))}
+              loading={loading}
+              userRole="supplier"
+              emptyText="Вы пока не подали ни одной заявки на участие в закупках"
+            />
           </div>
         )}
 

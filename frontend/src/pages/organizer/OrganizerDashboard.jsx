@@ -109,137 +109,18 @@ const OrganizerDashboard = () => {
       <div className="card">
         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h4 style={{ margin: 0 }}>Реестр моих тендеров</h4>
-          <div className="search-box" style={{ position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--pk-text-secondary)' }} />
-            <input type="text" className="form-control form-control-sm" placeholder="Поиск по номеру или названию..." style={{ paddingLeft: '2rem' }} />
-          </div>
         </div>
         
-        <div className="table-wrapper" style={{ overflowX: 'auto', width: '100%' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--pk-border)', textAlign: 'left', backgroundColor: '#f8fafc', color: '#475569' }}>
-                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>№ Тендера</th>
-                <th style={{ padding: '0.65rem 0.75rem' }}>Наименование тендера</th>
-                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Метод</th>
-                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Прием заявок (до)</th>
-                <th style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>Статус</th>
-                <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}><span className="loader-spinner"></span></td></tr>
-              ) : localTenders.length > 0 ? (
-                localTenders.map((tender) => (
-                  <tr key={tender.id} style={{ borderBottom: '1px solid var(--pk-border)', verticalAlign: 'middle' }}>
-                    <td style={{ padding: '0.65rem 0.75rem', fontWeight: 500, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                      {tender.status === 'draft' ? (
-                        <Link to={`/organizer/tenders/${tender.id}/edit`} style={{ color: 'var(--pk-primary)', textDecoration: 'none', fontWeight: 600 }} title="Нажмите, чтобы продолжить редактирование">
-                          {tender.number}
-                        </Link>
-                      ) : (
-                        <Link to={`/tenders/${tender.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                          {tender.number}
-                        </Link>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', maxWidth: '220px' }}>
-                      {tender.status === 'draft' ? (
-                        <Link to={`/organizer/tenders/${tender.id}/edit`} style={{ color: '#0f172a', textDecoration: 'none', fontWeight: 600 }} title="Нажмите, чтобы продолжить редактирование">
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {tender.title} <span style={{ fontSize: '0.8rem', color: '#0284c7' }}>✏️</span>
-                          </div>
-                        </Link>
-                      ) : (
-                        <Link to={`/tenders/${tender.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {tender.title}
-                          </div>
-                        </Link>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>
-                      <span className="badge badge-outline" style={{ fontSize: '0.72rem', padding: '0.2rem 0.45rem' }}>ЗЦП</span>
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap', color: '#64748b', fontSize: '0.82rem' }}>
-                      {new Date(tender.deadline_at).toLocaleDateString('ru-RU')}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', whiteSpace: 'nowrap' }}>
-                      {tender.status === 'draft' ? (
-                        <Link to={`/organizer/tenders/${tender.id}/edit`} style={{ textDecoration: 'none' }}>
-                          <span className="badge" style={{backgroundColor: '#fef3c7', color: '#b45309', fontWeight: 600, cursor: 'pointer', fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '6px'}} title="Кликните для редактирования черновика">⏳ Драфт Тендера</span>
-                        </Link>
-                      ) : tender.status === 'accepting' || tender.status === 'published' ? <span className="badge badge-success" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Опубликован (Прием)</span> :
-                       tender.status === 'evaluation' ? <span className="badge badge-warning" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Рассмотрение (Review)</span> :
-                       tender.status === 'completed' ? <span className="badge badge-primary" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Завершен (Completed)</span> :
-                       tender.status === 'cancelled' ? <span className="badge" style={{backgroundColor: '#ef4444', color: '#fff', fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>Отменен (Canceled)</span> :
-                       <span className="badge badge-primary" style={{fontSize: '0.72rem', padding: '0.2rem 0.5rem'}}>{tender.status}</span>}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.3rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-                        {tender.status === 'draft' ? (
-                          <>
-                            <Link
-                              to={`/organizer/tenders/${tender.id}/edit`}
-                              className="btn btn-outline btn-sm"
-                              style={{ color: '#0284c7', borderColor: '#38bdf8', textDecoration: 'none', padding: '0.25rem 0.5rem', fontSize: '0.78rem' }}
-                              title="Продолжить заполнение черновика"
-                            >
-                              ✏️ Изменить
-                            </Link>
-                            <button 
-                              className="btn btn-primary btn-sm" 
-                              style={{ padding: '0.25rem 0.55rem', fontSize: '0.78rem' }}
-                              onClick={() => handlePublishTender(tender.id, tender.title)}
-                              title="Опубликовать данный тендер на портале"
-                            >
-                              🚀 Опубликовать
-                            </button>
-                          </>
-                        ) : (
-                          <Link to={`/organizer/tenders/${tender.id}/evaluate`} className="btn btn-outline btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.78rem' }}>Вскрытие / Оценка</Link>
-                        )}
-                        <button 
-                          className="btn btn-outline btn-sm" 
-                          style={{ color: '#0284c7', borderColor: '#38bdf8', padding: '0.25rem 0.45rem', fontSize: '0.78rem' }} 
-                          onClick={() => handleDuplicateTender(tender.id, tender.title)}
-                          title="Создать закупку копированием"
-                        >
-                          📋
-                        </button>
-                        {tender.status !== 'cancelled' && tender.status !== 'completed' && (
-                          <button
-                            className="btn btn-outline btn-sm"
-                            style={{ color: '#ea580c', borderColor: '#fdba74', padding: '0.25rem 0.45rem', fontSize: '0.78rem' }}
-                            onClick={() => handleCancelTender(tender.id, tender.title)}
-                            title="Отменить закупку с указанием причины"
-                          >
-                            🛑
-                          </button>
-                        )}
-                        <button 
-                          className="btn btn-outline btn-sm" 
-                          style={{ color: '#da1e28', borderColor: '#da1e28', padding: '0.25rem 0.45rem', fontSize: '0.78rem' }} 
-                          onClick={() => handleDeleteTender(tender.id, tender.title)}
-                          title="Удалить тендер"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--pk-text-secondary)' }}>
-                    У вас пока нет созданных тендеров
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <TenderRegistryTable 
+          tenders={localTenders}
+          loading={loading}
+          userRole="organizer"
+          onDelete={handleDeleteTender}
+          onDuplicate={handleDuplicateTender}
+          onCancel={handleCancelTender}
+          onPublish={handlePublishTender}
+          emptyText="У вас пока нет созданных тендеров"
+        />
       </div>
 
       <EcpModal 
