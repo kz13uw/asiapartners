@@ -243,7 +243,7 @@ const TenderDetails = () => {
       </div>
 
       {/* Основной контент (строго фикс-размер без скачков ширины) */}
-      <div style={{ display: 'grid', gridTemplateColumns: user?.role === 'supplier' ? 'minmax(0, 1fr) 340px' : 'minmax(0, 1fr)', gap: '1.5rem', alignItems: 'start', width: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '1.5rem', alignItems: 'start', width: '100%' }}>
         
         {/* ЛЕВАЯ ЧАСТЬ: ТАБЫ И СОДЕРЖИМОЕ ИЗ СКРИНШОТОВ */}
         <div style={{ minWidth: 0, width: '100%' }}>
@@ -551,94 +551,127 @@ const TenderDetails = () => {
           )}
         </div>
 
-        {/* ПРАВАЯ ЧАСТЬ: ФОРМА ПОДАЧИ ЗАЯВКИ ПОСТАВЩИКОМ (ТОЛЬКО ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА) */}
-        {user?.role === 'supplier' && (
-          <div className="card" style={{ padding: '1.25rem', border: '2px solid var(--pk-primary)', borderRadius: '10px' }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: 'var(--pk-primary)', fontWeight: 800 }}>
-              ⚡ Подача ценового предложения
-            </h4>
+        {/* ПРАВАЯ ЧАСТЬ: ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА - ФОРМА ПОДАЧИ ЦЕНЫ, ДЛЯ ПУБЛИЧНЫХ ПОСЕТИТЕЛЕЙ - РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ */}
+        <div className="card" style={{ padding: '1.25rem', border: user?.role === 'supplier' ? '2px solid var(--pk-primary)' : '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>
+          {user?.role === 'supplier' ? (
+            <>
+              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: 'var(--pk-primary)', fontWeight: 800 }}>
+                ⚡ Подача ценового предложения
+              </h4>
 
-            {myBid ? (
-              <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-                <CheckCircle2 size={32} color="#15803d" style={{ margin: '0 auto 0.5rem' }} />
-                <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem' }}>Заявка успешно подана!</div>
-                <div style={{ fontSize: '0.82rem', color: '#166534', marginTop: '0.25rem' }}>
-                  Ваша цена: <strong>{formatPriceKzt(myBid.price)} ₸</strong>
+              {myBid ? (
+                <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+                  <CheckCircle2 size={32} color="#15803d" style={{ margin: '0 auto 0.5rem' }} />
+                  <div style={{ fontWeight: 800, color: '#15803d', fontSize: '0.95rem' }}>Заявка успешно подана!</div>
+                  <div style={{ fontSize: '0.82rem', color: '#166534', marginTop: '0.25rem' }}>
+                    Ваша цена: <strong>{formatPriceKzt(myBid.price)} ₸</strong>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#15803d', marginTop: '0.4rem' }}>
+                    Подписано ЭЦП KalkanCrypt
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#15803d', marginTop: '0.4rem' }}>
-                  Подписано ЭЦП KalkanCrypt
-                </div>
+              ) : (
+                <form onSubmit={handleSubmitClick}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
+                      Ваша цена (тенге):
+                    </label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Укажите цену"
+                      value={bidPrice}
+                      onChange={(e) => setBidPrice(e.target.value)}
+                      style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--pk-primary)' }}
+                      required
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      Стартовая цена: {totalSum} ₸
+                    </div>
+                  </div>
+
+                  {/* Документы из Хранилища Поставщика */}
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
+                      Прикрепить из Хранилища:
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
+                      {vaultDocs.map((doc) => {
+                        const isSelected = selectedVaultDocIds.includes(doc.id);
+                        return (
+                          <div 
+                            key={doc.id}
+                            onClick={() => toggleVaultDoc(doc)}
+                            style={{ padding: '0.45rem 0.65rem', border: `1px solid ${isSelected ? '#3b82f6' : '#cbd5e1'}`, background: isSelected ? '#eff6ff' : '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          >
+                            <span style={{ fontWeight: 600, color: isSelected ? '#1d4ed8' : '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {doc.name}
+                            </span>
+                            {isSelected && <Check size={14} color="#1d4ed8" />}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Загрузка новых файлов */}
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
+                      Загрузить новые файлы:
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="form-control form-control-sm"
+                      style={{ fontSize: '0.8rem' }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', padding: '0.7rem', fontWeight: 800, fontSize: '0.9rem' }}
+                    disabled={isSubmitting}
+                  >
+                    <ShieldCheck size={18} style={{ marginRight: '0.4rem' }} /> Подать заявку по ЭЦП
+                  </button>
+                </form>
+              )}
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '0.5rem 0' }}>
+              <div style={{ background: '#eff6ff', borderRadius: '50%', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+                <ShieldCheck size={26} color="var(--pk-primary)" />
               </div>
-            ) : (
-              <form onSubmit={handleSubmitClick}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
-                    Ваша цена (тенге):
-                  </label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="Укажите цену"
-                    value={bidPrice}
-                    onChange={(e) => setBidPrice(e.target.value)}
-                    style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--pk-primary)' }}
-                    required
-                  />
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
-                    Стартовая цена: {totalSum} ₸
-                  </div>
-                </div>
-
-                {/* Документы из Хранилища Поставщика */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
-                    Прикрепить из Хранилища:
-                  </label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '160px', overflowY: 'auto' }}>
-                    {vaultDocs.map((doc) => {
-                      const isSelected = selectedVaultDocIds.includes(doc.id);
-                      return (
-                        <div 
-                          key={doc.id}
-                          onClick={() => toggleVaultDoc(doc)}
-                          style={{ padding: '0.45rem 0.65rem', border: `1px solid ${isSelected ? '#3b82f6' : '#cbd5e1'}`, background: isSelected ? '#eff6ff' : '#ffffff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        >
-                          <span style={{ fontWeight: 600, color: isSelected ? '#1d4ed8' : '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {doc.name}
-                          </span>
-                          {isSelected && <Check size={14} color="#1d4ed8" />}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Загрузка новых файлов */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', display: 'block', marginBottom: '0.35rem' }}>
-                    Загрузить новые файлы:
-                  </label>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="form-control form-control-sm"
-                    style={{ fontSize: '0.8rem' }}
-                  />
-                </div>
-
+              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: '#0f172a', fontWeight: 800 }}>
+                Участие в закупке
+              </h4>
+              <p style={{ fontSize: '0.84rem', color: '#475569', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                Для подачи ценового предложения и загрузки квалификационных документов необходимо авторизоваться по ЭЦП или зарегистрироваться в качестве Поставщика.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 <button
-                  type="submit"
+                  type="button"
                   className="btn btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '0.7rem', fontWeight: 800, fontSize: '0.9rem' }}
-                  disabled={isSubmitting}
+                  onClick={() => setShowEdsModal(true)}
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.65rem', fontWeight: 800, fontSize: '0.88rem' }}
                 >
-                  <ShieldCheck size={18} style={{ marginRight: '0.4rem' }} /> Подать заявку по ЭЦП
+                  🔑 Авторизация по ЭЦП
                 </button>
-              </form>
-            )}
-          </div>
-        )}
+
+                <Link
+                  to="/login"
+                  className="btn btn-outline"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.65rem', fontWeight: 700, fontSize: '0.85rem', color: '#0284c7', borderColor: '#38bdf8', textDecoration: 'none' }}
+                >
+                  📝 Регистрация / Авторизация
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
 
       </div>
 
