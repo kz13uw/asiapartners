@@ -312,11 +312,6 @@ const TenderDetails = () => {
           {/* Правая колонка */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Срок начала приема заявок</span>
-              <input type="text" readOnly className="form-control" value={startDate} style={{ background: '#e2e8f0', borderColor: '#cbd5e1', fontWeight: 600, fontSize: '0.85rem', color: '#334155' }} />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Срок окончания приема заявок</span>
               <input type="text" readOnly className="form-control" value={deadlineDate} style={{ background: '#e2e8f0', borderColor: '#cbd5e1', fontWeight: 700, fontSize: '0.85rem', color: '#dc2626' }} />
             </div>
