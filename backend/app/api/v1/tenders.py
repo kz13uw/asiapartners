@@ -32,6 +32,16 @@ def require_role(*roles: UserRole):
     return checker
 
 
+def get_tender_options():
+    return [
+        selectinload(Tender.lots),
+        selectinload(Tender.qual_requirements),
+        selectinload(Tender.documents),
+        selectinload(Tender.organizer),
+        selectinload(Tender.category)
+    ]
+
+
 from app.core.cache import cache_response, cache_manager
 
 
@@ -49,7 +59,7 @@ async def list_tenders(
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy.orm import selectinload
-    query = select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.EVALUATION, TenderStatus.COMPLETED]))
+    query = select(Tender).options(*get_tender_options()).where(Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.EVALUATION, TenderStatus.COMPLETED]))
 
     if search:
         query = query.where(Tender.title.ilike(f"%{search}%"))
@@ -83,7 +93,7 @@ async def my_tenders(
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
-    query = select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.organizer_id == current_user.id).order_by(Tender.created_at.desc()).offset((page - 1) * size).limit(size)
+    query = select(Tender).options(*get_tender_options()).where(Tender.organizer_id == current_user.id).order_by(Tender.created_at.desc()).offset((page - 1) * size).limit(size)
     result = await db.execute(query)
     items = result.scalars().all()
     return TenderListOut(items=items, total=total, page=page, size=size)
@@ -96,7 +106,7 @@ async def get_tender(
     current_user: Optional[User] = Depends(get_optional_user),
 ):
     from sqlalchemy.orm import selectinload
-    result = await db.execute(select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.id == tender_id))
+    result = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
@@ -210,7 +220,7 @@ async def create_tender(
     await cache_manager.delete("tenders:*")
 
     from sqlalchemy.orm import selectinload
-    res = await db.execute(select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.id == tender.id))
+    res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender.id))
     return res.scalar_one()
 
 
@@ -393,7 +403,7 @@ async def update_tender(
         setattr(tender, field, value)
 
     await db.commit()
-    res = await db.execute(select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.id == tender_id))
+    res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
     return res.scalar_one()
 
 
@@ -418,7 +428,7 @@ async def publish_tender(
     log = AuditLog(user_id=current_user.id, action="PUBLISH_TENDER", entity_type="tender", entity_id=tender.id)
     await db.commit()
     await cache_manager.delete("tenders:*")
-    res = await db.execute(select(Tender).options(selectinload(Tender.lots), selectinload(Tender.qual_requirements), selectinload(Tender.documents)).where(Tender.id == tender_id))
+    res = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
     return res.scalar_one()
 
 
