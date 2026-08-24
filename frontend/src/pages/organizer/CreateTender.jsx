@@ -41,6 +41,7 @@ const CreateTender = () => {
 
   const psdInputRef = useRef(null);
   const contractInputRef = useRef(null);
+  const activeTenderIdRef = useRef(null);
   const [psdFiles, setPsdFiles] = useState([]);
   const [contractFiles, setContractFiles] = useState([]);
   const [isPsdDragging, setIsPsdDragging] = useState(false);
@@ -439,6 +440,7 @@ const CreateTender = () => {
         const res = await tendersAPI.create({ ...payload, status: 'draft' });
         tenderResId = res.data.id;
       }
+      activeTenderIdRef.current = tenderResId;
       setCreatedTenderId(tenderResId);
       setShowEdsModal(true);
       toast.success('Параметры закупки подготовлены. Выберите ЭЦП для подписания и публикации!');
@@ -468,12 +470,16 @@ const CreateTender = () => {
   };
 
   const processPublish = async (signedCms) => {
-    if (!createdTenderId) return;
+    const targetId = activeTenderIdRef.current || createdTenderId || editingId;
+    if (!targetId) {
+      toast.error('Ошибка: ID закупки не определен');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const edsHash = signedCms || "demo_publish_signature_56789";
-      await tendersAPI.publish(createdTenderId, edsHash);
-      removeLocalDraft(createdTenderId);
+      await tendersAPI.publish(targetId, edsHash);
+      removeLocalDraft(targetId);
       if (editingId) removeLocalDraft(editingId);
       
       toast.success('Закупка успешно создана и опубликована по ЭЦП!');
