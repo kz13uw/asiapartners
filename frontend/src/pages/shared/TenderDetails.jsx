@@ -248,14 +248,15 @@ const TenderDetails = () => {
       {/* Основной контент (строго фикс-размер без скачков ширины) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '1.5rem', alignItems: 'start', width: '100%' }}>
         
-        {/* ЛЕВАЯ ЧАСТЬ: ТАБЫ И СОДЕРЖИМОЕ ИЗ СКРИНШОТОВ */}
+        {/* ЛЕВАЯ ЧАСТЬ: ТАБЫ И СОДЕРЖИМОЕ (ЕГО ШИРИНА СТРОГО 100% И НИКОГДА НЕ ИЗМЕНЯЕТСЯ) */}
         <div style={{ minWidth: 0, width: '100%' }}>
-          {/* 3. НАВИГАЦИОННЫЕ ТАБЫ ИЗ СКРИНШОТА */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', marginBottom: '1.25rem', flexWrap: 'nowrap', overflowX: 'auto', gap: '0.2rem' }}>
+          
+          {/* 3. НАВИГАЦИОННЫЕ ТАБЫ (ПЛОТНО ПРИЛЕГАЮТ К ЕДИНОЙ КАРТОЧКЕ) */}
+          <div style={{ display: 'flex', borderBottom: '2px solid #cbd5e1', marginBottom: 0, flexWrap: 'nowrap', overflowX: 'auto', gap: '0.2rem' }}>
             <button 
               type="button"
               onClick={() => setActiveTab('general')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'general' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'general' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'general' ? 700 : 500, color: activeTab === 'general' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+              style={{ padding: '0.75rem 1.35rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'general' ? '3px solid #0284c7' : '1px solid #cbd5e1', background: activeTab === 'general' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'general' ? 800 : 600, color: activeTab === 'general' ? '#0284c7' : '#64748b', cursor: 'pointer', borderRadius: '8px 8px 0 0', marginBottom: '-2px', fontSize: '0.88rem', whiteSpace: 'nowrap' }}
             >
               Общие сведения
             </button>
@@ -263,7 +264,7 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('lots')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'lots' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'lots' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'lots' ? 700 : 500, color: activeTab === 'lots' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+              style={{ padding: '0.75rem 1.35rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'lots' ? '3px solid #0284c7' : '1px solid #cbd5e1', background: activeTab === 'lots' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'lots' ? 800 : 600, color: activeTab === 'lots' ? '#0284c7' : '#64748b', cursor: 'pointer', borderRadius: '8px 8px 0 0', marginBottom: '-2px', fontSize: '0.88rem', whiteSpace: 'nowrap' }}
             >
               Лоты ({tender.lots?.length || 1})
             </button>
@@ -271,7 +272,7 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('docs')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'docs' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'docs' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'docs' ? 700 : 500, color: activeTab === 'docs' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+              style={{ padding: '0.75rem 1.35rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'docs' ? '3px solid #0284c7' : '1px solid #cbd5e1', background: activeTab === 'docs' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'docs' ? 800 : 600, color: activeTab === 'docs' ? '#0284c7' : '#64748b', cursor: 'pointer', borderRadius: '8px 8px 0 0', marginBottom: '-2px', fontSize: '0.88rem', whiteSpace: 'nowrap' }}
             >
               Документация
             </button>
@@ -279,279 +280,284 @@ const TenderDetails = () => {
             <button 
               type="button"
               onClick={() => setActiveTab('protocols')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'protocols' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'protocols' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'protocols' ? 700 : 500, color: activeTab === 'protocols' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+              style={{ padding: '0.75rem 1.35rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'protocols' ? '3px solid #0284c7' : '1px solid #cbd5e1', background: activeTab === 'protocols' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'protocols' ? 800 : 600, color: activeTab === 'protocols' ? '#0284c7' : '#64748b', cursor: 'pointer', borderRadius: '8px 8px 0 0', marginBottom: '-2px', fontSize: '0.88rem', whiteSpace: 'nowrap' }}
             >
               Протоколы
             </button>
           </div>
 
-          {/* TAB 1: ОБЩИЕ СВЕДЕНИЯ (ТОЧНАЯ КОПИЯ СКРИНШОТА 2) */}
-          {activeTab === 'general' && (
-            <div className="fade-in" style={{ width: '100%', minWidth: 0 }}>
-              {/* Таблица 1: Общие сведения */}
-              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
-                <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
-                  Общие сведения
-                </div>
-                
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Способ проведения закупки
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                        Запрос ценовых предложений
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Тип закупки
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                        Первая закупка
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Вид предмета закупок
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                        {isGoods ? 'Товар' : 'Услуги / Работы'}
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Организатор
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 500, wordBreak: 'break-word' }}>
-                        {organizerName}
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Юр. адрес организатора
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                        751410000, KAZAKHSTAN, г. Алматы, ул. ЛЕВИТАНА, д. 20, оф. 4
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Кол-во лотов в объявлении
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 700 }}>
-                        {tender.lots?.length || 1}
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Сумма закупки
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem' }}>
-                        {totalSum} ₸
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Признаки
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
-                        • Без учета НДС
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Таблица 2: Информация об организаторе */}
-              <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
-                <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
-                  Информация об организаторе
-                </div>
-                
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        ФИО представителя
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>
-                        ОРАЗАЛИЕВА ЖАНАР МАУТХАНОВНА
-                      </td>
-                    </tr>
-
-                    <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        Должность
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                        Руководитель
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
-                        E-Mail
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600, wordBreak: 'break-word' }}>
-                        Orazalieva1976@mail.ru
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: ЛОТЫ */}
-          {activeTab === 'lots' && (
-            <div className="fade-in" style={{ width: '100%', minWidth: 0 }}>
-              <div className="table-wrapper card" style={{ padding: 0, overflowX: 'auto', borderRadius: '8px', width: '100%' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700, textAlign: 'left' }}>
-                      <th style={{ padding: '0.75rem 0.75rem', width: '70px' }}>№ ЛОТА</th>
-                      <th style={{ padding: '0.75rem 0.75rem' }}>НАИМЕНОВАНИЕ ЛОТА</th>
-                      <th style={{ padding: '0.75rem 0.75rem', width: '85px' }}>КОЛ-ВО</th>
-                      <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>ЦЕНА ЗА ЕД., ТГ.</th>
-                      <th style={{ padding: '0.75rem 0.75rem', width: '130px' }}>СУММА, ТГ.</th>
-                      <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>МЕСТО ПОСТАВКИ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(tender.lots && tender.lots.length > 0 ? tender.lots : [{
-                      lot_number: 1,
-                      title: tenderTitle,
-                      quantity: 1,
-                      unit_price: tender.start_price || 1000000,
-                      start_price: tender.start_price || 1000000,
-                      delivery_place: 'Алматы'
-                    }]).map((lot, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
-                          {lot.lot_number || idx + 1}
+          {/* ЕДИНЫЙ МОНОЛИТНЫЙ КОНТЕЙНЕР ДЛЯ ВСЕХ ВКЛАДОК (ОДИНАКОВАЯ ШИРИНА 100%, ГРАНИЦЫ И ПАДДИНГ) */}
+          <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderTop: 'none', padding: '1.5rem', borderRadius: '0 0 10px 10px', minHeight: '380px', width: '100%', boxSizing: 'border-box' }}>
+            
+            {/* TAB 1: ОБЩИЕ СВЕДЕНИЯ */}
+            {activeTab === 'general' && (
+              <div className="fade-in" style={{ width: '100%' }}>
+                {/* Таблица 1: Общие сведения */}
+                <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
+                  <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
+                    Общие сведения
+                  </div>
+                  
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Способ проведения закупки
                         </td>
-                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 600, color: '#0f172a', wordBreak: 'break-word' }}>
-                          {lot.title}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700 }}>
-                          {lot.quantity} {lot.unit || 'лот'}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.75rem', whiteSpace: 'nowrap' }}>
-                          {formatPriceKzt(lot.unit_price)}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.75rem', fontWeight: 800, color: '#15803d', whiteSpace: 'nowrap' }}>
-                          {formatPriceKzt(lot.start_price)}
-                        </td>
-                        <td style={{ padding: '0.75rem 0.75rem', fontSize: '0.8rem', color: '#475569', wordBreak: 'break-word' }}>
-                          {lot.delivery_place || 'Алматы'}
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
+                          Запрос ценовых предложений
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 3: ДОКУМЕНТАЦИЯ */}
-          {activeTab === 'docs' && (
-            <div className="fade-in card" style={{ padding: '1.25rem' }}>
-              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#0f172a' }}>
-                📁 Прилагаемая документация и проект договора
-              </h4>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Тип закупки
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
+                          Первая закупка
+                        </td>
+                      </tr>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
-                {tender.documents && tender.documents.length > 0 ? (
-                  tender.documents.map((doc, i) => (
-                    <a
-                      key={doc.id || i}
-                      href={doc.file_path || '#'}
-                      download={doc.file_name}
-                      className="btn btn-outline"
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
-                    >
-                      <FileText size={24} color="#0284c7" />
-                      <div style={{ flex: 1, overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          📄 {doc.file_name}
-                        </div>
-                        <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
-                          {doc.doc_type || 'Документ закупки'} • {Math.round((doc.file_size || 1024) / 1024)} KB
-                        </div>
-                      </div>
-                    </a>
-                  ))
-                ) : (
-                  <>
-                    <a 
-                      href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ТЕХНИЧЕСКАЯ СПЕЦИФИКАЦИЯ ОБЪЯВЛЕНИЯ № ${tenderNumber}\n\nНаименование: ${tenderTitle}\nЗаказчик: ${organizerName}`)}`}
-                      download={`Техническая_Спецификация_${tenderNumber}.txt`}
-                      className="btn btn-outline"
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
-                    >
-                      <FileText size={24} color="#0284c7" />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                          📄 Техническая спецификация.pdf
-                        </div>
-                        <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
-                          Параметры и ГОСТ
-                        </div>
-                      </div>
-                    </a>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Вид предмета закупок
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
+                          {isGoods ? 'Товар' : 'Услуги / Работы'}
+                        </td>
+                      </tr>
 
-                    <a 
-                      href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ПРОЕКТ ДОГОВОРА ПО ЗАКУПКЕ № ${tenderNumber}\n\n1. Предмет договора: ${tenderTitle}\n2. Заказчик: ${organizerName}`)}`}
-                      download={`Проект_Договора_${tenderNumber}.txt`}
-                      className="btn btn-outline"
-                      style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
-                    >
-                      <FileText size={24} color="#16a34a" />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                          📄 Проект договора.pdf
-                        </div>
-                        <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
-                          Условия и контракт
-                        </div>
-                      </div>
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Организатор
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 500, wordBreak: 'break-word' }}>
+                          {organizerName}
+                        </td>
+                      </tr>
 
-          {/* TAB 4: ПРОТОКОЛЫ */}
-          {activeTab === 'protocols' && (
-            <div className="fade-in card" style={{ padding: '1.25rem' }}>
-              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#0f172a' }}>
-                📜 Официальные протоколы закупки
-              </h4>
-              <p className="text-sec" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
-                Протоколы вскрытия заявки и подведения итогов подписываются ЭЦП KalkanCrypt.
-              </p>
-              
-              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <div>
-                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id || 1}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП</div>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Юр. адрес организатора
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
+                          751410000, KAZAKHSTAN, г. Алматы, ул. ЛЕВИТАНА, д. 20, оф. 4
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Кол-во лотов в объявлении
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 700 }}>
+                          {tender.lots?.length || 1}
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Сумма закупки
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem' }}>
+                          {totalSum} ₸
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Признаки
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
+                          • Без учета НДС
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.3rem 0.6rem' }}>
-                  ✓ Подписан ЭЦП
-                </span>
+
+                {/* Таблица 2: Информация об организаторе */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
+                  <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1' }}>
+                    Информация об организаторе
+                  </div>
+                  
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem', tableLayout: 'fixed' }}>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ width: '220px', padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          ФИО представителя
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>
+                          ОРАЗАЛИЕВА ЖАНАР МАУТХАНОВНА
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Должность
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
+                          Руководитель
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          E-Mail
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600, wordBreak: 'break-word' }}>
+                          Orazalieva1976@mail.ru
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* TAB 2: ЛОТЫ */}
+            {activeTab === 'lots' && (
+              <div className="fade-in" style={{ width: '100%' }}>
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto', width: '100%', background: '#ffffff' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700, textAlign: 'left' }}>
+                        <th style={{ padding: '0.75rem 0.75rem', width: '70px' }}>№ ЛОТА</th>
+                        <th style={{ padding: '0.75rem 0.75rem' }}>НАИМЕНОВАНИЕ ЛОТА</th>
+                        <th style={{ padding: '0.75rem 0.75rem', width: '85px' }}>КОЛ-ВО</th>
+                        <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>ЦЕНА ЗА ЕД., ТГ.</th>
+                        <th style={{ padding: '0.75rem 0.75rem', width: '130px' }}>СУММА, ТГ.</th>
+                        <th style={{ padding: '0.75rem 0.75rem', width: '120px' }}>МЕСТО ПОСТАВКИ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(tender.lots && tender.lots.length > 0 ? tender.lots : [{
+                        lot_number: 1,
+                        title: tenderTitle,
+                        quantity: 1,
+                        unit_price: tender.start_price || 1000000,
+                        start_price: tender.start_price || 1000000,
+                        delivery_place: 'Алматы'
+                      }]).map((lot, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
+                            {lot.lot_number || idx + 1}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.75rem', fontWeight: 600, color: '#0f172a', wordBreak: 'break-word' }}>
+                            {lot.title}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700 }}>
+                            {lot.quantity} {lot.unit || 'лот'}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.75rem', whiteSpace: 'nowrap' }}>
+                            {formatPriceKzt(lot.unit_price)}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.75rem', fontWeight: 800, color: '#15803d', whiteSpace: 'nowrap' }}>
+                            {formatPriceKzt(lot.start_price)}
+                          </td>
+                          <td style={{ padding: '0.75rem 0.75rem', fontSize: '0.8rem', color: '#475569', wordBreak: 'break-word' }}>
+                            {lot.delivery_place || 'Алматы'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: ДОКУМЕНТАЦИЯ */}
+            {activeTab === 'docs' && (
+              <div className="fade-in" style={{ width: '100%' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#0f172a' }}>
+                  📁 Прилагаемая документация и проект договора
+                </h4>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                  {tender.documents && tender.documents.length > 0 ? (
+                    tender.documents.map((doc, i) => (
+                      <a
+                        key={doc.id || i}
+                        href={doc.file_path || '#'}
+                        download={doc.file_name}
+                        className="btn btn-outline"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
+                      >
+                        <FileText size={24} color="#0284c7" />
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            📄 {doc.file_name}
+                          </div>
+                          <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
+                            {doc.doc_type || 'Документ закупки'} • {Math.round((doc.file_size || 1024) / 1024)} KB
+                          </div>
+                        </div>
+                      </a>
+                    ))
+                  ) : (
+                    <>
+                      <a 
+                        href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ТЕХНИЧЕСКАЯ СПЕЦИФИКАЦИЯ ОБЩЕСТВА № ${tenderNumber}\n\nНаименование: ${tenderTitle}\nЗаказчик: ${organizerName}`)}`}
+                        download={`Техническая_Спецификация_${tenderNumber}.txt`}
+                        className="btn btn-outline"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
+                      >
+                        <FileText size={24} color="#0284c7" />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+                            📄 Техническая спецификация.pdf
+                          </div>
+                          <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
+                            Параметры и ГОСТ
+                          </div>
+                        </div>
+                      </a>
+
+                      <a 
+                        href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ПРОЕКТ ДОГОВОРА ПО ЗАКУПКЕ № ${tenderNumber}\n\n1. Предмет договора: ${tenderTitle}\n2. Заказчик: ${organizerName}`)}`}
+                        download={`Проект_Договора_${tenderNumber}.txt`}
+                        className="btn btn-outline"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
+                      >
+                        <FileText size={24} color="#16a34a" />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+                            📄 Проект договора.pdf
+                          </div>
+                          <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
+                            Условия и контракт
+                          </div>
+                        </div>
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: ПРОТОКОЛЫ */}
+            {activeTab === 'protocols' && (
+              <div className="fade-in" style={{ width: '100%' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#0f172a' }}>
+                  📜 Официальные протоколы закупки
+                </h4>
+                <p className="text-sec" style={{ fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
+                  Протоколы вскрытия заявки и подведения итогов подписываются ЭЦП KalkanCrypt.
+                </p>
+                
+                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id || 1}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП</div>
+                  </div>
+                  <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.3rem 0.6rem' }}>
+                    ✓ Подписан ЭЦП
+                  </span>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
 
         {/* ПРАВАЯ ЧАСТЬ: ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА В КАБИНЕТЕ - ФОРМА ПОДАЧИ ЦЕНЫ, ДЛЯ ПУБЛИЧНЫХ ПОСЕТИТЕЛЕЙ - РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ */}
