@@ -116,13 +116,14 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           const isExplicitError = response.status === false 
             || response.code === '500' 
             || response.code === '400' 
-            || response.result === 'NONE';
+            || response.result === 'NONE'
+            || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
 
           if (isExplicitError && !signedCms) {
-            // Если NCALayer 2.0 не знает модуль basics (старый NCALayer v1), пробуем v1 commonUtils
-            if (response.message && response.message.includes('module') && !ws.current._retryV1) {
+            // Если вызов basics дал сбой (NCALayer v1 или несовместимость версии), моментально переключаемся на универсальный commonUtils!
+            if (!ws.current._retryV1) {
               ws.current._retryV1 = true;
-              console.log('[NCALayer] Retry using legacy NCALayer 1.0 (commonUtils)...');
+              console.log('[NCALayer] Basics failed, switching to universal commonUtils (createCMSSignatureFromBase64)...');
               const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
               const v1Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
@@ -210,7 +211,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
         data: nonceToSign,
         signingParams: {
           decode: false,
-          encapsulate: true,
+          encapsulate: false,
           digested: false
         },
         signerParams: {},
