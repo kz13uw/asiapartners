@@ -26,6 +26,7 @@ const SupplierDashboard = () => {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('tenders');
   const [myBids, setMyBids] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [documents, setDocuments] = useState(getStoredDocs);
   const fileInputRef = useRef(null);
@@ -39,6 +40,7 @@ const SupplierDashboard = () => {
 
   useEffect(() => {
     const fetchBids = async () => {
+      setLoading(true);
       try {
         const { bidsAPI } = await import('../../api');
         const res = await bidsAPI.myBids();
@@ -46,6 +48,8 @@ const SupplierDashboard = () => {
         setMyBids(items);
       } catch (e) {
         setMyBids([]);
+      } finally {
+        setLoading(false);
       }
     };
     fetchBids();
