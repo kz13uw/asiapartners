@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ShieldCheck, FileText, CheckCircle2, Download, Upload, Trash2, Package, Calendar, MapPin, Award, ArrowLeft, RefreshCw, Send, Check, Building2, UserCheck, Mail, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
@@ -19,7 +19,10 @@ const formatPriceKzt = (amount) => {
 const TenderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuthStore();
+  
+  const isSupplierCabinet = location.pathname.startsWith('/supplier/');
   
   const [tender, setTender] = useState(null);
   const [activeTab, setActiveTab] = useState('general'); // 'general', 'lots', 'docs', 'protocols', 'contracts', 'appeals'
@@ -551,9 +554,9 @@ const TenderDetails = () => {
           )}
         </div>
 
-        {/* ПРАВАЯ ЧАСТЬ: ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА - ФОРМА ПОДАЧИ ЦЕНЫ, ДЛЯ ПУБЛИЧНЫХ ПОСЕТИТЕЛЕЙ - РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ */}
-        <div className="card" style={{ padding: '1.25rem', border: user?.role === 'supplier' ? '2px solid var(--pk-primary)' : '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>
-          {user?.role === 'supplier' ? (
+        {/* ПРАВАЯ ЧАСТЬ: ДЛЯ АВТОРИЗОВАННОГО ПОСТАВЩИКА В КАБИНЕТЕ - ФОРМА ПОДАЧИ ЦЕНЫ, ДЛЯ ПУБЛИЧНЫХ ПОСЕТИТЕЛЕЙ - РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ */}
+        <div className="card" style={{ padding: '1.25rem', border: isSupplierCabinet ? '2px solid var(--pk-primary)' : '1px solid #cbd5e1', borderRadius: '10px', background: '#ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>
+          {isSupplierCabinet ? (
             <>
               <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.05rem', color: 'var(--pk-primary)', fontWeight: 800 }}>
                 ⚡ Подача ценового предложения

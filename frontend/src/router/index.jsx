@@ -101,6 +101,11 @@ const AppRouter = () => {
             <SupplierProfile />
           </ProtectedRoute>
         } />
+        <Route path="/supplier/tenders/:id" element={
+          <ProtectedRoute allowedRoles={['supplier']}>
+            <TenderDetails />
+          </ProtectedRoute>
+        } />
         
         {/* Организатор */}
         <Route path="/organizer/dashboard" element={

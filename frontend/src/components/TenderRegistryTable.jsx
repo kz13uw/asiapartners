@@ -144,8 +144,9 @@ const TenderRegistryTable = ({
         </thead>
         <tbody>
           {tenders.map((tnd) => {
-            const tenderNumber = tnd.number || (tnd.status === 'draft' ? `TND-DRAFT-${tnd.id}` : `TND-${tnd.id}`);
-            const detailUrl = tnd.status === 'draft' ? `/organizer/tenders/${tnd.id}/edit` : `/tenders/${tnd.id}`;
+            const detailUrl = tnd.status === 'draft' 
+              ? `/organizer/tenders/${tnd.id}/edit` 
+              : (userRole === 'supplier' ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
             const organizerName = tnd.company_name || tnd.organizer_name || 'КГУ "Общеобразовательная школа № 215" Управления образования города Алматы';
             const lotName = tnd.lot_name || tnd.title || 'Панель интерактивная';
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
