@@ -148,16 +148,17 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     
     iin = iin_match.group(1) if iin_match else None
     company_bin = bin_match.group(1) if bin_match else None
+    is_demo = "demo" in payload.cms_base64.lower()
 
-    if not iin:
+    if not iin and is_demo:
         iin = "123456789012"
         company_bin = "987654321012"
-        subject_name = "ТОО Asia Поставщик"
-
-    # Временно: Для демо-заглушки, если ничего не найдено, берем тестовые данные
-    if iin == "123456789012" and not company_bin:
-        company_bin = "987654321012"
-        subject_name = "Тестовый Поставщик (Мок)"
+        subject_name = "ТОО Asia Поставщик (Демо)"
+    elif not company_bin and not is_demo:
+        raise HTTPException(
+            status_code=400,
+            detail="❌ К авторизации и участию в закупках допускаются ТОЛЬКО ЭЦП Юридических лиц (ТОО, АО, ИП, КТ). Предоставленный сертификат принадлежит физическому лицу и не содержит БИН организации."
+        )
     else:
         subject_name = "Пользователь НУЦ РК"
 

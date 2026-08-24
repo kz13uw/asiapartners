@@ -51,11 +51,13 @@ def verify_and_parse_cms(cms_base64: str) -> Dict[str, Any]:
         except Exception as e:
             logger.debug(f"Java Kalkan execution skipped: {e}")
 
+    is_legal = bool(bin_val)
     return {
         "valid": True,
-        "bin": bin_val or "210440012345",
+        "bin": bin_val,
         "iin": iin_val or "850101400823",
-        "company_name": company_name or "ТОО Asia Procurement",
-        "subject_type": "legal_entity" if bin_val else "individual",
+        "company_name": company_name or ("ТОО Asia Procurement" if is_legal else "Физическое Лицо"),
+        "subject_type": "legal_entity" if is_legal else "individual",
+        "is_legal_entity": is_legal,
         "cms_base64": cms_base64[:40] + "..." if len(cms_base64) > 40 else cms_base64
     }
