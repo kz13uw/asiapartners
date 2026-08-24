@@ -144,6 +144,7 @@ const TenderRegistryTable = ({
         </thead>
         <tbody>
           {tenders.map((tnd) => {
+            const tenderNumber = tnd.number || tnd.tender_number || `17522776-${tnd.id}`;
             const detailUrl = tnd.status === 'draft' 
               ? `/organizer/tenders/${tnd.id}/edit` 
               : (userRole === 'supplier' ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
