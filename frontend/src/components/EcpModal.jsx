@@ -87,22 +87,50 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           const response = JSON.parse(event.data);
           console.log('[NCALayer] response:', response);
 
-          // NCALayer v2: поле result содержит подпись
-          // NCALayer v1: поле responseObject.result
-          const signedCms = response.result 
-            || response.responseObject?.cms 
-            || response.responseObject?.result
-            || null;
+          let signedCms = null;
 
-          const errorCode = response.code || response.status;
-          const isError = errorCode === '500' || errorCode === '400' 
-            || response.result === 'NONE' 
-            || response.status === 'NONE'
-            || !signedCms;
+          // 1. Стандарт NCALayer 2.0 (kz.gov.pki.knca.basics):
+          // { status: true, body: { result: { signatures: ["MII..."] } } }
+          if (response.status === true && response.body?.result) {
+            const res = response.body.result;
+            if (res.signatures && Array.isArray(res.signatures) && res.signatures.length > 0) {
+              signedCms = res.signatures[0];
+            } else if (typeof res === 'string') {
+              signedCms = res;
+            }
+          }
 
-          if (isError && response.status !== undefined) {
+          // 2. Стандарт NCALayer 1.0 (commonUtils):
+          if (!signedCms) {
+            signedCms = response.result 
+              || response.responseObject?.cms 
+              || response.responseObject?.result
+              || null;
+          }
+
+          // Проверка ошибок и отмены подписи
+          const isExplicitError = response.status === false 
+            || response.code === '500' 
+            || response.code === '400' 
+            || response.result === 'NONE';
+
+          if (isExplicitError && !signedCms) {
+            // Если NCALayer 2.0 не знает модуль basics (старый NCALayer v1), пробуем v1 commonUtils
+            if (response.message && response.message.includes('module') && !ws.current._retryV1) {
+              ws.current._retryV1 = true;
+              console.log('[NCALayer] Retry using legacy NCALayer 1.0 (commonUtils)...');
+              const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
+              const v1Payload = {
+                module: 'kz.gov.pki.knca.commonUtils',
+                method: 'createCMSSignatureFromBase64',
+                args: ['PKCS12', 'SIGNATURE', dataToSign, true]
+              };
+              ws.current.send(JSON.stringify(v1Payload));
+              return;
+            }
+
             setStep(4);
-            const errMsg = response.message || response.responseObject?.errorCode || 'Подписание отменено или выбран неверный ключ.';
+            const errMsg = response.message || response.responseObject?.errorCode || 'Подписание отменено пользователем или выбран неверный ключ.';
             setErrorMessage(errMsg);
             return;
           }
@@ -111,7 +139,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             setStep(3);
             setSignedData(signedCms);
 
-            // Верифицируем на бэкенде
+            // Верифицируем подпись на бэкенде KalkanCrypt
             try {
               if (activeSession?.connection_id) {
                 const res = await edsAPI.verifySession(activeSession.connection_id, signedCms);
@@ -158,7 +186,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     let nonceToSign = 'AsiaPartners_AuthData_' + Date.now();
 
     try {
-      // Архитектура 2: создаём сессию на бэкенде, получаем nonce
+      // Создаём сессию на бэкенде, получаем одноразовый nonce
       const sessRes = await edsAPI.createSession(action, targetId);
       const sessData = sessRes.data;
       setActiveSession(sessData);
@@ -168,25 +196,26 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       console.warn('[EDS] Session creation failed, using local nonce:', err);
     }
 
-    // Отправляем запрос в NCALayer
-    // Метод createCMSSignatureFromBase64: данные передаются как Base64-строка
-    const dataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
-    const requestId = String(_ncaRequestId++);
-
-    const requestPayload = {
-      module: 'kz.gov.pki.knca.commonUtils',
-      method: 'createCMSSignatureFromBase64',
-      requestId,
-      args: [
-        'PKCS12',      // storageType: PKCS12 (файловый .p12) или CryptoProvider (аппаратный)
-        'SIGNATURE',   // keyType
-        dataToSign,    // data (Base64 строка данных для подписи)
-        true           // detach: true = отсоединённая подпись (CMS без вложенных данных)
-      ]
+    // Официальный формат NCALayer 2.0 (kz.gov.pki.knca.basics)
+    const nca2Payload = {
+      module: 'kz.gov.pki.knca.basics',
+      method: 'sign',
+      args: {
+        allowedStorages: ['PKCS12'],
+        format: 'cms',
+        data: nonceToSign,
+        signingParams: {
+          decode: false,
+          encapsulate: true,
+          digested: false
+        },
+        signerParams: {},
+        locale: lang === 'kz' ? 'kz' : 'ru'
+      }
     };
 
-    console.log('[NCALayer] → Sending request:', JSON.stringify(requestPayload));
-    ws.current.send(JSON.stringify(requestPayload));
+    console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
+    ws.current.send(JSON.stringify(nca2Payload));
   };
 
   const handleFallbackSign = async () => {
