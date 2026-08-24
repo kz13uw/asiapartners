@@ -7,6 +7,7 @@ import { useTranslation } from '../../store/useLanguageStore';
 import { tendersAPI } from '../../api';
 
 import EcpModal from '../../components/EcpModal';
+import TenderRegistryTable from '../../components/TenderRegistryTable';
 
 const OrganizerDashboard = () => {
   const { lang, t } = useTranslation();
