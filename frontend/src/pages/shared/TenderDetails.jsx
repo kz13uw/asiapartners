@@ -251,11 +251,9 @@ const TenderDetails = () => {
   const handleBackNavigation = (e) => {
     if (e) e.preventDefault();
     const token = localStorage.getItem('access_token');
-    const isSupplier = user?.role === 'supplier' || user?.role === 'PO' || location.pathname.includes('/supplier') || !!token;
-    if (isSupplier) {
-      navigate('/supplier/dashboard');
-    } else if (user?.role === 'organizer') {
-      navigate('/organizer/dashboard');
+    const isAuthenticated = !!token || !!user;
+    if (isAuthenticated) {
+      navigate('/tenders');
     } else {
       navigate('/public-tenders');
     }
