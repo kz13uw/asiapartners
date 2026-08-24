@@ -1226,6 +1226,8 @@ const CreateTender = () => {
         isOpen={showEdsModal} 
         onClose={() => !isSubmitting && setShowEdsModal(false)}
         onSign={processPublish}
+        action="publish_tender"
+        targetId={createdTenderId}
         docTitle={`Публикация лота: ${formData.title}`}
       />
     </div>

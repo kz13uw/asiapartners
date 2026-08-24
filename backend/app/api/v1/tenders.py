@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import selectinload
@@ -407,13 +408,27 @@ async def update_tender(
     return res.scalar_one()
 
 
+class TenderPublishBody(BaseModel):
+    eds_hash: Optional[str] = None
+    cms_base64: Optional[str] = None
+
+
 @router.post("/{tender_id}/publish", response_model=TenderOut, summary="Опубликовать тендер (ЭЦП)")
 async def publish_tender(
     tender_id: int,
-    eds_hash: str = Query("demo_eds_signature_bypassed"),
+    body: Optional[TenderPublishBody] = None,
+    eds_hash: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN)),
 ):
+    sig = None
+    if body and (body.cms_base64 or body.eds_hash):
+        sig = body.cms_base64 or body.eds_hash
+    elif eds_hash:
+        sig = eds_hash
+    else:
+        sig = "demo_eds_signature_bypassed"
+
     result = await db.execute(select(Tender).where(Tender.id == tender_id))
     tender = result.scalar_one_or_none()
     if not tender:
@@ -422,7 +437,7 @@ async def publish_tender(
         raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
     tender.status = TenderStatus.ACCEPTING
-    tender.eds_hash = eds_hash
+    tender.eds_hash = sig
     tender.published_at = datetime.utcnow()
 
     log = AuditLog(user_id=current_user.id, action="PUBLISH_TENDER", entity_type="tender", entity_id=tender.id)

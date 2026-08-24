@@ -68,7 +68,7 @@ export const tendersAPI = {
   create: (data) => API.post('/tenders', data),
   duplicate: (id) => API.post(`/tenders/${id}/duplicate`),
   update: (id, data) => API.patch(`/tenders/${id}`, data),
-  publish: (id, edsHash) => API.post(`/tenders/${id}/publish`, null, { params: { eds_hash: edsHash } }),
+  publish: (id, edsHash) => API.post(`/tenders/${id}/publish`, { eds_hash: edsHash, cms_base64: edsHash }),
   cancel: (id, reason) => API.post(`/tenders/${id}/cancel`, { reason }),
   delete: (id) => API.delete(`/tenders/${id}`),
 };
