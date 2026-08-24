@@ -248,8 +248,8 @@ const TenderDetails = () => {
   const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : '2026-08-25 08:44:27';
   const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '2026-08-27 09:44:35';
   const totalSum = formatPriceKzt(tender.start_price || tender.budget || 3204310.35);
-  const backLinkTarget = isSupplierCabinet
-    ? '/supplier/tenders'
+  const backLinkTarget = (location.pathname.startsWith('/supplier') || user?.role === 'supplier' || user?.role === 'PO')
+    ? '/supplier/dashboard'
     : user?.role === 'organizer'
     ? '/organizer/dashboard'
     : '/public-tenders';
