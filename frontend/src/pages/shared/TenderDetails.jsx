@@ -280,22 +280,6 @@ const TenderDetails = () => {
             >
               Протоколы
             </button>
-
-            <button 
-              type="button"
-              onClick={() => setActiveTab('contracts')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'contracts' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'contracts' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'contracts' ? 700 : 500, color: activeTab === 'contracts' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
-            >
-              Договоры
-            </button>
-
-            <button 
-              type="button"
-              onClick={() => setActiveTab('appeals')}
-              style={{ padding: '0.65rem 1.25rem', border: '1px solid #cbd5e1', borderBottom: activeTab === 'appeals' ? '2px solid #ffffff' : '1px solid #cbd5e1', background: activeTab === 'appeals' ? '#ffffff' : '#f8fafc', fontWeight: activeTab === 'appeals' ? 700 : 500, color: activeTab === 'appeals' ? '#0f172a' : '#64748b', cursor: 'pointer', borderRadius: '4px 4px 0 0', marginBottom: '-1px', fontSize: '0.85rem' }}
-            >
-              Апелляции
-            </button>
           </div>
 
           {/* TAB 1: ОБЩИЕ СВЕДЕНИЯ (ТОЧНАЯ КОПИЯ СКРИНШОТА 2) */}
@@ -563,20 +547,6 @@ const TenderDetails = () => {
                   ✓ Подписан ЭЦП
                 </span>
               </div>
-            </div>
-          )}
-
-          {/* TAB 5: ДОГОВОРЫ */}
-          {activeTab === 'contracts' && (
-            <div className="fade-in card" style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem' }}>Договор находится на стадии формирования после завершения приема заявок.</p>
-            </div>
-          )}
-
-          {/* TAB 6: АПЕЛЛЯЦИИ */}
-          {activeTab === 'appeals' && (
-            <div className="fade-in card" style={{ padding: '1.5rem', textAlign: 'center', color: '#64748b' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem' }}>Заявления об апелляции и жалобы по данному объявлению отсутствуют.</p>
             </div>
           )}
         </div>
