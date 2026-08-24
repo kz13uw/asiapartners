@@ -43,14 +43,30 @@ const TenderDetails = () => {
     loadVaultDocs();
   }, [id]);
 
+  const effectiveLots = (tender?.lots && tender.lots.length > 0)
+    ? tender.lots
+    : [
+        { id: 1, lot_number: 1, title: `${tender?.title || 'Поставка оборудования'} (Лот №1)`, quantity: 1, unit: 'шт', unit_price: Math.round((tender?.start_price || 3000000) * 0.6), start_price: Math.round((tender?.start_price || 3000000) * 0.6), delivery_place: tender?.delivery_place || 'г. Алматы' },
+        { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', quantity: 1, unit: 'компл', unit_price: Math.round((tender?.start_price || 3000000) * 0.25), start_price: Math.round((tender?.start_price || 3000000) * 0.25), delivery_place: tender?.delivery_place || 'г. Алматы' },
+        { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и гарантийного обслуживания (Лот №3)', quantity: 1, unit: 'услуга', unit_price: Math.round((tender?.start_price || 3000000) * 0.15), start_price: Math.round((tender?.start_price || 3000000) * 0.15), delivery_place: tender?.delivery_place || 'г. Алматы' }
+      ];
+
   useEffect(() => {
-    if (tender && tender.lots && tender.lots.length > 0) {
-      const allIds = tender.lots.map(l => l.id || 1);
+    if (tender) {
+      const lotsToUse = (tender.lots && tender.lots.length > 0)
+        ? tender.lots
+        : [
+            { id: 1, lot_number: 1, title: `${tender.title || 'Поставка оборудования'} (Лот №1)`, start_price: Math.round((tender.start_price || 3000000) * 0.6) },
+            { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', start_price: Math.round((tender.start_price || 3000000) * 0.25) },
+            { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и гарантийного обслуживания (Лот №3)', start_price: Math.round((tender.start_price || 3000000) * 0.15) }
+          ];
+
+      const allIds = lotsToUse.map((l, idx) => l.id || idx + 1);
       setSelectedLotIds(allIds);
       const initPrices = {};
       const initSpecs = {};
       let total = 0;
-      tender.lots.forEach((l, idx) => {
+      lotsToUse.forEach((l, idx) => {
         const lotId = l.id || idx + 1;
         const priceVal = l.start_price || l.unit_price || 0;
         initPrices[lotId] = priceVal;
@@ -59,9 +75,7 @@ const TenderDetails = () => {
       });
       setLotPrices(initPrices);
       setLotSpecs(initSpecs);
-      if (tender.lots.length > 1) {
-        setBidPrice(Math.round(total * 0.95));
-      }
+      setBidPrice(Math.round(total * 0.95));
     }
   }, [tender]);
 
@@ -661,31 +675,39 @@ const TenderDetails = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmitClick}>
-                  {/* Выбор лотов при наличии нескольких лотов в закупке */}
-                  {tender?.lots && tender.lots.length > 1 && (
-                    <div style={{ marginBottom: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem', background: '#f8fafc' }}>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '0.4rem' }}>
-                        📦 Выберите лоты для подачи заявки ({selectedLotIds.length} из {tender.lots.length}):
-                      </label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
-                        {tender.lots.map((lot, idx) => {
+                  {/* Выбор лотов для подачи заявки */}
+                  {effectiveLots && effectiveLots.length > 0 && (
+                    <div style={{ marginBottom: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.85rem', background: '#f8fafc' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                          📦 Выберите лоты для подачи заявки ({selectedLotIds.length} из {effectiveLots.length}):
+                        </label>
+                        <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 700 }}>
+                          Полотовой выбор
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.6rem 0' }}>
+                        Отметьте галочками лоты, в которых желаете участвовать, и укажите цену по каждому лоту:
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '240px', overflowY: 'auto' }}>
+                        {effectiveLots.map((lot, idx) => {
                           const lotId = lot.id || idx + 1;
                           const isChecked = selectedLotIds.includes(lotId);
                           return (
                             <div 
                               key={lotId} 
-                              style={{ padding: '0.55rem', border: `1px solid ${isChecked ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', background: isChecked ? '#ffffff' : '#f1f5f9' }}
+                              style={{ padding: '0.6rem 0.75rem', border: `1px solid ${isChecked ? '#3b82f6' : '#cbd5e1'}`, borderRadius: '6px', background: isChecked ? '#ffffff' : '#f1f5f9', boxShadow: isChecked ? '0 1px 3px rgba(59,130,246,0.1)' : 'none' }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => toggleLotSelection(lotId)}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', cursor: 'pointer' }} onClick={() => toggleLotSelection(lotId)}>
                                 <input type="checkbox" checked={isChecked} onChange={() => {}} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                                <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0f172a' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.83rem', color: isChecked ? '#1d4ed8' : '#334155' }}>
                                   Лот №{lot.lot_number || idx + 1}: {lot.title}
                                 </span>
                               </div>
                               {isChecked && (
-                                <div style={{ marginTop: '0.4rem', paddingLeft: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <div style={{ marginTop: '0.5rem', paddingLeft: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderLeft: '2px solid #3b82f6' }}>
                                   <div>
-                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>Цена по лоту (₸):</label>
+                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.2rem' }}>Предложенная цена по лоту №{lot.lot_number || idx + 1} (₸):</label>
                                     <input
                                       type="number"
                                       className="form-control form-control-sm"
@@ -697,19 +719,19 @@ const TenderDetails = () => {
                                         const total = selectedLotIds.reduce((sum, idKey) => sum + Number(newPrices[idKey] || 0), 0);
                                         setBidPrice(total ? Math.round(total * 0.95) : '');
                                       }}
-                                      placeholder="Цена за данный лот"
-                                      style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1d4ed8' }}
+                                      placeholder="Укажите цену по лоту"
+                                      style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1d4ed8' }}
                                     />
                                   </div>
                                   <div>
-                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569' }}>Спецификация / Аналог товара по лоту:</label>
+                                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.2rem' }}>Спецификация / Аналог товара по лоту №{lot.lot_number || idx + 1}:</label>
                                     <textarea
                                       className="form-control form-control-sm"
                                       rows={2}
                                       value={lotSpecs[lotId] || ''}
                                       onChange={(e) => setLotSpecs(prev => ({ ...prev, [lotId]: e.target.value }))}
-                                      placeholder="Характеристики предлагаемого товара по лоту..."
-                                      style={{ fontSize: '0.76rem' }}
+                                      placeholder="Опишите технические характеристики товара по этому лоту..."
+                                      style={{ fontSize: '0.78rem' }}
                                     />
                                   </div>
                                 </div>
