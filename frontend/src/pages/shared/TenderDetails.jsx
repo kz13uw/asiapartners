@@ -848,9 +848,6 @@ const TenderDetails = () => {
                   <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: '0.35rem', fontWeight: 600 }}>
                     🔒 Поле нередактируемое (складывается автоматически из цен выбранных лотов выше).
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem' }}>
-                    Стартовый бюджет закупки: <strong>{totalSum} ₸</strong>
-                  </div>
                 </div>
               </div>
 
