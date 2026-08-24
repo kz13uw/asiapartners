@@ -30,7 +30,7 @@ async def init_db(clean_all: bool = False):
                 await db.execute(sql_delete(Tender))
                 await db.execute(sql_delete(Company))
                 await db.execute(sql_delete(AuditLog))
-                await db.execute(sql_delete(User).where(User.username != "admin"))
+                await db.execute(sql_delete(User))
                 await db.commit()
 
             admin_pwd = os.getenv("ADMIN_PASSWORD", "admin123")
