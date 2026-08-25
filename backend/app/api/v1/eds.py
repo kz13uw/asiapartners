@@ -109,9 +109,10 @@ async def verify_eds_session(
     if not parsed.get("valid"):
         raise HTTPException(status_code=400, detail=parsed.get("error", "Неверный штамп ЭЦП"))
 
-    is_demo = payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345"
-    company_bin = parsed.get("bin") or ("210440012345" if is_demo else None)
-    iin = parsed.get("iin") or ("850101400823" if is_demo else None)
+    from app.core.config import settings
+    is_demo = settings.DEBUG and (payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345")
+    company_bin = parsed.get("bin") or parsed.get("iin") or ("210440012345" if is_demo else None)
+    iin = parsed.get("iin") or company_bin or ("850101400823" if is_demo else None)
 
     # 🔒 Строгая проверка: К закупкам допускаются ТОЛЬКО Юридические лица (наличие БИН компании)
     if not company_bin and not is_demo:

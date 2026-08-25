@@ -137,7 +137,8 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
 
     from app.core.kalkan_verifier import verify_and_parse_cms
 
-    is_demo = payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345"
+    from app.core.config import settings
+    is_demo = settings.DEBUG and (payload.cms_base64.startswith("demo_") or payload.cms_base64 == "demo_signed_cms_base64_hash_12345")
     if is_demo:
         parsed = {"valid": True, "bin": getattr(payload, "company_bin", None) or "210440012345", "iin": "850101400823", "company_name": payload.company_name or "ТОО Asia Procurement"}
     else:
@@ -236,6 +237,12 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
 
 @router.post("/refresh", response_model=TokenResponse, summary="Обновить токен")
 async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    from app.models.models import TokenBlacklist
+    # Проверка: токен не отозван
+    blacklisted = await db.execute(select(TokenBlacklist).where(TokenBlacklist.token == body.refresh_token))
+    if blacklisted.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Токен отозван")
+
     payload = decode_token(body.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный refresh-токен")
@@ -245,6 +252,8 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
+    if user.status != UserStatus.ACTIVE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Аккаунт заблокирован")
 
     token_data = {"sub": str(user.id), "role": user.role.value}
     return TokenResponse(

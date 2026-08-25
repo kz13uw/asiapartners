@@ -76,10 +76,15 @@ const EvaluateTender = () => {
     setShowProtocolModal(true);
   };
 
-  const signProtocol = async () => {
+  const signProtocol = async (signedCms) => {
     setIsSigning(true);
     try {
-      const edsHash = "demo_protocol_signature_999";
+      const edsHash = signedCms || null;
+      if (!edsHash) {
+        toast.error('Ошибка: Подпись ЭЦП не получена. Повторите подписание.');
+        setIsSigning(false);
+        return;
+      }
       await bidsAPI.generateProtocol(tender.id, edsHash);
       
       toast.success('Протокол итогов успешно подписан ЭЦП и опубликован!');
@@ -117,7 +122,7 @@ const EvaluateTender = () => {
             </span>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0.3rem 0 0.5rem 0', color: '#0f172a' }}>{tender.title}</h2>
             <div className="text-secondary" style={{ color: '#64748b', fontSize: '0.88rem' }}>
-              № Закупки: <strong style={{ fontFamily: 'monospace', color: 'var(--pk-primary)' }}>{tender.number}</strong> • Способ: <strong>Запрос ценовых предложений (ЗЦП)</strong> • Плановая сумма: <strong style={{ color: '#15803d' }}>{tender.start_price.toLocaleString('ru-RU')} ₸</strong>
+              № Закупки: <strong style={{ fontFamily: 'monospace', color: 'var(--pk-primary)' }}>{tender.number}</strong> • Способ: <strong>Запрос ценовых предложений (ЗЦП)</strong> • Плановая сумма: <strong style={{ color: '#15803d' }}>{(tender.start_price ?? 0).toLocaleString('ru-RU')} ₸</strong>
             </div>
           </div>
           <span className="badge badge-warning" style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}>⚖️ Рассмотрение заявок</span>
@@ -182,7 +187,7 @@ const EvaluateTender = () => {
                   <div style={{ textAlign: 'right', background: '#ffffff', padding: '0.5rem 0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Ценовое предложение</div>
                     <div style={{ fontSize: '1.35rem', fontWeight: 900, color: isQualified ? '#16a34a' : 'var(--pk-primary)' }}>
-                      {bid.price.toLocaleString('ru-RU')} ₸
+                      {(bid.price ?? 0).toLocaleString('ru-RU')} ₸
                     </div>
                   </div>
                 </div>

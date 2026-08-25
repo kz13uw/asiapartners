@@ -52,7 +52,7 @@ const TenderCard = ({ tender }) => {
   const [hovered, setHovered] = useState(false);
   return (
     <Link
-      to={`/public-tenders/${tender.id}`}
+      to={`/tenders/${tender.id}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -213,7 +213,7 @@ const IndexPage = () => {
             >
               Войти / Зарегистрироваться <ArrowRight size={18} />
             </Link>
-            <Link to="/public-tenders" style={{
+            <Link to="/tenders" style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
               background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.25)',
               color: '#ffffff', fontWeight: 600, fontSize: '1rem',
@@ -249,13 +249,45 @@ const IndexPage = () => {
         </div>
       </section>
 
+      {/* ════════════════════ ACTIVE TENDERS ════════════════════ */}
+      {tenders.length > 0 && (
+        <section style={{ padding: 'clamp(2.5rem,5vw,4rem) 1.5rem', background: 'linear-gradient(180deg,#f0f7ff 0%,#f8fafc 100%)' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 'clamp(1.3rem,2.5vw,1.75rem)', fontWeight: 900, color: '#0f172a' }}>
+                  Активные закупки
+                </h2>
+                <p style={{ margin: '0.3rem 0 0', fontSize: '0.88rem', color: '#64748b' }}>
+                  Открытые тендеры группы Asia Partners
+                </p>
+              </div>
+              <Link to="/tenders" style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                background: '#2B8AC4', color: '#fff', fontWeight: 600, fontSize: '0.88rem',
+                padding: '0.6rem 1.4rem', borderRadius: '10px', textDecoration: 'none',
+                transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = '#1e6fa0'}
+                onMouseLeave={e => e.currentTarget.style.background = '#2B8AC4'}
+              >
+                Все закупки <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: '1rem' }}>
+              {tenders.map(t => <TenderCard key={t.id} tender={t} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ════════════════════ HOW TO BECOME SUPPLIER ════════════════════ */}
       <section style={{ padding: 'clamp(3.5rem,6vw,5.5rem) 1.5rem', background: 'linear-gradient(180deg,#f8fafc 0%,#eef4f9 100%)' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
 
             <h2 style={{ fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 900, color: '#0f172a', marginBottom: '0.6rem' }}>
-              Почему выбирают нашу платформу</h2>
+              Как стать поставщиком</h2>
             <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '480px', marginInline: 'auto' }}>
               Простой и понятный процесс — от регистрации до победы в закупке
             </p>

@@ -47,7 +47,12 @@ const LoginPage = () => {
       } else {
         // Зарегистрированный пользователь — форма НЕ показывается, сразу редирект в кабинет!
         toast.success('Успешный вход по ЭЦП!');
-        navigate('/supplier/dashboard');
+        const role = (result?.role || '').toLowerCase();
+        if (role === 'admin') navigate('/admin/dashboard');
+        else if (role === 'monitoring') navigate('/monitoring/dashboard');
+        else if (role === 'organizer') navigate('/organizer/dashboard');
+        else if (role === 'commission') navigate('/organizer/dashboard');
+        else navigate('/supplier/dashboard');
       }
     } catch (e) {
       console.error("EDS Login Error:", e);
@@ -76,9 +81,13 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
+      if (!company?.bin) {
+        toast.error('Ошибка: Не удалось определить БИН компании. Повторите вход через ЭЦП.');
+        return;
+      }
       await usersAPI.updateCompany({
-        bin: company?.bin || '123456789012',
-        full_name: company?.full_name || user?.full_name || 'ТОО Поставщик',
+        bin: company.bin,
+        full_name: company?.full_name || user?.full_name,
         legal_form: 'ТОО',
         address: supplierExtra.company_address,
         phone: supplierExtra.phone,
@@ -88,9 +97,9 @@ const LoginPage = () => {
       toast.success('Регистрация успешно завершена!');
       navigate('/supplier/dashboard');
     } catch (e) {
-      console.warn("Notice updating company profile:", e);
-      toast.success('Регистрация завершена! Переход в Личный кабинет...');
-      navigate('/supplier/dashboard');
+      console.error('Ошибка обновления профиля компании:', e);
+      const msg = e.response?.data?.detail || 'Ошибка сохранения данных. Попробуйте ещё раз.';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

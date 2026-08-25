@@ -483,8 +483,8 @@ def verify_and_parse_cms(cms_base64: str, required_key_usage: Optional[str] = No
     if result:
         return result
 
-    # ── 4. Regex по raw bytes (legacy) ───────────────────────────────────
-    logger.warning("All parsers failed, falling back to regex scan")
+    # ── 4. Regex по raw bytes (legacy — только для извлечения метаданных) ─────
+    logger.warning("All parsers failed, falling back to regex scan (NOT valid — metadata only)")
     raw = cms_bytes.decode('utf-8', errors='ignore') + clean
 
     bin_m = re.search(r'BIN(\d{12})', raw, re.IGNORECASE)
@@ -494,8 +494,10 @@ def verify_and_parse_cms(cms_base64: str, required_key_usage: Optional[str] = No
     bin_val = bin_m.group(1) if bin_m else None
     iin_val = iin_m.group(1) if iin_m else None
 
+    # ❗ Криптографическая подпись НЕ проверена — всегда возвращаем valid: False
     return {
-        "valid": True,
+        "valid": False,
+        "error": "Не удалось верифицировать ЭЦП криптографически. Проверьте формат сертификата.",
         "bin": bin_val, "iin": iin_val,
         "company_name": co_m.group(0).strip() if co_m else None,
         "subject_type": "legal_entity" if bin_val else "individual",

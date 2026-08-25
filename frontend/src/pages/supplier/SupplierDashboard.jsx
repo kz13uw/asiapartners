@@ -75,9 +75,9 @@ const SupplierDashboard = () => {
       } else if (tenderId) {
         await bidsAPI.revokeByTender(tenderId, { reason, eds_hash: "demo_revocation_signature_999" });
       }
-      toast.success(`Заявка по закупке "${tenderTitle}" полностью отозвана с подписью ЭЦП!`);
+      toast.success(`Заявка по закупке "${tenderTitle}" полностью отозвана!`);
     } catch (e) {
-      toast.success(`Заявка по закупке "${tenderTitle}" успешно отозвана с подписью ЭЦП!`);
+      toast.error(e.response?.data?.detail || `Ошибка отзыва заявки "${tenderTitle}". Попробуйте ещё раз.`);
     } finally {
       try {
         const { bidsAPI } = await import('../../api');

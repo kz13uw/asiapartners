@@ -485,6 +485,8 @@ async def publish_tender(
         tender = result.scalar_one_or_none()
         if not tender:
             raise HTTPException(status_code=404, detail="Тендер не найден")
+        if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
+            raise HTTPException(status_code=403, detail="У вас нет прав на публикацию этого тендера")
         if tender.status not in [TenderStatus.DRAFT, TenderStatus.ACCEPTING]:
             raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
@@ -520,6 +522,8 @@ async def cancel_tender(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
+    if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="У вас нет прав на отмену этого тендера")
     if tender.status == TenderStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Завершенный тендер отменить нельзя")
 
@@ -547,8 +551,10 @@ async def delete_tender(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
+    if tender.status != TenderStatus.DRAFT:
+        raise HTTPException(status_code=400, detail="Удалять можно только черновики. Для отзыва опубликованного тендера используйте ОТМЕНА.")
     if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Нет прав на удаление этого тендера")
+        raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого тендера")
     
     from app.models.models import Lot, QualificationRequirement, TenderDocument
     await db.execute(delete(Lot).where(Lot.tender_id == tender_id))

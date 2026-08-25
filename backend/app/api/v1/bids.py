@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db
-from app.models.models import Bid, BidStatus, Tender, TenderStatus, User, UserRole, AuditLog, Protocol
+from app.models.models import Bid, BidStatus, Tender, TenderStatus, User, UserRole, AuditLog, Protocol, Lot
 from app.schemas.schemas import BidCreate, BidStatusUpdate, BidOut, BidRevoke
 from app.api.v1.auth import get_current_user
 from app.api.v1.tenders import require_role
@@ -274,9 +274,9 @@ async def generate_protocol(
 
     # 1. Формируем список всех лотов закупки (из базы данных или 3 базовых лота по умолчанию)
     lots_list = list(tender.lots) if (tender.lots and len(tender.lots) > 0) else [
-        TenderLot(id=1, lot_number=1, title=f"{tender.title} (Лот №1)", start_price=round(tender.start_price * 0.6)),
-        TenderLot(id=2, lot_number=2, title="Комплектующие материалы и оборудование (Лот №2)", start_price=round(tender.start_price * 0.25)),
-        TenderLot(id=3, lot_number=3, title="Услуги монтажа и пусконаладочных работ (Лот №3)", start_price=round(tender.start_price * 0.15))
+        Lot(id=1, lot_number=1, title=f"{tender.title} (Лот №1)", start_price=round((tender.start_price or 0) * 0.6)),
+        Lot(id=2, lot_number=2, title="Комплектующие материалы и оборудование (Лот №2)", start_price=round((tender.start_price or 0) * 0.25)),
+        Lot(id=3, lot_number=3, title="Услуги монтажа и пусконаладочных работ (Лот №3)", start_price=round((tender.start_price or 0) * 0.15))
     ]
 
     lot_summary_lines = []

@@ -30,13 +30,13 @@ const SupplierProfile = () => {
     if (company) {
       setProfile({
         bin: company.bin || '',
-        name: company.name || '',
-        directorName: company.directorName || 'Иванов Алексей Сергеевич',
-        directorIin: company.directorIin || '850101400823',
+        name: company.name || company.full_name || '',
+        directorName: company.director_name || '',
+        directorIin: company.director_iin || '',
         address: company.address || '',
-        email: company.email || 'director@snab-invest.kz',
-        phone: company.phone || '+7 (701) 123-45-67',
-        iban: company.iban || 'KZ123456789012345678'
+        email: company.email || '',
+        phone: company.phone || '',
+        iban: company.iban || ''
       });
     }
   }, [company]);
