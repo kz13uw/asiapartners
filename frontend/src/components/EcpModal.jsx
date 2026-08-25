@@ -223,17 +223,17 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       console.warn('[EDS] Session creation failed, using local nonce:', err);
     }
 
-    // Официальный формат NCALayer 2.0 (kz.gov.pki.knca.basics)
+    const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     const nca2Payload = {
       module: 'kz.gov.pki.knca.basics',
       method: 'sign',
       args: {
         allowedStorages: ['PKCS12'],
         format: 'cms',
-        data: nonceToSign,
+        data: base64DataToSign,
         signingParams: {
-          decode: false,
-          encapsulate: false,
+          decode: true,
+          encapsulate: true,
           digested: false
         },
         signerParams: {},
@@ -360,15 +360,6 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                         <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> Повторить
                       </button>
                     </div>
-
-                    <button 
-                      type="button" 
-                      className="btn btn-outline btn-sm" 
-                      onClick={handleFallbackSign}
-                      style={{ marginTop: '0.4rem', backgroundColor: '#f8fafc', color: '#475569', fontSize: '0.8rem', border: '1px dashed #cbd5e1' }}
-                    >
-                      <Key size={13} style={{ marginRight: '0.3rem' }} /> Войти с демо-ЭЦП (для проверки)
-                    </button>
                   </div>
                 </div>
               )}

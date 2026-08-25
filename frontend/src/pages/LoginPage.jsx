@@ -243,21 +243,12 @@ const LoginPage = () => {
               <div>
                 <button 
                   type="button" 
-                  className="btn btn-primary mb-2" 
+                  className="btn btn-primary" 
                   style={{ width: '100%', padding: '0.9rem', justifyContent: 'center', fontSize: '1rem', borderRadius: '10px', fontWeight: 700 }}
                   onClick={() => setShowEdsModal(true)}
                   disabled={isLoading}
                 >
                   🔑 Выбрать ключ ЭЦП (NCALayer) и Войти
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ width: '100%', padding: '0.65rem', justifyContent: 'center', fontSize: '0.85rem', borderRadius: '10px', borderColor: '#cbd5e1', color: '#475569', backgroundColor: '#f8fafc' }}
-                  onClick={() => handleEdsSuccess('demo_signed_cms_base64_hash_12345')}
-                  disabled={isLoading}
-                >
-                  ⚡ Вход с демо-ЭЦП Поставщика (без NCALayer)
                 </button>
               </div>
             )
