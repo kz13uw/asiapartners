@@ -236,26 +236,18 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
 
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
-    const nca2Payload = {
-      module: 'kz.gov.pki.knca.basics',
-      method: 'sign',
-      args: {
-        allowedStorages: ['PKCS12'],
-        format: 'cms',
-        data: base64DataToSign,
-        signingParams: {
-          decode: true,
-          encapsulate: true,
-          digested: false
-        },
-        signerParams: {},
-        locale: lang === 'kz' ? 'kz' : 'ru'
-      }
+    
+    // 🌐 Официальный универсальный формат NCALayer (Госзакуп, Самрук, eGov)
+    const ncaPayload = {
+      module: 'kz.gov.pki.knca.commonUtils',
+      method: 'createCMSSignatureFromBase64',
+      args: ['PKCS12', 'SIGNATURE', base64DataToSign, '', true]
     };
 
-    console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
-    ws.current.send(JSON.stringify(nca2Payload));
+    console.log('[NCALayer] → Sending request:', JSON.stringify(ncaPayload));
+    ws.current.send(JSON.stringify(ncaPayload));
   };
+
 
 
   const handleFallbackSign = async () => {
