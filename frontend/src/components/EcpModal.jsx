@@ -32,13 +32,11 @@ export const formatErrorMessage = (err) => {
 const NCALAYER_URLS = [
   'wss://127.0.0.1:13579/',
   'wss://localhost:13579/',
+  'wss://127.0.0.1:13580/',
+  'wss://localhost:13580/',
   'ws://127.0.0.1:13579/',
   'ws://localhost:13579/',
 ];
-
-// Хранилище по requestId для сопоставления запросов и ответов NCALayer
-let _ncaRequestId = 1;
-const _ncaPendingRequests = {};
 
 const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', targetId = null }) => {
   const { lang, t } = useTranslation();
@@ -81,34 +79,48 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       }
       
       const targetUrl = NCALAYER_URLS[currentUrlIdx.current] || NCALAYER_URLS[0];
-      ws.current = new WebSocket(targetUrl);
+      console.log(`[NCALayer] Connecting to ${targetUrl} (attempt ${currentUrlIdx.current + 1}/${NCALAYER_URLS.length})...`);
+      const socket = new WebSocket(targetUrl);
+      ws.current = socket;
 
-      connTimeout.current = setTimeout(() => {
-        if (ws.current && ws.current.readyState !== WebSocket.OPEN) {
+      let handled = false;
+      const handleFailure = () => {
+        if (handled) return;
+        handled = true;
+        clearTimeout(connTimeout.current);
+        if (ws.current === socket) {
           tryNextUrl();
         }
-      }, 1500);
+      };
+
+      connTimeout.current = setTimeout(() => {
+        if (socket.readyState !== WebSocket.OPEN) {
+          try { socket.close(); } catch (e) {}
+          handleFailure();
+        }
+      }, 2000);
       
-      ws.current.onopen = () => {
+      socket.onopen = () => {
+        if (ws.current !== socket) return;
         clearTimeout(connTimeout.current);
         setNcaStatus('connected');
+        console.log(`[NCALayer] Connected successfully via ${targetUrl}`);
         // 🚀 АВТОМАТИЧЕСКИЙ ВЫЗОВ NCALayer сразу при подключении!
         setTimeout(() => {
           requestNcaSignature();
-        }, 50);
+        }, 100);
       };
 
-      ws.current.onclose = () => {
-        clearTimeout(connTimeout.current);
-        tryNextUrl();
+      socket.onclose = () => {
+        handleFailure();
       };
 
-      ws.current.onerror = () => {
-        clearTimeout(connTimeout.current);
-        tryNextUrl();
+      socket.onerror = (err) => {
+        console.warn(`[NCALayer] Connection error on ${targetUrl}:`, err);
+        handleFailure();
       };
 
-      ws.current.onmessage = async (event) => {
+      socket.onmessage = async (event) => {
         try {
           const response = JSON.parse(event.data);
           console.log('[NCALayer] response:', response);
@@ -149,7 +161,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
               const v1Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
                 method: 'createCMSSignatureFromBase64',
-                args: ['PKCS12', 'SIGNATURE', dataToSign, true]
+                args: ['PKCS12', 'SIGNATURE', dataToSign, 'true']
               };
               ws.current.send(JSON.stringify(v1Payload));
               return;
@@ -228,7 +240,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       module: 'kz.gov.pki.knca.basics',
       method: 'sign',
       args: {
-        allowedStorages: ['PKCS12'],
+        allowedStorages: ['PKCS12', 'AKSK', 'AKKaztoken', 'AKKAZTOKENST', 'AKIDCard'],
         format: 'cms',
         data: base64DataToSign,
         signingParams: {
@@ -244,6 +256,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
     ws.current.send(JSON.stringify(nca2Payload));
   };
+
 
   const handleFallbackSign = async () => {
     const demoCms = "demo_signed_cms_base64_hash_12345";
