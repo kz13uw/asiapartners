@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { useTranslation } from '../store/useLanguageStore';
 import { usersAPI } from '../api';
-import EcpModal from '../components/EcpModal';
+import EcpModal, { formatErrorMessage } from '../components/EcpModal';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -50,8 +50,10 @@ const LoginPage = () => {
         navigate('/supplier/dashboard');
       }
     } catch (e) {
-      console.error(e);
-      toast.error('Ошибка входа по ЭЦП. Проверьте ключ или соединение.');
+      console.error("EDS Login Error:", e);
+      const detail = e.response?.data?.detail;
+      const msg = detail ? formatErrorMessage(detail) : (e.message || 'Ошибка входа по ЭЦП. Проверьте ключ или соединение.');
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

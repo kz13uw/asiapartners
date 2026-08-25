@@ -146,13 +146,13 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
     if not parsed.get("valid"):
         raise HTTPException(status_code=400, detail=parsed.get("error", "Неверный штамп ЭЦП"))
 
-    company_bin = parsed.get("bin") or ("210440012345" if is_demo else None)
-    iin = parsed.get("iin") or ("850101400823" if is_demo else None)
+    company_bin = parsed.get("bin") or parsed.get("iin") or ("210440012345" if is_demo else None)
+    iin = parsed.get("iin") or company_bin or ("850101400823" if is_demo else None)
 
     if not company_bin and not is_demo:
         raise HTTPException(
             status_code=400,
-            detail="❌ К авторизации и участию в закупках допускаются ТОЛЬКО ЭЦП Юридических лиц (ТОО, АО, ИП, КТ). Предоставленный сертификат принадлежит физическому лицу и не содержит БИН организации."
+            detail="Не удалось определить БИН/ИИН из ключа ЭЦП. Проверьте сертификат."
         )
 
     if is_demo:
