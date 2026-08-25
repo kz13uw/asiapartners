@@ -240,7 +240,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       module: 'kz.gov.pki.knca.basics',
       method: 'sign',
       args: {
-        allowedStorages: ['PKCS12', 'AKSK', 'AKKaztoken', 'AKKAZTOKENST', 'AKIDCard'],
+        allowedStorages: ['PKCS12'],
         format: 'cms',
         data: base64DataToSign,
         signingParams: {
@@ -350,47 +350,25 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                   <div style={{ fontWeight: 700, color: '#9f1239', fontSize: '1rem', marginBottom: '0.4rem' }}>
                     Не удалось подключиться к NCALayer
                   </div>
-                  <p style={{ fontSize: '0.84rem', color: '#be123c', lineHeight: 1.5, margin: '0 0 1rem 0' }}>
-                    Убедитесь, что приложение <strong>NCALayer запущено на вашем компьютере Windows</strong> (иконка N возле часов в трее).
+                  <p style={{ fontSize: '0.85rem', color: '#be123c', lineHeight: 1.5, margin: '0 0 1.25rem 0' }}>
+                    Для работы с ЭЦП убедитесь, что приложение <strong>NCALayer запущено</strong> на вашем компьютере.
                   </p>
 
-                  <div style={{ background: '#ffffff', border: '1.5px solid #fda4af', borderRadius: '10px', padding: '0.9rem', marginBottom: '1rem', textAlign: 'left', fontSize: '0.82rem', color: '#881337', boxShadow: '0 2px 8px rgba(225,29,72,0.06)' }}>
-                    <div style={{ fontWeight: 800, color: '#9f1239', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span>🪟 Инструкция для Windows (HTTPS доступ):</span>
-                    </div>
-                    <ol style={{ margin: 0, paddingLeft: '1.2rem', lineHeight: 1.6 }}>
-                      <li>Нажмите красную кнопку ниже <strong>«Разрешить SSL в браузере»</strong> (откроется новая вкладка).</li>
-                      <li>В открывшейся вкладке нажмите <strong>«Дополнительно»</strong> → <strong>«Перейти на сайт 127.0.0.1 (небезопасно)»</strong>.</li>
-                      <li>Вернитесь сюда и нажмите синюю кнопку <strong>«Повторить подключение»</strong>.</li>
-                    </ol>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', alignItems: 'stretch' }}>
-                    <a 
-                      href="https://127.0.0.1:13579/" 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="btn"
-                      style={{ background: '#e11d48', color: '#ffffff', fontWeight: 700, justifyContent: 'center', padding: '0.65rem', borderRadius: '8px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                    >
-                      <ExternalLink size={16} /> 1. Разрешить SSL в браузере (127.0.0.1:13579)
+                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                    <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#fda4af', color: '#be123c', fontWeight: 600, flex: 1, justifyContent: 'center', padding: '0.6rem' }}>
+                      <Download size={15} style={{ marginRight: '0.4rem' }} /> Скачать NCALayer
                     </a>
-
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.2rem' }}>
-                      <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#fda4af', color: '#be123c', fontWeight: 600, flex: 1, justifyContent: 'center' }}>
-                        <Download size={14} style={{ marginRight: '0.3rem' }} /> Скачать NCALayer
-                      </a>
-                      <button 
-                        className="btn btn-primary btn-sm" 
-                        onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} 
-                        style={{ fontWeight: 700, flex: 1, justifyContent: 'center' }}
-                      >
-                        <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> 2. Повторить подключение
-                      </button>
-                    </div>
+                    <button 
+                      className="btn btn-primary btn-sm" 
+                      onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} 
+                      style={{ fontWeight: 700, flex: 1, justifyContent: 'center', padding: '0.6rem' }}
+                    >
+                      <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Повторить подключение
+                    </button>
                   </div>
                 </div>
               )}
+
 
               {ncaStatus === 'connected' && (
                 <div style={{ textAlign: 'center', padding: '1.25rem 0' }}>
