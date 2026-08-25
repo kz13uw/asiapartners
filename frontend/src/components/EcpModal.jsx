@@ -153,15 +153,15 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
 
           if (isExplicitError && !signedCms) {
-            // Если вызов basics дал сбой (NCALayer v1 или несовместимость версии), моментально переключаемся на универсальный commonUtils!
+            // Если указанный тип ключа не найден, пробуем с открытым типом ключа ''
             if (!ws.current._retryV1) {
               ws.current._retryV1 = true;
-              console.log('[NCALayer] Basics failed, switching to universal commonUtils (createCMSSignatureFromBase64)...');
+              console.log('[NCALayer] Retrying with universal keyType...');
               const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
               const v1Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
                 method: 'createCMSSignatureFromBase64',
-                args: ['PKCS12', 'SIGNATURE', dataToSign, 'true']
+                args: ['PKCS12', '', dataToSign, 'true']
               };
               ws.current.send(JSON.stringify(v1Payload));
               return;
@@ -172,6 +172,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             setErrorMessage(errMsg);
             return;
           }
+
 
           if (signedCms) {
             setStep(3);
@@ -237,16 +238,17 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
 
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
-    // 🌐 Официальный универсальный формат NCALayer (Госзакуп, Самрук, eGov)
+    // 🌐 Официальный универсальный формат NCALayer (Госзакуп, Самрук, eGov) — ровно 4 аргумента!
     const ncaPayload = {
       module: 'kz.gov.pki.knca.commonUtils',
       method: 'createCMSSignatureFromBase64',
-      args: ['PKCS12', 'SIGNATURE', base64DataToSign, '', true]
+      args: ['PKCS12', 'SIGNATURE', base64DataToSign, 'true']
     };
 
     console.log('[NCALayer] → Sending request:', JSON.stringify(ncaPayload));
     ws.current.send(JSON.stringify(ncaPayload));
   };
+
 
 
 
