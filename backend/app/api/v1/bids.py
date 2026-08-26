@@ -184,6 +184,14 @@ async def get_bids_by_tender(
     current_user: User = Depends(require_role(UserRole.ORGANIZER, UserRole.ADMIN, UserRole.COMMISSION)),
 ):
     from sqlalchemy.orm import selectinload
+    # Проверка прав: Организатор может просматривать только свои тендеры (Админ видит все)
+    t_res = await db.execute(select(Tender).where(Tender.id == tender_id))
+    tender = t_res.scalar_one_or_none()
+    if not tender:
+        raise HTTPException(status_code=404, detail="Закупка не найдена")
+    if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Доступ запрещен: вы не являетесь организатором данной закупки")
+
     result = await db.execute(
         select(Bid).options(
             selectinload(Bid.items), 
@@ -209,8 +217,16 @@ async def update_bid_status(
     bid = result.scalar_one_or_none()
     if not bid:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
+
+    # Проверка прав: Изменять статус заявок может только организатор тендера или админ
+    t_res = await db.execute(select(Tender).where(Tender.id == bid.tender_id))
+    tender = t_res.scalar_one_or_none()
+    if current_user.role != UserRole.ADMIN and tender and tender.organizer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Доступ запрещен: вы не являетесь организатором данной закупки")
+
     if body.status == BidStatus.REJECTED and not body.rejection_reason:
         raise HTTPException(status_code=400, detail="Укажите причину отклонения")
+
 
     bid.status = body.status
     if body.rejection_reason:
