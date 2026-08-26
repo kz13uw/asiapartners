@@ -150,20 +150,45 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             || response.code === '500' 
             || response.code === '400' 
             || response.result === 'NONE'
-            || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
-
-          if (isExplicitError && !signedCms) {
-            // Если указанный тип ключа не найден, пробуем с открытым типом ключа ''
-            if (!ws.current._retryV1) {
-              ws.current._retryV1 = true;
-              console.log('[NCALayer] Retrying with universal keyType...');
+                   if (isExplicitError && !signedCms) {
+            // 🔄 Многоуровневый фолбэк для любых версий NCALayer на Windows/Mac:
+            // 1. Вторая попытка: commonUtils (4 аргумента с boolean true)
+            if (!ws.current._retryCount) {
+              ws.current._retryCount = 1;
+              console.log('[NCALayer] Fallback 1: commonUtils with 4 args (boolean true)...');
               const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
               const v1Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
                 method: 'createCMSSignatureFromBase64',
-                args: ['PKCS12', '', dataToSign, 'true']
+                args: ['PKCS12', 'SIGNATURE', dataToSign, true]
               };
               ws.current.send(JSON.stringify(v1Payload));
+              return;
+            }
+            // 2. Третья попытка: commonUtils (5 аргументов с пустой строкой пароля)
+            if (ws.current._retryCount === 1) {
+              ws.current._retryCount = 2;
+              console.log('[NCALayer] Fallback 2: commonUtils with 5 args (empty password)...');
+              const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
+              const v2Payload = {
+                module: 'kz.gov.pki.knca.commonUtils',
+                method: 'createCMSSignatureFromBase64',
+                args: ['PKCS12', 'SIGNATURE', dataToSign, '', true]
+              };
+              ws.current.send(JSON.stringify(v2Payload));
+              return;
+            }
+            // 3. Четвёртая попытка: commonUtils без ограничения типа ключа ('')
+            if (ws.current._retryCount === 2) {
+              ws.current._retryCount = 3;
+              console.log('[NCALayer] Fallback 3: commonUtils with any keyType...');
+              const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
+              const v3Payload = {
+                module: 'kz.gov.pki.knca.commonUtils',
+                method: 'createCMSSignatureFromBase64',
+                args: ['PKCS12', '', dataToSign, true]
+              };
+              ws.current.send(JSON.stringify(v3Payload));
               return;
             }
 
@@ -172,7 +197,6 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             setErrorMessage(errMsg);
             return;
           }
-
 
           if (signedCms) {
             setStep(3);
@@ -238,16 +262,28 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
 
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
-    // 🌐 Официальный универсальный формат NCALayer (Госзакуп, Самрук, eGov) — ровно 4 аргумента!
-    const ncaPayload = {
-      module: 'kz.gov.pki.knca.commonUtils',
-      method: 'createCMSSignatureFromBase64',
-      args: ['PKCS12', 'SIGNATURE', base64DataToSign, 'true']
+    // 🚀 Первичный метод: NCALayer 2.0 (kz.gov.pki.knca.basics)
+    const nca2Payload = {
+      module: 'kz.gov.pki.knca.basics',
+      method: 'sign',
+      args: {
+        allowedStorages: ['PKCS12'],
+        format: 'cms',
+        data: base64DataToSign,
+        signingParams: {
+          decode: true,
+          encapsulate: true,
+          digested: false
+        },
+        signerParams: {},
+        locale: lang === 'kz' ? 'kz' : 'ru'
+      }
     };
 
-    console.log('[NCALayer] → Sending request:', JSON.stringify(ncaPayload));
-    ws.current.send(JSON.stringify(ncaPayload));
+    console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
+    ws.current.send(JSON.stringify(nca2Payload));
   };
+
 
 
 
