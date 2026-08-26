@@ -39,16 +39,20 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+import SessionTimeoutHandler from './components/SessionTimeoutHandler';
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <ScrollToTop />
+        <SessionTimeoutHandler />
         <Toaster position="top-right" />
         <AppRouter />
       </BrowserRouter>
     </ErrorBoundary>
   );
 }
+
 
 export default App;
