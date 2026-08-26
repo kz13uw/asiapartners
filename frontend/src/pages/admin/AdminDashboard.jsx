@@ -64,10 +64,13 @@ const AdminDashboard = () => {
       toast.success('Пользователь успешно удален из системы');
       refetch();
     } catch (e) {
-      deleteMockUser(id);
-      toast.success('Пользователь успешно удален');
+      console.error("Delete user error:", e);
+      const msg = e.response?.data?.detail || 'Не удалось удалить пользователя';
+      toast.error(`⚠️ ${msg}`);
+      refetch();
     }
   };
+
   
   const [categories, setCategories] = useState(defaultCategoriesMock);
   const [isSubmitting, setIsSubmitting] = useState(false);

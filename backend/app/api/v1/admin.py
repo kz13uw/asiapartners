@@ -88,8 +88,8 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
-    from app.models.models import Company, Tender, AuditLog
-    from sqlalchemy import update as sql_update
+    from app.models.models import Company, Tender, AuditLog, Bid, Notification
+    from sqlalchemy import update as sql_update, delete as sql_delete
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -98,23 +98,30 @@ async def delete_user(
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Нельзя удалить собственного администратора")
     
-    # 1. Переназначаем компании пользователя на текущего администратора
-    await db.execute(sql_update(Company).where(Company.owner_id == user_id).values(owner_id=current_user.id))
+    try:
+        # 1. Отвязываем или удаляем дочерние объекты пользователя
+        await db.execute(sql_delete(Bid).where(Bid.supplier_id == user_id))
+        await db.execute(sql_update(Company).where(Company.owner_id == user_id).values(owner_id=current_user.id))
+        await db.execute(sql_update(Tender).where(Tender.organizer_id == user_id).values(organizer_id=current_user.id))
+        await db.execute(sql_update(AuditLog).where(AuditLog.user_id == user_id).values(user_id=None))
+        try:
+            await db.execute(sql_delete(Notification).where(Notification.user_id == user_id))
+        except Exception:
+            pass
 
-    # 2. Переназначаем созданные тендеры на администратора
-    await db.execute(sql_update(Tender).where(Tender.organizer_id == user_id).values(organizer_id=current_user.id))
+        # 2. Прямое удаление пользователя
+        await db.execute(sql_delete(User).where(User.id == user_id))
+        
+        # 3. Логируем действие от лица администратора
+        log = AuditLog(user_id=current_user.id, action="DELETE_USER", entity_type="user", entity_id=user_id)
+        db.add(log)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении пользователя: {str(e)}")
 
-    # 3. Отвязываем логи аудита
-    await db.execute(sql_update(AuditLog).where(AuditLog.user_id == user_id).values(user_id=None))
-
-    # 4. Удаляем пользователя
-    await db.delete(user)
-    
-    # 5. Логируем действие
-    log = AuditLog(user_id=current_user.id, action="DELETE_USER", entity_type="user", entity_id=user_id)
-    db.add(log)
-    await db.commit()
     return {"message": "Пользователь успешно удален"}
+
 
 
 @router.patch("/users/{user_id}/block", response_model=UserOut, summary="Заблокировать аккаунт")
