@@ -265,14 +265,15 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     const nonceToSign = activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now());
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
-    // 🌐 Универсальный метод NCALayer / SIGEX (хранилище '', тип ключа '')
+    // 🌐 Официальный метод NCALayer (хранилище PKCS12, тип ключа '' для вызова файлового диалога)
     const sigexPayload = {
       module: 'kz.gov.pki.knca.commonUtils',
       method: 'createCMSSignatureFromBase64',
-      args: ['', '', base64DataToSign, true]
+      args: ['PKCS12', '', base64DataToSign, true]
     };
 
-    console.log('[NCALayer SIGEX] → Sending universal signature request:', JSON.stringify(sigexPayload));
+    console.log('[NCALayer SIGEX] → Sending PKCS12 file signature request:', JSON.stringify(sigexPayload));
+
 
     try {
       ws.current.send(JSON.stringify(sigexPayload));
