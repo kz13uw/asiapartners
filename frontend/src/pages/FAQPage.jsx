@@ -85,18 +85,19 @@ const FAQPage = () => {
             <div style={{ background: '#f8fafc', borderRadius: '14px', border: '1px solid #cbd5e1', padding: '1.1rem' }}>
               <div style={{ background: 'linear-gradient(135deg,#0a2133,#163A54)', borderRadius: '10px', padding: '1rem', color: '#ffffff', marginBottom: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.7rem', color: '#FFAF00', fontWeight: 700 }}>
-                  <span>ЭКРАН 1: АВТОРИЗАЦИЯ</span>
+                  <span>ЭКРАН 1: ЛИЧНЫЙ КАБИНЕТ</span>
                   <ShieldCheck size={14} color="#38bdf8" />
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                  🔑 Вход через NCALayer (ЭЦП НУЦ РК)
+                  👤 Вход / Регистрация Поставщика
                 </div>
               </div>
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.3rem' }}>1. Авторизация по ЭЦП</h4>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.3rem' }}>1. Вход в Личный Кабинет</h4>
               <p style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                Выбор ключей AUTH/RSA в NCALayer. Автоматическая верификация организации по БИН/ИИН.
+                Быстрый вход по логину и паролю. Регистрация компании с привязкой ИИН/БИН.
               </p>
             </div>
+
 
             {/* Step 2 */}
             <div style={{ background: '#f8fafc', borderRadius: '14px', border: '1px solid #cbd5e1', padding: '1.1rem' }}>
