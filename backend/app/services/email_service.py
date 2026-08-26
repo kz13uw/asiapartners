@@ -71,14 +71,20 @@ async def send_otp_email(to_email: str, otp_code: str, purpose: str = "register"
         part = MIMEText(html_content, "html", "utf-8")
         msg.attach(part)
 
-        # Выполняем подключение к SMTP
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
-            server.ehlo()
-            if settings.SMTP_PORT == 587:
-                server.starttls()
+        # Выполняем подключение к SMTP (Порт 465 SSL для Яндекс/Mail.ru, порт 587 TLS для Gmail)
+        if settings.SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.sendmail(sender_email, [to_email], msg.as_string())
+        else:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
                 server.ehlo()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(sender_email, [to_email], msg.as_string())
+                if settings.SMTP_PORT == 587:
+                    server.starttls()
+                    server.ehlo()
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.sendmail(sender_email, [to_email], msg.as_string())
+
 
         logger.info(f"✅ OTP email sent successfully to {to_email}")
         return True
