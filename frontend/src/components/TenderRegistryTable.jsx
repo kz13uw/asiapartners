@@ -147,11 +147,20 @@ const TenderRegistryTable = ({
         <tbody>
           {tenders.map((tnd) => {
             const tenderNumber = tnd.number || tnd.tender_number || `T-${tnd.id}`;
-            const detailUrl = tnd.status === 'draft' 
-              ? `/organizer/tenders/${tnd.id}/edit` 
-              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
+            
+            const getDetailUrl = () => {
+              if (tnd.status === 'draft') return `/organizer/tenders/${tnd.id}/edit`;
+              if (userRole === 'organizer' || user?.role === 'organizer' || location.pathname.startsWith('/organizer/')) return `/organizer/tenders/${tnd.id}`;
+              if (userRole === 'supplier' || user?.role === 'supplier' || location.pathname.startsWith('/supplier/')) return `/supplier/tenders/${tnd.id}`;
+              if (userRole === 'admin' || user?.role === 'admin' || location.pathname.startsWith('/admin/')) return `/organizer/tenders/${tnd.id}`;
+              if (user) return `/app/tenders/${tnd.id}`;
+              return `/tenders/${tnd.id}`;
+            };
+
+            const detailUrl = getDetailUrl();
             const organizerName = tnd.organizer_company_name || tnd.company_name || tnd.organizer_name || tnd.organizer?.company?.full_name || tnd.organizer?.full_name || 'Asia Partners';
             const lotName = tnd.title || tnd.lot_name || '—';
+
 
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
             const quantity = tnd.quantity || 1;
