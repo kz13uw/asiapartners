@@ -150,8 +150,11 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             || response.code === '500' 
             || response.code === '400' 
             || response.result === 'NONE'
-                   if (isExplicitError && !signedCms) {
+            || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
+
+          if (isExplicitError && !signedCms) {
             // 🔄 Многоуровневый фолбэк для любых версий NCALayer на Windows/Mac:
+
             // 1. Вторая попытка: commonUtils (4 аргумента с boolean true)
             if (!ws.current._retryCount) {
               ws.current._retryCount = 1;
