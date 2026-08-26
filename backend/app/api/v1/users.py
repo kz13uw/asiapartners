@@ -19,14 +19,26 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.get("/me/company", response_model=CompanyOut, summary="Моя компания")
 async def get_my_company(
-    current_user: User = Depends(require_role(UserRole.SUPPLIER)),
+    current_user: User = Depends(require_role(UserRole.SUPPLIER, UserRole.ORGANIZER, UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
     company = result.scalar_one_or_none()
     if not company:
-        raise HTTPException(status_code=404, detail="Компания не зарегистрирована")
+        company = Company(
+            owner_id=current_user.id,
+            bin=current_user.iin_bin or f"99{current_user.id:010d}",
+            full_name=current_user.full_name or "Компания поставщика",
+            legal_form="TOO",
+            email=current_user.email,
+            phone=current_user.phone,
+            director_name=current_user.full_name
+        )
+        db.add(company)
+        await db.commit()
+        await db.refresh(company)
     return company
+
 
 
 @router.post("/me/company", response_model=CompanyOut, status_code=201, summary="Зарегистрировать компанию")
@@ -47,20 +59,34 @@ async def register_company(
 
 
 @router.put("/me/company", response_model=CompanyOut, summary="Обновить реквизиты компании")
+@router.put("/company", response_model=CompanyOut, summary="Обновить данные компании")
 async def update_company(
     body: CompanyCreate,
-    current_user: User = Depends(require_role(UserRole.SUPPLIER)),
+    current_user: User = Depends(require_role(UserRole.SUPPLIER, UserRole.ORGANIZER)),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
     company = result.scalar_one_or_none()
     if not company:
-        raise HTTPException(status_code=404, detail="Компания не найдена")
+        company = Company(
+            owner_id=current_user.id,
+            bin=body.bin or current_user.iin_bin or f"99{current_user.id:010d}",
+            full_name=body.full_name or current_user.full_name,
+            legal_form=body.legal_form or "TOO"
+        )
+        db.add(company)
+
     for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(company, field, value)
+        if value is not None:
+            setattr(company, field, value)
+
+    if body.bin:
+        current_user.iin_bin = body.bin
+
     await db.commit()
     await db.refresh(company)
     return company
+
 
 
 # ===== PROFILE & PASSWORD MANAGEMENT =====
