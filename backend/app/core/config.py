@@ -48,7 +48,16 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "/app/uploads"
     MAX_FILE_SIZE_MB: int = 50
 
+    # SMTP Mailer (Gmail / Corporate SMTP)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_NAME: str = "Asia Partners Procurement"
+    SMTP_FROM_EMAIL: str = ""
+
     class Config:
+
         env_file = ".env"
         case_sensitive = True
         extra = "ignore"

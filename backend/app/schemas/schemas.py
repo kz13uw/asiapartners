@@ -38,6 +38,35 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+# ===== OTP & REGISTRATION SCHEMAS =====
+
+class SendOtpRequest(BaseModel):
+    email: EmailStr
+    purpose: Optional[str] = "register"  # "register" или "reset_password"
+
+
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr
+    code: str
+    purpose: Optional[str] = "register"
+
+
+class RegisterSupplierRequest(BaseModel):
+    email: EmailStr
+    password: str
+    confirm_password: str
+    otp_code: str
+    full_name: str
+    phone: Optional[str] = None
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp_code: str
+    new_password: str
+
+
+
 # ===== USERS =====
 
 class UserCreate(BaseModel):

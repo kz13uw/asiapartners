@@ -1,126 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, HardDrive, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Mail, KeyRound, UserCheck, Lock, RefreshCw, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { useTranslation } from '../store/useLanguageStore';
-import { usersAPI } from '../api';
-import EcpModal, { formatErrorMessage } from '../components/EcpModal';
+import { authAPI } from '../api';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { login, loginEds, user, company } = useAuthStore();
+  const { login } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState('eds'); // 'eds' или 'staff'
+  // Основная форма входа
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showEdsModal, setShowEdsModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Флаг первичного входа — форма доп. данных покажется ТОЛЬКО если это новый пользователь
-  const [showFirstLoginRegistration, setShowFirstLoginRegistration] = useState(false);
-  const [supplierExtra, setSupplierExtra] = useState({
-    company_address: '',
-    phone: '',
+  // Модальное окно Регистрации Поставщика
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [regStep, setRegStep] = useState(1); // 1 - данные, 2 - ввод OTP
+  const [regForm, setRegForm] = useState({
+    full_name: '',
     email: '',
-    director_name: '',
+    phone: '',
+    password: '',
+    confirm_password: '',
+    otp_code: ''
   });
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
-  const handleEdsSuccess = async (cmsBase64) => {
-    setIsLoading(true);
-    try {
-      const result = await loginEds(cmsBase64);
+  // Модальное окно «Забыли пароль?»
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1 - email, 2 - OTP + новый пароль
+  const [forgotForm, setForgotForm] = useState({
+    email: '',
+    otp_code: '',
+    new_password: ''
+  });
+  const [forgotCooldown, setForgotCooldown] = useState(0);
 
-      if (result?.is_new_user) {
-        // Первый вход пользователя по ЭЦП — открываем форму заполнения доп. данных
-        setShowFirstLoginRegistration(true);
-        setSupplierExtra(prev => ({
-          ...prev,
-          email: result.email || '',
-          phone: result.phone || '',
-          director_name: result.full_name || '',
-          company_address: result.company_address || ''
-        }));
-        toast('Первый вход по ЭЦП! Заполните регистрационные данные организации.', { icon: '📋' });
-      } else {
-        // Зарегистрированный пользователь — форма НЕ показывается, сразу редирект в кабинет!
-        toast.success('Успешный вход по ЭЦП!');
-        const role = (result?.role || '').toLowerCase();
-        if (role === 'admin') navigate('/admin/dashboard');
-        else if (role === 'monitoring') navigate('/monitoring/dashboard');
-        else if (role === 'organizer') navigate('/organizer/dashboard');
-        else if (role === 'commission') navigate('/organizer/dashboard');
-        else navigate('/supplier/dashboard');
-      }
-    } catch (e) {
-      console.error("EDS Login Error:", e);
-      const detail = e.response?.data?.detail;
-      const msg = detail ? formatErrorMessage(detail) : (e.message || 'Ошибка входа по ЭЦП. Проверьте ключ или соединение.');
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
+  // Таймер обратного отсчета Cooldown 60 секунд
+  useEffect(() => {
+    let timer;
+    if (cooldownSeconds > 0) {
+      timer = setInterval(() => setCooldownSeconds(prev => prev - 1), 1000);
     }
-  };
+    return () => clearInterval(timer);
+  }, [cooldownSeconds]);
 
-  const handleCompleteRegistration = async (e) => {
-    if (e) e.preventDefault();
-    if (!supplierExtra.company_address || supplierExtra.company_address.trim().length < 3) {
-      toast.error('Заполните юридический адрес организации');
-      return;
+  useEffect(() => {
+    let timer;
+    if (forgotCooldown > 0) {
+      timer = setInterval(() => setForgotCooldown(prev => prev - 1), 1000);
     }
-    if (!supplierExtra.phone || supplierExtra.phone.trim().length < 5) {
-      toast.error('Укажите контактный телефон');
-      return;
-    }
-    if (!supplierExtra.email || !supplierExtra.email.includes('@')) {
-      toast.error('Укажите корректный email адрес');
-      return;
-    }
+    return () => clearInterval(timer);
+  }, [forgotCooldown]);
 
-    setIsLoading(true);
-    try {
-      if (!company?.bin) {
-        toast.error('Ошибка: Не удалось определить БИН компании. Повторите вход через ЭЦП.');
-        return;
-      }
-      await usersAPI.updateCompany({
-        bin: company.bin,
-        full_name: company?.full_name || user?.full_name,
-        legal_form: 'ТОО',
-        address: supplierExtra.company_address,
-        phone: supplierExtra.phone,
-        email: supplierExtra.email,
-        director_name: supplierExtra.director_name
-      });
-      toast.success('Регистрация успешно завершена!');
-      navigate('/supplier/dashboard');
-    } catch (e) {
-      console.error('Ошибка обновления профиля компании:', e);
-      const msg = e.response?.data?.detail || 'Ошибка сохранения данных. Попробуйте ещё раз.';
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStaffLogin = async (e) => {
+  // Обработка Входа (Email + Пароль)
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
     if (!email || !password) {
-      toast.error('Введите логин и пароль');
+      toast.error('Укажите email и пароль');
       return;
     }
 
     setIsLoading(true);
     try {
-      const loggedUser = await login(email, password);
+      const loggedUser = await login(email.trim().toLowerCase(), password);
       toast.success('Успешный вход!');
       const role = (loggedUser?.role || '').toLowerCase();
       if (role === 'admin') navigate('/admin/dashboard');
       else if (role === 'monitoring') navigate('/monitoring/dashboard');
-      else if (role === 'supplier') navigate('/supplier/dashboard');
-      else navigate('/organizer/dashboard');
+      else if (role === 'organizer' || role === 'commission') navigate('/organizer/dashboard');
+      else navigate('/supplier/dashboard');
     } catch (e) {
       console.error("Login error:", e);
       const msg = e.response?.data?.detail || (e.message?.includes('Network Error') ? 'Ошибка сети: Сервер бэкенда недоступен' : 'Неверный логин или пароль');
@@ -130,200 +84,388 @@ const LoginPage = () => {
     }
   };
 
+  // 1. Запрос OTP кода для Регистрации
+  const handleSendRegOtp = async (e) => {
+    if (e) e.preventDefault();
+    if (!regForm.full_name || !regForm.email || !regForm.password || !regForm.confirm_password) {
+      toast.error('Заполните все обязательные поля');
+      return;
+    }
+    if (regForm.password !== regForm.confirm_password) {
+      toast.error('Пароли не совпадают');
+      return;
+    }
+    if (regForm.password.length < 8) {
+      toast.error('Пароль должен содержать не менее 8 символов');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authAPI.sendOtp(regForm.email.trim(), 'register');
+      toast.success(`Код подтверждения отправлен на ${regForm.email}`);
+      setRegStep(2);
+      setCooldownSeconds(60);
+    } catch (e) {
+      const msg = e.response?.data?.detail || 'Ошибка отправки OTP-кода';
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2. Завершение Регистрации по OTP
+  const handleCompleteRegister = async (e) => {
+    if (e) e.preventDefault();
+    if (!regForm.otp_code || regForm.otp_code.trim().length !== 6) {
+      toast.error('Введите 6-значный код подтверждения из письма');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await authAPI.registerSupplier({
+        email: regForm.email.trim(),
+        password: regForm.password,
+        confirm_password: regForm.confirm_password,
+        otp_code: regForm.otp_code.trim(),
+        full_name: regForm.full_name.trim(),
+        phone: regForm.phone.trim() || null
+      });
+
+      const tokenData = res.data;
+      localStorage.setItem('access_token', tokenData.access_token);
+      localStorage.setItem('refresh_token', tokenData.refresh_token);
+
+      toast.success('🎉 Аккаунт поставщика успешно создан!');
+      setShowRegisterModal(false);
+      navigate('/supplier/dashboard');
+      window.location.reload();
+    } catch (e) {
+      const msg = e.response?.data?.detail || 'Ошибка регистрации. Проверьте код.';
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 1. Запрос OTP кода для Сброса пароля
+  const handleSendForgotOtp = async (e) => {
+    if (e) e.preventDefault();
+    if (!forgotForm.email) {
+      toast.error('Введите почту для восстановления');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authAPI.sendOtp(forgotForm.email.trim(), 'reset_password');
+      toast.success(`Код сброса пароля отправлен на ${forgotForm.email}`);
+      setForgotStep(2);
+      setForgotCooldown(60);
+    } catch (e) {
+      const msg = e.response?.data?.detail || 'Пользователь не найден или ошибка отправки';
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2. Сохранение нового пароля по OTP
+  const handleResetPassword = async (e) => {
+    if (e) e.preventDefault();
+    if (!forgotForm.otp_code || !forgotForm.new_password) {
+      toast.error('Заполните код и новый пароль');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authAPI.resetPassword({
+        email: forgotForm.email.trim(),
+        otp_code: forgotForm.otp_code.trim(),
+        new_password: forgotForm.new_password
+      });
+      toast.success('✅ Пароль успешно изменён! Войдите с новым паролем.');
+      setShowForgotModal(false);
+      setEmail(forgotForm.email);
+    } catch (e) {
+      const msg = e.response?.data?.detail || 'Ошибка сброса пароля. Проверьте код.';
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="fade-in" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: '1.5rem 1rem' }}>
-      <div className="card glass-panel" style={{ maxWidth: '520px', width: '100%', padding: '0', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+      <div className="card glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '2rem', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', background: '#ffffff' }}>
         
-        {/* Вкладки */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--pk-border)' }}>
-          <button 
-            onClick={() => { setActiveTab('eds'); setShowFirstLoginRegistration(false); }}
-            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'eds' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'eds' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'eds' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}
-          >
-            🛡️ Регистрация / Вход Поставщика (ЭЦП)
-          </button>
-          <button 
-            onClick={() => setActiveTab('staff')}
-            style={{ flex: 1, padding: '1.25rem 1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'staff' ? '3px solid var(--pk-primary)' : '3px solid transparent', color: activeTab === 'staff' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'staff' ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}
-          >
-            {t('staff_login_tab')}
-          </button>
+        {/* Заголовок */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <ShieldCheck size={48} color="var(--pk-primary)" style={{ marginBottom: '0.5rem' }} />
+          <h2 style={{ fontSize: '1.4rem', marginBottom: '0.3rem', fontWeight: 800, color: '#0f172a' }}>
+            Вход в личный кабинет
+          </h2>
+          <p className="text-sec" style={{ fontSize: '0.85rem', margin: 0 }}>
+            Портал закупок холдинга Asia Partners
+          </p>
         </div>
 
-        <div style={{ padding: '2rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-            <ShieldCheck size={44} color="var(--pk-primary)" style={{ marginBottom: '0.5rem' }} />
-            <h2 style={{ fontSize: '1.35rem', marginBottom: '0.4rem', fontWeight: 800, color: '#0f172a' }}>
-              {activeTab === 'eds' 
-                ? (showFirstLoginRegistration ? 'Завершение первичной регистрации' : 'Вход Поставщика по ЭЦП') 
-                : t('staff_login_title')}
-            </h2>
-            <p className="text-sec" style={{ fontSize: '0.85rem', margin: 0 }}>
-              {activeTab === 'eds' 
-                ? (showFirstLoginRegistration 
-                    ? 'Укажите контактную информацию организации для завершения регистрации' 
-                    : 'Авторизация и вход в систему с помощью ключа ЭЦП НУЦ РК') 
-                : t('staff_login_desc')}
-            </p>
+        {/* Форма Входа по Email + Пароль */}
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '1.1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.85rem', color: '#334155' }}>
+              Логин (Электронная почта)
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="email" 
+                className="form-control" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                placeholder="supplier@asia.kz или ваш email" 
+                required 
+                style={{ paddingLeft: '2.5rem' }}
+              />
+              <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
           </div>
 
-          {activeTab === 'eds' ? (
-            showFirstLoginRegistration ? (
-              /* Показываем форму ТОЛЬКО при первом входе */
-              <form onSubmit={handleCompleteRegistration}>
-                <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1e40af', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    📋 Форма дополнительных регистрационных данных:
-                  </div>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#334155', margin: 0 }}>
+                {t('password_label')}
+              </label>
+              <button 
+                type="button" 
+                onClick={() => { setForgotForm({ email, otp_code: '', new_password: '' }); setForgotStep(1); setShowForgotModal(true); }} 
+                style={{ background: 'none', border: 'none', color: 'var(--pk-primary)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+              >
+                Забыли пароль?
+              </button>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input 
+                type={showPassword ? "text" : "password"} 
+                className="form-control" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+                required 
+                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem' }}
+              />
+              <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-                  <div style={{ marginBottom: '0.85rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                      🏢 Юридический адрес ТОО / ИП <span style={{ color: 'var(--pk-danger)' }}>*</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
-                      placeholder="Например: г. Семей, ул. Кабанбай Батыра 42"
-                      value={supplierExtra.company_address}
-                      onChange={e => setSupplierExtra(p => ({ ...p, company_address: e.target.value }))}
-                      required
-                    />
-                  </div>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', fontSize: '0.95rem', borderRadius: '10px', fontWeight: 700 }} 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Выполняется вход...' : 'Войти в кабинет'}
+          </button>
+        </form>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                        📞 Контактный телефон <span style={{ color: 'var(--pk-danger)' }}>*</span>
-                      </label>
-                      <input 
-                        type="tel" 
-                        className="form-control"
-                        style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
-                        placeholder="+7 (7222) 55-44-33"
-                        value={supplierExtra.phone}
-                        onChange={e => setSupplierExtra(p => ({ ...p, phone: e.target.value }))}
-                        required
-                      />
-                    </div>
+        {/* Ссылка на Регистрацию */}
+        <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.88rem', color: '#64748b', margin: '0 0 0.6rem 0' }}>
+            Ещё нет аккаунта поставщика?
+          </p>
+          <button 
+            type="button" 
+            onClick={() => { setRegForm({ full_name: '', email: '', phone: '', password: '', confirm_password: '', otp_code: '' }); setRegStep(1); setShowRegisterModal(true); }}
+            className="btn btn-outline"
+            style={{ width: '100%', justifyContent: 'center', fontWeight: 700, borderColor: 'var(--pk-primary)', color: 'var(--pk-primary)' }}
+          >
+            <UserCheck size={18} style={{ marginRight: '0.4rem' }} /> Зарегистрироваться как Поставщик
+          </button>
+        </div>
+      </div>
 
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                        ✉️ Электронная почта <span style={{ color: 'var(--pk-danger)' }}>*</span>
-                      </label>
-                      <input 
-                        type="email" 
-                        className="form-control"
-                        style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
-                        placeholder="supplier@asia.kz"
-                        value={supplierExtra.email}
-                        onChange={e => setSupplierExtra(p => ({ ...p, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                  </div>
 
+      {/* ========================================================= */}
+      {/* 🚀 МОДАЛЬНОЕ ОКНО РЕГИСТРАЦИИ ПОСТАВЩИКА С OTP */}
+      {/* ========================================================= */}
+      {showRegisterModal && (
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '460px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <UserCheck color="var(--pk-primary)" size={24} />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>Регистрация Поставщика</h3>
+              </div>
+              <button onClick={() => setShowRegisterModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', color: '#64748b', cursor: 'pointer' }}>×</button>
+            </div>
+
+            {regStep === 1 ? (
+              <form onSubmit={handleSendRegOtp}>
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>ФИО / Наименование <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" className="form-control" placeholder="Иванов Иван Иванович" value={regForm.full_name} onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} required />
+                </div>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Электронная почта (Email) <span style={{ color: 'red' }}>*</span></label>
+                  <input type="email" className="form-control" placeholder="supplier@example.com" value={regForm.email} onChange={e => setRegForm(p => ({ ...p, email: e.target.value }))} required />
+                </div>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Телефон</label>
+                  <input type="tel" className="form-control" placeholder="+7 (707) 123-45-67" value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                      👤 ФИО Руководителя
-                    </label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      style={{ fontSize: '0.88rem', padding: '0.5rem 0.75rem' }}
-                      placeholder="Ахметов Марат Ерланович"
-                      value={supplierExtra.director_name}
-                      onChange={e => setSupplierExtra(p => ({ ...p, director_name: e.target.value }))}
-                    />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Пароль <span style={{ color: 'red' }}>*</span></label>
+                    <input type={showRegPassword ? "text" : "password"} className="form-control" placeholder="Мин. 8 символов" value={regForm.password} onChange={e => setRegForm(p => ({ ...p, password: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Повтор пароля <span style={{ color: 'red' }}>*</span></label>
+                    <input type={showRegPassword ? "text" : "password"} className="form-control" placeholder="Повторите пароль" value={regForm.confirm_password} onChange={e => setRegForm(p => ({ ...p, confirm_password: e.target.value }))} required />
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '0.85rem', justifyContent: 'center', fontSize: '0.95rem', borderRadius: '10px' }}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Сохранение...' : '💾 Сохранить и перейти в Личный кабинет'}
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} disabled={isLoading}>
+                  {isLoading ? 'Отправка...' : '📩 Получить код подтверждения (OTP)'}
                 </button>
               </form>
             ) : (
-              /* Кнопки входа для обычного входа / уже зарегистрированных пользователей */
-              <div>
-                <button 
-                  type="button" 
-                  className="btn btn-primary" 
-                  style={{ width: '100%', padding: '0.9rem', justifyContent: 'center', fontSize: '1rem', borderRadius: '10px', fontWeight: 700 }}
-                  onClick={() => setShowEdsModal(true)}
-                  disabled={isLoading}
-                >
-                  🔑 Выбрать ключ ЭЦП (NCALayer) и Войти
-                </button>
-              </div>
-            )
-          ) : (
-            <form onSubmit={handleStaffLogin}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('username_label')}</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  placeholder="admin или ваш логин" 
-                  required 
-                />
-              </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>{t('password_label')}</label>
-                <div style={{ position: 'relative' }}>
+              <form onSubmit={handleCompleteRegister}>
+                <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', padding: '1rem', borderRadius: '10px', textAlign: 'center', marginBottom: '1.25rem' }}>
+                  <Mail size={32} color="#1e40af" style={{ marginBottom: '0.4rem' }} />
+                  <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: '0.95rem' }}>Проверьте вашу почту</div>
+                  <div style={{ fontSize: '0.82rem', color: '#3b82f6', marginTop: '0.2rem' }}>Мы отправили 6-значный код на <strong>{regForm.email}</strong></div>
+                </div>
+
+                <div style={{ marginBottom: '1.25rem', textAlign: 'center' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
+                    Введите 6-значный OTP-код из письма:
+                  </label>
                   <input 
-                    type={showPassword ? "text" : "password"} 
+                    type="text" 
+                    maxLength={6} 
                     className="form-control" 
-                    value={password} 
-                    onChange={e => setPassword(e.target.value)} 
-                    placeholder="••••••••" 
+                    style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.5rem', fontWeight: 800, fontFamily: 'monospace', maxWidth: '220px', margin: '0 auto' }} 
+                    placeholder="123456" 
+                    value={regForm.otp_code} 
+                    onChange={e => setRegForm(p => ({ ...p, otp_code: e.target.value.replace(/\D/g, '') }))} 
                     required 
-                    style={{ paddingRight: '2.75rem' }}
+                    autoFocus
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '0.75rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#64748b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: 0,
-                      zIndex: 2
-                    }}
-                    title={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setRegStep(1)} style={{ flex: 1, justifyContent: 'center' }}>
+                    <ArrowLeft size={16} style={{ marginRight: '0.3rem' }} /> Назад
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm" 
+                    disabled={cooldownSeconds > 0 || isLoading} 
+                    onClick={handleSendRegOtp}
+                    style={{ flex: 1, justifyContent: 'center' }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    <RefreshCw size={14} style={{ marginRight: '0.3rem' }} /> 
+                    {cooldownSeconds > 0 ? `${cooldownSeconds} сек` : 'Отправить снова'}
                   </button>
                 </div>
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.75rem' }} disabled={isLoading}>
-                {isLoading ? 'Вход...' : t('login_button')}
-              </button>
-            </form>
-          )}
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} disabled={isLoading}>
+                  {isLoading ? 'Проверка...' : '✅ Подтвердить и создать аккаунт'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <EcpModal 
-        isOpen={showEdsModal} 
-        onClose={() => setShowEdsModal(false)}
-        onSign={(cms) => handleEdsSuccess(cms)}
-        docTitle="Авторизация по ЭЦП"
-        isAuth={true}
-      />
+      )}
+
+
+      {/* ========================================================= */}
+      {/* 🔐 МОДАЛЬНОЕ ОКНО «ЗАБЫЛИ ПАРОЛЬ?» */}
+      {/* ========================================================= */}
+      {showForgotModal && (
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <KeyRound color="var(--pk-primary)" size={24} />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>Сброс пароля</h3>
+              </div>
+              <button onClick={() => setShowForgotModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', color: '#64748b', cursor: 'pointer' }}>×</button>
+            </div>
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleSendForgotOtp}>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                  Укажите адрес электронной почты вашего аккаунта. Мы отправим вам 6-значный OTP-код для восстановления доступа.
+                </p>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>Ваша электронная почта</label>
+                  <input type="email" className="form-control" placeholder="supplier@example.com" value={forgotForm.email} onChange={e => setForgotForm(p => ({ ...p, email: e.target.value }))} required />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} disabled={isLoading}>
+                  {isLoading ? 'Отправка...' : '📩 Отправить код сброса пароля'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPassword}>
+                <div style={{ marginBottom: '1rem', textAlign: 'center' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.4rem' }}>OTP-код из письма</label>
+                  <input 
+                    type="text" 
+                    maxLength={6} 
+                    className="form-control" 
+                    style={{ textAlign: 'center', letterSpacing: '6px', fontSize: '1.35rem', fontWeight: 800, fontFamily: 'monospace', maxWidth: '200px', margin: '0 auto' }} 
+                    placeholder="123456" 
+                    value={forgotForm.otp_code} 
+                    onChange={e => setForgotForm(p => ({ ...p, otp_code: e.target.value.replace(/\D/g, '') }))} 
+                    required 
+                  />
+                </div>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>Новый пароль (мин. 8 символов)</label>
+                  <input type="password" className="form-control" placeholder="••••••••" value={forgotForm.new_password} onChange={e => setForgotForm(p => ({ ...p, new_password: e.target.value }))} required />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setForgotStep(1)} style={{ flex: 1, justifyContent: 'center' }}>
+                    Назад
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm" 
+                    disabled={forgotCooldown > 0 || isLoading} 
+                    onClick={handleSendForgotOtp}
+                    style={{ flex: 1, justifyContent: 'center' }}
+                  >
+                    {forgotCooldown > 0 ? `${forgotCooldown} сек` : 'Повторить'}
+                  </button>
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} disabled={isLoading}>
+                  {isLoading ? 'Сохранение...' : '💾 Сохранить новый пароль'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

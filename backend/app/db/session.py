@@ -27,3 +27,11 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
+
+
+import redis.asyncio as aioredis
+redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+
+async def get_redis():
+    return redis_client
+

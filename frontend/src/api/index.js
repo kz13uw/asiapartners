@@ -58,7 +58,16 @@ export const authAPI = {
     const refresh_token = localStorage.getItem('refresh_token');
     return API.post('/auth/logout', refresh_token ? { refresh_token } : {});
   },
+  sendOtp: (email, purpose = 'register') =>
+    API.post('/auth/send-otp', { email, purpose }),
+  verifyOtp: (email, code, purpose = 'register') =>
+    API.post('/auth/verify-otp', { email, code, purpose }),
+  registerSupplier: (data) =>
+    API.post('/auth/register-supplier', data),
+  resetPassword: (data) =>
+    API.post('/auth/reset-password', data),
 };
+
 
 // ===== TENDERS =====
 export const tendersAPI = {

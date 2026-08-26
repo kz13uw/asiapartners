@@ -286,3 +286,166 @@ async def logout(
     db.add(log)
     await db.commit()
     return {"message": "Выход выполнен успешно"}
+
+
+# ===== OTP & SUPPLIER REGISTRATION ENDPOINTS =====
+
+import logging
+logger = logging.getLogger("auth_api")
+
+from app.schemas.schemas import SendOtpRequest, VerifyOtpRequest, RegisterSupplierRequest, ResetPasswordRequest
+from app.services.otp_service import check_rate_limits, generate_otp_code, store_otp, verify_otp
+from app.services.email_service import send_otp_email
+from app.db.session import get_redis
+from redis.asyncio import Redis
+
+
+@router.post("/send-otp", summary="Отправить OTP-код на email")
+async def send_otp(
+    body: SendOtpRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
+):
+    email_clean = body.email.strip().lower()
+    client_ip = request.client.host if request and request.client else "127.0.0.1"
+
+    # Проверка лимитов (cooldown 60s, max 10/hr per IP)
+    allowed, limit_msg = await check_rate_limits(redis, email_clean, client_ip)
+    if not allowed:
+        raise HTTPException(status_code=429, detail=limit_msg)
+
+    # Проверка существования пользователя
+    existing = await db.execute(select(User).where(User.email == email_clean))
+    existing_user = existing.scalar_one_or_none()
+
+    if body.purpose == "register":
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Пользователь с такой почтой уже зарегистрирован. Войдите по логину и паролю.")
+    elif body.purpose == "reset_password":
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="Пользователь с такой почтой не найден в системе.")
+
+    # Генерация и хранение
+    code = generate_otp_code()
+    await store_otp(redis, email_clean, client_ip, code)
+
+    # Отправка по SMTP
+    sent = await send_otp_email(email_clean, code, body.purpose)
+    if not sent:
+        logger.warning(f"OTP email failed for {email_clean}, fallback code logged to console.")
+
+    return {"message": f"Код подтверждения успешно отправлен на {email_clean}"}
+
+
+@router.post("/verify-otp", summary="Проверить OTP-код")
+async def verify_otp_endpoint(
+    body: VerifyOtpRequest,
+    redis: Redis = Depends(get_redis)
+):
+    is_valid, msg = await verify_otp(redis, body.email, body.code)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"message": "Код успешно подтвержден", "valid": True}
+
+
+@router.post("/register-supplier", response_model=TokenResponse, status_code=201, summary="Регистрация поставщика (Email, Пароль, OTP)")
+async def register_supplier(
+    body: RegisterSupplierRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
+):
+    email_clean = body.email.strip().lower()
+
+    if body.password != body.confirm_password:
+        raise HTTPException(status_code=400, detail="Пароли не совпадают.")
+
+    from app.core.security import validate_password_policy, get_password_hash
+    valid_pwd, pwd_msg = validate_password_policy(body.password)
+    if not valid_pwd:
+        raise HTTPException(status_code=400, detail=pwd_msg)
+
+    # Проверка и сгорание OTP из Redis
+    is_valid_otp, otp_msg = await verify_otp(redis, email_clean, body.otp_code)
+    if not is_valid_otp:
+        raise HTTPException(status_code=400, detail=otp_msg)
+
+    # Проверка повторной регистрации
+    existing = await db.execute(select(User).where(User.email == email_clean))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
+
+    # Создание пользователя
+    from app.models.models import generate_account_code
+    user = User(
+        email=email_clean,
+        username=email_clean,
+        account_code=email_clean,
+        full_name=body.full_name.strip(),
+        phone=body.phone.strip() if body.phone else None,
+        role=UserRole.SUPPLIER,
+        status=UserStatus.ACTIVE,
+        hashed_password=get_password_hash(body.password),
+    )
+    db.add(user)
+    await db.flush()
+
+    user.account_code = generate_account_code(user.id, user.role, email_clean)
+    user.last_login = datetime.utcnow()
+
+    log = AuditLog(
+        user_id=user.id,
+        ip_address=request.client.host if request and request.client else None,
+        action="REGISTER_SUPPLIER",
+        entity_type="user",
+        entity_id=user.id
+    )
+    db.add(log)
+    await db.commit()
+
+    token_data = {"sub": str(user.id), "role": user.role.value}
+    return TokenResponse(
+        access_token=create_access_token(token_data),
+        refresh_token=create_refresh_token(token_data),
+        user_id=user.id,
+        account_code=user.computed_account_code,
+        role=user.role,
+        full_name=user.full_name,
+        is_new_user=True
+    )
+
+
+@router.post("/reset-password", summary="Сброс пароля по OTP-коду")
+async def reset_password(
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis)
+):
+    email_clean = body.email.strip().lower()
+
+    # Проверка и сгорание OTP
+    is_valid_otp, otp_msg = await verify_otp(redis, email_clean, body.otp_code)
+    if not is_valid_otp:
+        raise HTTPException(status_code=400, detail=otp_msg)
+
+    from app.core.security import validate_password_policy, get_password_hash
+    valid_pwd, pwd_msg = validate_password_policy(body.new_password)
+    if not valid_pwd:
+        raise HTTPException(status_code=400, detail=pwd_msg)
+
+    result = await db.execute(select(User).where(User.email == email_clean))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден.")
+
+    user.hashed_password = get_password_hash(body.new_password)
+    user.password_changed_at = datetime.utcnow()
+    user.failed_login_attempts = 0
+    user.status = UserStatus.ACTIVE
+
+    db.add(user)
+    await db.commit()
+
+    return {"message": "Пароль успешно изменён! Войдите с новым паролем."}
+
