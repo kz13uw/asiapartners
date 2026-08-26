@@ -377,12 +377,13 @@ async def register_supplier(
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует.")
 
     # Создание пользователя
-    from app.models.models import generate_account_code
+    from app.models.models import generate_account_code, Company
     user = User(
         email=email_clean,
         username=email_clean,
         account_code=email_clean,
         full_name=body.full_name.strip(),
+        iin_bin=body.iin_bin.strip() if body.iin_bin else None,
         phone=body.phone.strip() if body.phone else None,
         role=UserRole.SUPPLIER,
         status=UserStatus.ACTIVE,
@@ -394,6 +395,31 @@ async def register_supplier(
     user.account_code = generate_account_code(user.id, user.role, email_clean)
     user.last_login = datetime.utcnow()
 
+    # Если переданы БИН/Наименование/Адрес компании — сразу создаем или привязываем профиль компании
+    comp_name = body.company_name.strip() if body.company_name else body.full_name.strip()
+    comp_bin = body.iin_bin.strip() if body.iin_bin else None
+    comp_addr = body.company_address.strip() if body.company_address else None
+
+    if comp_bin or comp_name:
+        existing_comp = await db.execute(select(Company).where(Company.owner_id == user.id))
+        comp = existing_comp.scalar_one_or_none()
+        if not comp:
+            comp = Company(
+                owner_id=user.id,
+                bin=comp_bin or f"99{user.id:010d}",
+                full_name=comp_name,
+                legal_form="TOO" if "TOO" in comp_name.upper() else "IP",
+                address=comp_addr or "г. Семей, Казахстан",
+                phone=body.phone.strip() if body.phone else None,
+                email=email_clean,
+                director_name=body.full_name.strip()
+            )
+            db.add(comp)
+        else:
+            if comp_bin: comp.bin = comp_bin
+            if comp_name: comp.full_name = comp_name
+            if comp_addr: comp.address = comp_addr
+
     log = AuditLog(
         user_id=user.id,
         ip_address=request.client.host if request and request.client else None,
@@ -403,6 +429,7 @@ async def register_supplier(
     )
     db.add(log)
     await db.commit()
+
 
     token_data = {"sub": str(user.id), "role": user.role.value}
     return TokenResponse(

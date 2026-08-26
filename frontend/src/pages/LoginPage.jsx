@@ -23,12 +23,16 @@ const LoginPage = () => {
   const [regStep, setRegStep] = useState(1); // 1 - данные, 2 - ввод OTP
   const [regForm, setRegForm] = useState({
     full_name: '',
+    company_name: '',
+    iin_bin: '',
+    company_address: '',
     email: '',
     phone: '',
     password: '',
     confirm_password: '',
     otp_code: ''
   });
+
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
@@ -182,8 +186,12 @@ const LoginPage = () => {
         confirm_password: regForm.confirm_password,
         otp_code: regForm.otp_code.trim(),
         full_name: regForm.full_name.trim(),
+        company_name: regForm.company_name.trim() || null,
+        iin_bin: regForm.iin_bin.trim() || null,
+        company_address: regForm.company_address.trim() || null,
         phone: regForm.phone.trim() || null
       });
+
 
       toast.success('🎉 Аккаунт поставщика успешно создан!');
       setShowRegisterModal(false);
@@ -363,20 +371,92 @@ const LoginPage = () => {
 
             {regStep === 1 ? (
               <form onSubmit={handleSendRegOtp}>
-                <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>ФИО / Наименование организации <span style={{ color: 'red' }}>*</span></label>
-                  <input type="text" className="form-control" placeholder="Иванов Иван Иванович / ТОО «Компания»" value={regForm.full_name} onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} required />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Наименование организации / ИП <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="ТОО «Asia Procurement» или ИП" 
+                      value={regForm.company_name} 
+                      onChange={e => setRegForm(p => ({ ...p, company_name: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      БИН / ИИН организации <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      maxLength={12}
+                      className="form-control" 
+                      placeholder="12 цифр (например, 123456789012)" 
+                      value={regForm.iin_bin} 
+                      onChange={e => setRegForm(p => ({ ...p, iin_bin: e.target.value.replace(/\D/g, '') }))} 
+                      required 
+                    />
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Электронная почта (Email) <span style={{ color: 'red' }}>*</span></label>
-                  <input type="email" className="form-control" placeholder="supplier@example.com" value={regForm.email} onChange={e => setRegForm(p => ({ ...p, email: e.target.value }))} required />
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    ФИО Руководителя / Контактное лицо <span style={{ color: 'red' }}>*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="Иванов Иван Иванович" 
+                    value={regForm.full_name} 
+                    onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} 
+                    required 
+                  />
                 </div>
 
                 <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Телефон</label>
-                  <input type="tel" className="form-control" placeholder="+7 (707) 123-45-67" value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Юридический адрес компании <span style={{ color: 'red' }}>*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-control" 
+                    placeholder="Республика Казахстан, г. Алматы, ул. Абая 10" 
+                    value={regForm.company_address} 
+                    onChange={e => setRegForm(p => ({ ...p, company_address: e.target.value }))} 
+                    required 
+                  />
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Электронная почта (Email) <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input 
+                      type="email" 
+                      className="form-control" 
+                      placeholder="supplier@example.com" 
+                      value={regForm.email} 
+                      onChange={e => setRegForm(p => ({ ...p, email: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Телефон</label>
+                    <input 
+                      type="tel" 
+                      className="form-control" 
+                      placeholder="+7 (707) 123-45-67" 
+                      value={regForm.phone} 
+                      onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} 
+                    />
+                  </div>
+                </div>
+
 
                 {/* Пароль и Подтверждение с Генерацией и Глазиком */}
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', marginBottom: '1.25rem' }}>
