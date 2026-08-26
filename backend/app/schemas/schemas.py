@@ -351,6 +351,7 @@ class TenderCreate(BaseModel):
     delivery_place: Optional[str] = None
     requires_license: Optional[bool] = False
     license_category: Optional[str] = None
+    vat_mode: Optional[str] = "include_vat"
     lots: Optional[list[LotCreate]] = []
     qual_requirements: Optional[list[QualificationRequirementCreate]] = []
     documents: Optional[list[dict]] = []
@@ -374,6 +375,7 @@ class TenderUpdate(BaseModel):
     delivery_place: Optional[str] = None
     requires_license: Optional[bool] = None
     license_category: Optional[str] = None
+    vat_mode: Optional[str] = None
     status: Optional[TenderStatus] = None
     documents: Optional[list[dict]] = None
     qual_requirements: Optional[list[QualificationRequirementCreate]] = None
@@ -403,6 +405,7 @@ class TenderOut(BaseModel):
     delivery_place: Optional[str] = None
     requires_license: bool = False
     license_category: Optional[str] = None
+    vat_mode: Optional[str] = "include_vat"
     cancellation_reason: Optional[str] = None
     organizer_id: int
     organizer_code: Optional[str] = None
@@ -442,7 +445,16 @@ class TenderOut(BaseModel):
                     data.organizer_email = org.email
                 if hasattr(org, 'position') and getattr(org, 'position', None):
                     data.organizer_position = org.position
+
+            # Подтягиваем vat_mode из первого лота при наличии
+            lots = getattr(data, 'lots', None) or d.get('lots', None)
+            if lots and len(lots) > 0:
+                first_lot = lots[0]
+                lot_vat = getattr(first_lot, 'vat_mode', None) if hasattr(first_lot, 'vat_mode') else (first_lot.get('vat_mode') if isinstance(first_lot, dict) else None)
+                if lot_vat:
+                    data.vat_mode = lot_vat
         return data
+
 
 
 

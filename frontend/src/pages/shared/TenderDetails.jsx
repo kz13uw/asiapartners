@@ -455,10 +455,16 @@ const TenderDetails = () => {
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                           Признаки
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a' }}>
-                          • Без учета НДС
+                        <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600 }}>
+                          {(() => {
+                            const mode = tender?.vat_mode || (tender?.lots && tender.lots.length > 0 ? tender.lots[0].vat_mode : null);
+                            if (mode === 'no_vat' || mode === 'without_vat') return '• Без учета НДС (0%)';
+                            if (mode === 'supplier_tax_mode') return '• Учитывать НДС поставщика';
+                            return '• Включая НДС (16%)';
+                          })()}
                         </td>
                       </tr>
+
                     </tbody>
                   </table>
                 </div>

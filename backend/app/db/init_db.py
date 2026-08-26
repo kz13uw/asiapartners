@@ -139,8 +139,17 @@ async def init_db(clean_all: bool = False):
             )
             await db.commit()
 
+            # Миграция: Добавление колонки vat_mode в таблицу tenders
+            try:
+                from sqlalchemy import text
+                await db.execute(text("ALTER TABLE tenders ADD COLUMN IF NOT EXISTS vat_mode VARCHAR(50) DEFAULT 'include_vat'"))
+                await db.commit()
+            except Exception as ex:
+                await db.rollback()
+                print(f"[DB MIGRATION NOTICE] vat_mode column notice: {ex}")
 
             print("База данных проинициализирована! Пользователи и структуры созданы.")
+
 
     except Exception as e:
         print(f"[DB SEED NOTICE] Skipped seed: {e}")

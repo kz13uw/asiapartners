@@ -188,6 +188,8 @@ class Tender(Base):
     # 📜 Квалификационный отбор и Лицензирование
     requires_license: Mapped[bool] = mapped_column(Boolean, default=False)
     license_category: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    vat_mode: Mapped[Optional[str]] = mapped_column(String(50), default="include_vat", nullable=True)
+
 
     # 🛑 Отмена закупки Заказчиком
     cancellation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
