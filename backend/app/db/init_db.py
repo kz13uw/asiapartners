@@ -95,10 +95,7 @@ async def init_db(clean_all: bool = False):
                 exist_user = res.scalar_one_or_none()
                 if not exist_user:
                     db.add(User(**udata))
-                else:
-                    exist_user.hashed_password = udata["hashed_password"]
-                    exist_user.status = UserStatus.ACTIVE
-                    exist_user.failed_login_attempts = 0
+
 
 
 

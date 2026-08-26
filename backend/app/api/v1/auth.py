@@ -1,5 +1,7 @@
 from typing import Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -74,19 +76,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     user = result.scalars().first()
 
 
-    # 1. Проверяем подлинность пароля
-    is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
 
-    # 2. Самовосстановление и разблокировка системных аккаунтов по мастер-паролю
-    import os
-    master_admin_pwd = os.getenv("ADMIN_PASSWORD", "Asia@Procurement2025!")
-    if form_data.password == master_admin_pwd:
-        if user.email in ["admin@asiapartners.kz", "info@asiapartners.kz", "monitoring@asiapartners.kz", "supplier@asia.kz"]:
-            user.hashed_password = get_password_hash(master_admin_pwd)
-            user.status = UserStatus.ACTIVE
-            user.failed_login_attempts = 0
-            await db.commit()
-            is_pwd_ok = True
+    if user.status == UserStatus.BLOCKED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
+
+    is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
 
     if not is_pwd_ok:
         if user.role != UserRole.ADMIN:
@@ -112,8 +108,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
             detail="Неверный логин или пароль"
         )
 
-    if user.status == UserStatus.BLOCKED:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
 
 
 
