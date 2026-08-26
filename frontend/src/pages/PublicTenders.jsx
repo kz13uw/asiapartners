@@ -13,7 +13,7 @@ const PublicTenders = () => {
   useEffect(() => {
     const fetchTenders = async () => {
       try {
-        const res = await tendersAPI.list({ status: 'published' });
+        const res = await tendersAPI.list();
         const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
         setTenders(items);
       } catch (err) {
@@ -25,6 +25,7 @@ const PublicTenders = () => {
     };
     fetchTenders();
   }, []);
+
 
   const filteredTenders = tenders.filter(tender =>
     tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

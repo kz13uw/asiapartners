@@ -67,17 +67,31 @@ async def list_tenders(
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy.orm import selectinload
-    query = select(Tender).options(*get_tender_options()).where(Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.EVALUATION, TenderStatus.COMPLETED]))
+    # Открытый публичный реестр: показываем опубликованные закупки (прием заявок, рассмотрение, завершенные)
+    query = select(Tender).options(*get_tender_options()).where(
+        Tender.status.in_([
+            TenderStatus.ACCEPTING, "accepting", "published",
+            TenderStatus.EVALUATION, "evaluating", "review",
+            TenderStatus.COMPLETED, "completed"
+        ])
+    )
 
     if search:
-        query = query.where(Tender.title.ilike(f"%{search}%"))
+        query = query.where(
+            (Tender.title.ilike(f"%{search}%")) |
+            (Tender.number.ilike(f"%{search}%")) |
+            (Tender.delivery_place.ilike(f"%{search}%"))
+        )
     if method:
         query = query.where(Tender.method == method)
     if category_id:
         query = query.where(Tender.category_id == category_id)
     if status_filter:
-        target_status = TenderStatus.ACCEPTING if status_filter == "published" else status_filter
-        query = query.where(Tender.status == target_status)
+        if status_filter in ["published", "accepting", "active"]:
+            query = query.where(Tender.status.in_([TenderStatus.ACCEPTING, "accepting", "published"]))
+        else:
+            query = query.where(Tender.status == status_filter)
+
 
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = total_result.scalar()
