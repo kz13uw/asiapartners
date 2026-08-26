@@ -42,13 +42,15 @@ def strip_tz(dt: Optional[datetime]) -> Optional[datetime]:
 
 
 def get_tender_options():
+    from app.models.models import User
     return [
         selectinload(Tender.lots),
         selectinload(Tender.qual_requirements),
         selectinload(Tender.documents),
-        selectinload(Tender.organizer),
+        selectinload(Tender.organizer).selectinload(User.company),
         selectinload(Tender.category)
     ]
+
 
 
 from app.core.cache import cache_response, cache_manager

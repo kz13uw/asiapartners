@@ -430,14 +430,20 @@ class TenderOut(BaseModel):
             d = getattr(data, '__dict__', {})
             if 'organizer' in d and d['organizer'] is not None:
                 org = d['organizer']
-                if hasattr(org, 'full_name') and org.full_name:
-                    data.organizer_full_name = org.full_name
-                    data.organizer_name = getattr(org, 'company_name', None) or org.full_name
+                comp_name = None
+                if hasattr(org, 'company') and org.company and getattr(org.company, 'full_name', None):
+                    comp_name = org.company.full_name
+                if not comp_name and hasattr(org, 'company_name') and org.company_name:
+                    comp_name = org.company_name
+
+                data.organizer_full_name = getattr(org, 'full_name', None)
+                data.organizer_name = comp_name or 'ТОО "Asia Partners"'
                 if hasattr(org, 'email') and org.email:
                     data.organizer_email = org.email
                 if hasattr(org, 'position') and getattr(org, 'position', None):
                     data.organizer_position = org.position
         return data
+
 
 
     class Config:

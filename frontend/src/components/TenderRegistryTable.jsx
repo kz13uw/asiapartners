@@ -156,10 +156,11 @@ const TenderRegistryTable = ({
               if (user) return `/app/tenders/${tnd.id}`;
               return `/tenders/${tnd.id}`;
             };
-
             const detailUrl = getDetailUrl();
-            const organizerName = tnd.organizer_company_name || tnd.company_name || tnd.organizer_name || tnd.organizer?.company?.full_name || tnd.organizer?.full_name || 'Asia Partners';
+            const organizerName = tnd.organizer_company_name || tnd.organizer?.company?.full_name || tnd.company_name || (tnd.organizer_name && (tnd.organizer_name.includes('ТОО') || tnd.organizer_name.includes('АО') || tnd.organizer_name.includes('ИП')) ? tnd.organizer_name : null) || 'ТОО "Asia Partners"';
+
             const lotName = tnd.title || tnd.lot_name || '—';
+
 
 
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
