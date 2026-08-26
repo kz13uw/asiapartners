@@ -104,7 +104,8 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           try { socket.close(); } catch (e) {}
           handleFailure();
         }
-      }, 2000);
+      }, 5000);
+
       
       socket.onopen = () => {
         if (ws.current !== socket) return;
@@ -252,11 +253,12 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
   const tryNextUrl = () => {
     if (currentUrlIdx.current < NCALAYER_URLS.length - 1) {
       currentUrlIdx.current += 1;
-      setTimeout(connectNCALayer, 150);
+      setTimeout(connectNCALayer, 300);
     } else {
       setNcaStatus('not_running');
     }
   };
+
 
   const requestNcaSignature = () => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
