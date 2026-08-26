@@ -36,16 +36,6 @@ services:
       retries: 5
 
   # ==============================
-  # NCANode (Верификация ЭЦП НУЦ РК)
-  # ==============================
-  ncanode:
-    image: ncanode/ncanode:latest
-    container_name: asia_ncanode_prod
-    restart: always
-    ports:
-      - "14579:14579"
-
-  # ==============================
   # FastAPI Backend (Боевой)
   # ==============================
   backend:
@@ -62,7 +52,6 @@ services:
       USE_SQLITE: "false"
       ADMIN_PASSWORD: "Asia@Procurement2025!"
       SECRET_KEY: "asia_partners_super_secure_jwt_secret_key_prod_2026"
-      NCANODE_URL: "http://ncanode:14579"
     volumes:
       - uploads_data_prod:/app/uploads
     depends_on:
@@ -70,8 +59,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ncanode:
-        condition: service_started
+
 
 
   # ==============================
