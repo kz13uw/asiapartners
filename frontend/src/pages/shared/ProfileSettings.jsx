@@ -255,11 +255,8 @@ const ProfileSettings = () => {
               <input type="text" className="form-control" value={companyData?.address || 'Не указан'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
           </div>
-
-          <p style={{ fontSize: '0.85rem', color: 'var(--pk-text-sec)', marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            * Изменение юридических данных организации возможно через ЭЦП или администратора.
-          </p>
         </div>
+
       )}
 
       {/* Безопасность и Смена пароля */}
