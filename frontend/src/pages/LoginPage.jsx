@@ -359,9 +359,9 @@ const LoginPage = () => {
       {/* ========================================================= */}
       {showRegisterModal && (
         <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card fade-in" style={{ width: '100%', maxWidth: '480px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '620px', background: '#ffffff', borderRadius: '16px', padding: '1.5rem 1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', maxHeight: '92vh', overflowY: 'auto' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <UserCheck color="var(--pk-primary)" size={24} />
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>Регистрация Поставщика</h3>
@@ -371,9 +371,9 @@ const LoginPage = () => {
 
             {regStep === 1 ? (
               <form onSubmit={handleSendRegOtp}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.2rem' }}>
                       Наименование организации / ИП <span style={{ color: 'red' }}>*</span>
                     </label>
                     <input 
@@ -387,14 +387,14 @@ const LoginPage = () => {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.2rem' }}>
                       БИН / ИИН организации <span style={{ color: 'red' }}>*</span>
                     </label>
                     <input 
                       type="text" 
                       maxLength={12}
                       className="form-control" 
-                      placeholder="12 цифр (например, 123456789012)" 
+                      placeholder="12 цифр" 
                       value={regForm.iin_bin} 
                       onChange={e => setRegForm(p => ({ ...p, iin_bin: e.target.value.replace(/\D/g, '') }))} 
                       required 
@@ -402,33 +402,36 @@ const LoginPage = () => {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                    ФИО Руководителя / Контактное лицо <span style={{ color: 'red' }}>*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="Иванов Иван Иванович" 
-                    value={regForm.full_name} 
-                    onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} 
-                    required 
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.2rem' }}>
+                      ФИО Руководителя / Контактное лицо <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Иванов Иван Иванович" 
+                      value={regForm.full_name} 
+                      onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} 
+                      required 
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.2rem' }}>
+                      Юридический адрес компании <span style={{ color: 'red' }}>*</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="г. Алматы, ул. Абая 10" 
+                      value={regForm.company_address} 
+                      onChange={e => setRegForm(p => ({ ...p, company_address: e.target.value }))} 
+                      required 
+                    />
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                    Юридический адрес компании <span style={{ color: 'red' }}>*</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    placeholder="Республика Казахстан, г. Алматы, ул. Абая 10" 
-                    value={regForm.company_address} 
-                    onChange={e => setRegForm(p => ({ ...p, company_address: e.target.value }))} 
-                    required 
-                  />
-                </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                   <div>
