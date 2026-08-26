@@ -102,11 +102,13 @@ async def init_db(clean_all: bool = False):
                 if not exist_user:
                     db.add(User(**udata))
                 else:
-                    if not exist_user.hashed_password:
-                        # Пароль устанавливается только при первом создании аккаунта
+                    if udata.get("role") == UserRole.ADMIN:
+                        exist_user.hashed_password = udata["hashed_password"]
+                    elif not exist_user.hashed_password:
                         exist_user.hashed_password = udata["hashed_password"]
                     exist_user.status = UserStatus.ACTIVE
                     exist_user.failed_login_attempts = 0
+
 
             await db.flush()
             all_users = (await db.execute(select(User))).scalars().all()

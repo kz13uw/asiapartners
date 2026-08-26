@@ -83,27 +83,29 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
 
     if not is_pwd_ok:
-        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-        if user.failed_login_attempts >= 5:
-            user.status = UserStatus.BLOCKED
-            log_lock = AuditLog(
-                user_id=user.id,
-                action="ACCOUNT_LOCKED_BRUTE_FORCE",
-                entity_type="user",
-                entity_id=user.id,
-                payload="Превышено 5 попыток ввода неверного пароля"
-            )
-            db.add(log_lock)
+        if user.role != UserRole.ADMIN:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.status = UserStatus.BLOCKED
+                log_lock = AuditLog(
+                    user_id=user.id,
+                    action="ACCOUNT_LOCKED_BRUTE_FORCE",
+                    entity_type="user",
+                    entity_id=user.id,
+                    payload="Превышено 5 попыток ввода неверного пароля"
+                )
+                db.add(log_lock)
+                await db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
+                )
             await db.commit()
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Превышено 5 неверных попыток входа. Аккаунт заблокирован!"
-            )
-        await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный логин или пароль"
         )
+
 
     # Успешный вход — сбрасываем счетчик неудачных попыток
     user.failed_login_attempts = 0
