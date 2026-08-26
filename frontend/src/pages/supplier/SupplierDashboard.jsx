@@ -22,6 +22,7 @@ const SupplierDashboard = () => {
   const [myBids, setMyBids] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [notificationsList, setNotificationsList] = useState([]);
   const [documents, setDocuments] = useState(getStoredDocs);
   const fileInputRef = useRef(null);
 
@@ -48,16 +49,21 @@ const SupplierDashboard = () => {
     };
     fetchBids();
 
-    try {
-      const stored = localStorage.getItem(`notifications_${user?.id || 'guest'}`);
-      if (stored) {
-        const notifs = JSON.parse(stored);
-        if (Array.isArray(notifs)) {
-          setUnreadNotifCount(notifs.filter(n => !n.read).length);
-        }
+    const fetchNotifications = async () => {
+      try {
+        const { notificationsAPI } = await import('../../api');
+        const res = await notificationsAPI.list();
+        const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        setNotificationsList(items);
+        setUnreadNotifCount(items.filter(n => !n.read && !n.is_read).length);
+      } catch (err) {
+        setNotificationsList([]);
+        setUnreadNotifCount(0);
       }
-    } catch (err) {}
+    };
+    fetchNotifications();
   }, [user]);
+
 
   const handleRevokeClick = async (bidId, tenderId, tenderTitle, tenderStatus) => {
     if (tenderStatus !== 'published' && tenderStatus !== 'accepting') {
@@ -320,17 +326,37 @@ const SupplierDashboard = () => {
 
         {/* TAB 3: Notifications */}
         {activeTab === 'notif' && (
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            <li style={{ border: '1px solid var(--pk-border)', borderRadius: '8px', padding: '1.25rem', marginBottom: '1rem', backgroundColor: 'white' }}>
-              <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
-                <Bell size={18} color="var(--pk-primary)" /> Изменение в документации лота LOT-2026-001
+          <div>
+            {notificationsList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3.5rem 1rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--pk-border)' }}>
+                <Bell size={40} color="#cbd5e1" style={{ marginBottom: '0.5rem' }} />
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#334155' }}>
+                  У вас пока нет новых уведомлений
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.3rem' }}>
+                  Уведомления об изменениях статусов закупок и протоколах будут появляться здесь.
+                </div>
               </div>
-              <div className="text-sm text-sec" style={{ marginTop: '0.5rem', color: '#475569' }}>
-                Организатор ТОО "Asia Partners" обновил приложение к договору. Просьба ознакомиться в разделе документации лота.
-              </div>
-            </li>
-          </ul>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {notificationsList.map(n => (
+                  <li key={n.id} style={{ border: '1px solid var(--pk-border)', borderRadius: '8px', padding: '1.25rem', marginBottom: '1rem', backgroundColor: 'white' }}>
+                    <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+                      <Bell size={18} color="var(--pk-primary)" /> {n.title || 'Системное уведомление'}
+                    </div>
+                    <div className="text-sm text-sec" style={{ marginTop: '0.5rem', color: '#475569' }}>
+                      {n.message || n.text}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.4rem' }}>
+                      {n.created_at ? new Date(n.created_at).toLocaleString('ru-RU') : ''}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
+
       </div>
     </div>
   );
