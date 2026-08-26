@@ -98,8 +98,37 @@ async def delete_user(
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Нельзя удалить собственного администратора")
     
+    # 1. Проверка наличия активных опубликованных закупок у организатора
+    from app.models.models import TenderStatus
+    active_tenders_res = await db.execute(
+        select(func.count(Tender.id)).where(
+            Tender.organizer_id == user_id,
+            Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.EVALUATION, "accepting", "published", "evaluating"])
+        )
+    )
+    active_tenders_count = active_tenders_res.scalar() or 0
+    if active_tenders_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Удаление заблокировано: у пользователя '{user.full_name}' есть {active_tenders_count} активных опубликованных закупок. Сначала завершите или отмените их в реестре."
+        )
+
+    # 2. Проверка наличия активных заявок у поставщика
+    active_bids_res = await db.execute(
+        select(func.count(Bid.id)).where(
+            Bid.supplier_id == user_id,
+            Bid.status.in_(["submitted", "ACCEPTED", "WINNER", "RESERVE"])
+        )
+    )
+    active_bids_count = active_bids_res.scalar() or 0
+    if active_bids_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Удаление заблокировано: у пользователя '{user.full_name}' есть {active_bids_count} активных заявок в проводимых закупках."
+        )
+
     try:
-        # 1. Отвязываем или удаляем дочерние объекты пользователя
+        # 3. Отвязываем завершенные/черновики или удаляем связанные объекты
         await db.execute(sql_delete(Bid).where(Bid.supplier_id == user_id))
         await db.execute(sql_update(Company).where(Company.owner_id == user_id).values(owner_id=current_user.id))
         await db.execute(sql_update(Tender).where(Tender.organizer_id == user_id).values(organizer_id=current_user.id))
@@ -109,13 +138,14 @@ async def delete_user(
         except Exception:
             pass
 
-        # 2. Прямое удаление пользователя
+        # 4. Прямое удаление пользователя
         await db.execute(sql_delete(User).where(User.id == user_id))
         
-        # 3. Логируем действие от лица администратора
+        # 5. Логируем действие от лица администратора
         log = AuditLog(user_id=current_user.id, action="DELETE_USER", entity_type="user", entity_id=user_id)
         db.add(log)
         await db.commit()
+
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении пользователя: {str(e)}")
