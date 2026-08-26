@@ -41,12 +41,8 @@ const Notifications = () => {
       // 2. Догружаем пользовательские уведомления из локального стораджа
       const savedNotifs = JSON.parse(localStorage.getItem(`notifications_${user?.id || 'guest'}`) || '[]');
       
-      // 3. Если уведомлений нет, создаем актуальный динамический список по роли
-      if (realNotifs.length === 0 && savedNotifs.length === 0) {
-        realNotifs = generateInitialRealNotifications(user?.role);
-      } else {
-        realNotifs = [...savedNotifs, ...realNotifs];
-      }
+      // 3. Соединяем пользовательские и системные логи
+      realNotifs = [...savedNotifs, ...realNotifs];
 
       setNotifications(realNotifs);
     } catch (e) {
@@ -79,32 +75,6 @@ const Notifications = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
   };
 
-  const generateInitialRealNotifications = (role) => {
-    const now = new Date();
-    const time1 = new Date(now.getTime() - 5 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const time2 = new Date(now.getTime() - 45 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const time3 = new Date(now.getTime() - 180 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    if (role === 'admin') {
-      return [
-        { id: 1, type: 'warning', title: 'Запрос на сброс пароля', message: 'ТОО "Азия Строй" запрашивает сброс пароля. Требуется подтверждение администратора.', time: time1, read: false },
-        { id: 2, type: 'info', title: 'Системное уведомление', message: 'Резервное копирование базы данных успешно завершено на сервере.', time: time2, read: false },
-        { id: 3, type: 'success', title: 'Новый организатор зарегистрирован', message: 'В системе успешно зарегистрирован организатор: АО "Самрук-Казына".', time: time3, read: true },
-      ];
-    } else if (role === 'organizer') {
-      return [
-        { id: 1, type: 'success', title: 'Подана новая ценовая заявка', message: 'Поступило новое предложение по лоту №1 "Капитальный ремонт фасада".', time: time1, read: false },
-        { id: 2, type: 'info', title: 'Вопрос по тендерной документации', message: 'Поставщик затребовал разъяснение по разделу "Смета и ПСД".', time: time2, read: false },
-        { id: 3, type: 'warning', title: 'Завершается прием заявок', message: 'Прием заявок по процедурам №T-2026-0816 закрывается через 24 часа.', time: time3, read: true },
-      ];
-    } else {
-      return [
-        { id: 1, type: 'success', title: 'Победа в закупке!', message: 'Поздравляем! Ваше ценовое предложение признано наименьшим в тендере "Поставка офисной техники".', time: time1, read: false },
-        { id: 2, type: 'info', title: 'Новый тендер по вашей подписке', message: 'Опубликована закупка в категории "Строительно-монтажные работы".', time: time2, read: false },
-        { id: 3, type: 'warning', title: 'Требуется подписание Протокола ЭЦП', message: 'Пожалуйста, подпишите Протокол итогов в течение 3 рабочих дней.', time: time3, read: true },
-      ];
-    }
-  };
 
   const getIcon = (type) => {
     switch(type) {
