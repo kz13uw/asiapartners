@@ -573,42 +573,17 @@ const TenderDetails = () => {
                       </a>
                     ))
                   ) : (
-                    <>
-                      <a 
-                        href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ТЕХНИЧЕСКАЯ СПЕЦИФИКАЦИЯ ОБЩЕСТВА № ${tenderNumber}\n\nНаименование: ${tenderTitle}\nЗаказчик: ${organizerName}`)}`}
-                        download={`Техническая_Спецификация_${tenderNumber}.txt`}
-                        className="btn btn-outline"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
-                      >
-                        <FileText size={24} color="#0284c7" />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                            📄 Техническая спецификация.pdf
-                          </div>
-                          <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
-                            Параметры и ГОСТ
-                          </div>
-                        </div>
-                      </a>
-
-                      <a 
-                        href={`data:text/plain;charset=utf-8,${encodeURIComponent(`ПРОЕКТ ДОГОВОРА ПО ЗАКУПКЕ № ${tenderNumber}\n\n1. Предмет договора: ${tenderTitle}\n2. Заказчик: ${organizerName}`)}`}
-                        download={`Проект_Договора_${tenderNumber}.txt`}
-                        className="btn btn-outline"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.85rem 1.25rem', textDecoration: 'none', borderColor: '#cbd5e1', color: '#1e293b', borderRadius: '10px', width: '100%', background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}
-                      >
-                        <FileText size={24} color="#16a34a" />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                            📄 Проект договора.pdf
-                          </div>
-                          <div className="text-sm text-sec" style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>
-                            Условия и контракт
-                          </div>
-                        </div>
-                      </a>
-                    </>
+                    <div style={{ textAlign: 'center', padding: '2.5rem 1rem', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' }}>
+                      <Package size={36} color="#94a3b8" style={{ margin: '0 auto 0.5rem' }} />
+                      <div style={{ fontWeight: 600, color: '#475569', fontSize: '0.92rem' }}>
+                        Документация к закупке не прикреплена
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                        Организатор не прикрепил дополнительные файлы или проект договора при создании закупки.
+                      </div>
+                    </div>
                   )}
+
                 </div>
               </div>
             )}
