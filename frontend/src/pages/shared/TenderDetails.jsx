@@ -243,7 +243,9 @@ const TenderDetails = () => {
   const tenderNumber = tender.number || `${tender.id}`;
   const tenderTitle = tender.title || 'Наименование закупки не указано';
   const isGoods = tender.subject_type === 'goods';
+  const isOrganizerUser = user?.role === 'organizer' || user?.role === 'admin' || (user && tender && user.id === tender.organizer_id);
   const organizerName = tender.organizer?.company?.full_name || tender.company_name || tender.organizer_name || tender.organizer?.full_name || 'Организатор закупки';
+
   const pubDate = tender.published_at ? new Date(tender.published_at).toLocaleString('ru-RU') : (tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '—');
   const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : (tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '—');
   const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '—';
@@ -689,86 +691,89 @@ const TenderDetails = () => {
           </div>
         </div>
 
-        {/* НИЖНИЙ БЛОК ДЕЙСТВИЙ: ДЛЯ ПОСТАВЩИКА (НА ВСЮ ШИРИНУ ПОД ФОРМОЙ) */}
-        <div className="card" style={{ padding: '1.5rem 1.75rem', border: isSupplierCabinet ? '2px solid var(--pk-primary)' : '1px solid #cbd5e1', borderRadius: '12px', background: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', width: '100%', boxSizing: 'border-box', marginTop: '0.5rem' }}>
-          {isSupplierCabinet ? (
-            <>
-              {myBid ? (
-                <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <CheckCircle2 size={38} color="#15803d" />
-                    <div>
-                      <div style={{ fontWeight: 800, color: '#15803d', fontSize: '1.05rem' }}>Заявка на участие успешно подана!</div>
-                      <div style={{ fontSize: '0.88rem', color: '#166534', marginTop: '0.2rem' }}>
-                        Ваше ценовое предложение: <strong>{formatPriceKzt(myBid.price)} ₸</strong> (Заверено подписью ЭЦП KalkanCrypt)
+        {/* НИЖНИЙ БЛОК ДЕЙСТВИЙ: ДЛЯ ПОСТАВЩИКА (СКРЫВАЕМ ДЛЯ ОРГАНИЗАТОРА/АДМИНА) */}
+        {!isOrganizerUser && (
+          <div className="card" style={{ padding: '1.5rem 1.75rem', border: isSupplierCabinet ? '2px solid var(--pk-primary)' : '1px solid #cbd5e1', borderRadius: '12px', background: '#ffffff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', width: '100%', boxSizing: 'border-box', marginTop: '0.5rem' }}>
+            {isSupplierCabinet ? (
+              <>
+                {myBid ? (
+                  <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <CheckCircle2 size={38} color="#15803d" />
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#15803d', fontSize: '1.05rem' }}>Заявка на участие успешно подана!</div>
+                        <div style={{ fontSize: '0.88rem', color: '#166534', marginTop: '0.2rem' }}>
+                          Ваше ценовое предложение: <strong>{formatPriceKzt(myBid.price)} ₸</strong> (Заверено подписью ЭЦП KalkanCrypt)
+                        </div>
                       </div>
                     </div>
+                    <span className="badge badge-success" style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem' }}>✓ Подписано ЭЦП</span>
                   </div>
-                  <span className="badge badge-success" style={{ padding: '0.45rem 0.85rem', fontSize: '0.85rem' }}>✓ Подписано ЭЦП</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, minWidth: '280px' }}>
-                    <div style={{ background: '#eff6ff', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Send size={28} color="var(--pk-primary)" />
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, minWidth: '280px' }}>
+                      <div style={{ background: '#eff6ff', borderRadius: '50%', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Send size={28} color="var(--pk-primary)" />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 0.3rem 0', fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>
+                          Подача ценового предложения по закупке
+                        </h4>
+                        <p style={{ fontSize: '0.86rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+                          Вы авторизованы как Поставщик. Для заполнения полотового расчёта, выбора документов из Хранилища и подписи ЭЦП нажмите кнопку справа:
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.3rem 0', fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>
-                        Подача ценового предложения по закупке
-                      </h4>
-                      <p style={{ fontSize: '0.86rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
-                        Вы авторизованы как Поставщик. Для заполнения полотового расчёта, выбора документов из Хранилища и подписи ЭЦП нажмите кнопку справа:
-                      </p>
-                    </div>
-                  </div>
 
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setShowBidFormModal(true)}
+                      style={{ padding: '0.9rem 2.2rem', fontWeight: 800, fontSize: '1rem', borderRadius: '10px', boxShadow: '0 4px 14px rgba(37,99,235,0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.65rem', whiteSpace: 'nowrap' }}
+                    >
+                      <Send size={20} /> ⚡ Подать заявку на участие
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, minWidth: '280px' }}>
+                  <div style={{ background: '#eff6ff', borderRadius: '50%', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <ShieldCheck size={28} color="var(--pk-primary)" />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 0.3rem 0', fontSize: '1.1rem', color: '#0f172a', fontWeight: 800 }}>
+                      Участие в коммерческой закупке
+                    </h4>
+                    <p style={{ fontSize: '0.86rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
+                      Для подачи ценового предложения и загрузки квалификационных документов необходимо авторизоваться по ЭЦП или зарегистрироваться в качестве Поставщика.
+                    </p>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={() => setShowBidFormModal(true)}
-                    style={{ padding: '0.9rem 2.2rem', fontWeight: 800, fontSize: '1rem', borderRadius: '10px', boxShadow: '0 4px 14px rgba(37,99,235,0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.65rem', whiteSpace: 'nowrap' }}
+                    onClick={() => setShowEdsModal(true)}
+                    style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.9rem' }}
                   >
-                    <Send size={20} /> ⚡ Подать заявку на участие
+                    🔑 Авторизация по ЭЦП
                   </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, minWidth: '280px' }}>
-                <div style={{ background: '#eff6ff', borderRadius: '50%', width: '52px', height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <ShieldCheck size={28} color="var(--pk-primary)" />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 0.3rem 0', fontSize: '1.1rem', color: '#0f172a', fontWeight: 800 }}>
-                    Участие в коммерческой закупке
-                  </h4>
-                  <p style={{ fontSize: '0.86rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
-                    Для подачи ценового предложения и загрузки квалификационных документов необходимо авторизоваться по ЭЦП или зарегистрироваться в качестве Поставщика.
-                  </p>
+                  <Link
+                    to="/login"
+                    className="btn btn-outline"
+                    style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.9rem' }}
+                  >
+                    Войти в кабинет
+                  </Link>
                 </div>
               </div>
-              
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setShowEdsModal(true)}
-                  style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.9rem' }}
-                >
-                  🔑 Авторизация по ЭЦП
-                </button>
-                <Link
-                  to="/login"
-                  className="btn btn-outline"
-                  style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.9rem' }}
-                >
-                  Войти в кабинет
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ПОЛНОРАЗМЕРНОЕ МОДАЛЬНОЕ ОКНО ПОДАЧИ ЗАЯВКИ */}
