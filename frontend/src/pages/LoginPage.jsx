@@ -197,11 +197,20 @@ const LoginPage = () => {
       setRegStep(2);
       setCooldownSeconds(60);
     } catch (e) {
-      const msg = e.response?.data?.detail || 'Ошибка отправки OTP-кода';
+      console.error("OTP send error:", e);
+      let msg = 'Ошибка отправки OTP-кода';
+      if (typeof e.response?.data?.detail === 'string') {
+        msg = e.response.data.detail;
+      } else if (Array.isArray(e.response?.data?.detail)) {
+        msg = e.response.data.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+      } else if (e.message?.includes('Network Error')) {
+        msg = 'Ошибка сети: Сервер бэкенда недоступен';
+      }
       toast.error(msg);
     } finally {
       setIsLoading(false);
     }
+
   };
 
   // 2. Завершение Регистрации по OTP
