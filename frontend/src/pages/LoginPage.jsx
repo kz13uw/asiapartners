@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, Eye, EyeOff, Mail, KeyRound, UserCheck, Lock, RefreshCw, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Mail, KeyRound, UserCheck, Lock, RefreshCw, ArrowLeft, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { useTranslation } from '../store/useLanguageStore';
@@ -29,6 +29,7 @@ const LoginPage = () => {
     otp_code: ''
   });
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   // Модальное окно «Забыли пароль?»
@@ -39,9 +40,59 @@ const LoginPage = () => {
     otp_code: '',
     new_password: ''
   });
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
   const [forgotCooldown, setForgotCooldown] = useState(0);
 
-  // Таймер обратного отсчета Cooldown 60 секунд
+  // Проверка требований к паролю (как в админ-панели и профиле)
+  const evalRegPwd = regForm.password || '';
+  const isRegLengthValid = evalRegPwd.length >= 8;
+  const isRegHasLetters = /[a-zA-Zа-яА-ЯёЁ]/.test(evalRegPwd);
+  const isRegHasDigits = /[0-9]/.test(evalRegPwd);
+  const isRegMatch = evalRegPwd.length > 0 && evalRegPwd === regForm.confirm_password;
+  const isRegPwdPolicyOk = isRegLengthValid && isRegHasLetters && isRegHasDigits;
+
+  const evalForgotPwd = forgotForm.new_password || '';
+  const isForgotLengthValid = evalForgotPwd.length >= 8;
+  const isForgotHasLetters = /[a-zA-Zа-яА-ЯёЁ]/.test(evalForgotPwd);
+  const isForgotHasDigits = /[0-9]/.test(evalForgotPwd);
+  const isForgotPwdPolicyOk = isForgotLengthValid && isForgotHasLetters && isForgotHasDigits;
+
+  // Генератор надежного пароля (как в Админке)
+  const generateStrongPassword = () => {
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lower = "abcdefghijkmnopqrstuvwxyz";
+    const nums = "23456789";
+    const spec = "!@#$%^&*";
+    let gen = "";
+    gen += upper[Math.floor(Math.random() * upper.length)];
+    gen += lower[Math.floor(Math.random() * lower.length)];
+    gen += lower[Math.floor(Math.random() * lower.length)];
+    gen += nums[Math.floor(Math.random() * nums.length)];
+    gen += nums[Math.floor(Math.random() * nums.length)];
+    gen += spec[Math.floor(Math.random() * spec.length)];
+    const pool = upper + lower + nums + spec;
+    for (let i = 0; i < 4; i++) {
+      gen += pool[Math.floor(Math.random() * pool.length)];
+    }
+    return gen;
+  };
+
+  const handleGenerateRegPassword = () => {
+    const pwd = generateStrongPassword();
+    setRegForm(p => ({ ...p, password: pwd, confirm_password: pwd }));
+    setShowRegPassword(true);
+    setShowRegConfirmPassword(true);
+    toast.success('⚡ Сгенерирован надежный пароль!');
+  };
+
+  const handleGenerateForgotPassword = () => {
+    const pwd = generateStrongPassword();
+    setForgotForm(p => ({ ...p, new_password: pwd }));
+    setShowForgotNewPassword(true);
+    toast.success('⚡ Сгенерирован надежный пароль!');
+  };
+
+  // Таймеры обратного отсчета Cooldown
   useEffect(() => {
     let timer;
     if (cooldownSeconds > 0) {
@@ -91,12 +142,12 @@ const LoginPage = () => {
       toast.error('Заполните все обязательные поля');
       return;
     }
-    if (regForm.password !== regForm.confirm_password) {
-      toast.error('Пароли не совпадают');
+    if (!isRegPwdPolicyOk) {
+      toast.error('Пароль должен содержать не менее 8 символов, включая буквы и цифры');
       return;
     }
-    if (regForm.password.length < 8) {
-      toast.error('Пароль должен содержать не менее 8 символов');
+    if (!isRegMatch) {
+      toast.error('Введённые пароли не совпадают');
       return;
     }
 
@@ -176,6 +227,10 @@ const LoginPage = () => {
     if (e) e.preventDefault();
     if (!forgotForm.otp_code || !forgotForm.new_password) {
       toast.error('Заполните код и новый пароль');
+      return;
+    }
+    if (!isForgotPwdPolicyOk) {
+      toast.error('Новый пароль должен содержать не менее 8 символов, включая буквы и цифры');
       return;
     }
 
@@ -259,6 +314,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? "Скрыть пароль" : "Показать пароль"}
                 style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', padding: 0 }}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -294,11 +350,11 @@ const LoginPage = () => {
 
 
       {/* ========================================================= */}
-      {/* 🚀 МОДАЛЬНОЕ ОКНО РЕГИСТРАЦИИ ПОСТАВЩИКА С OTP */}
+      {/* 🚀 МОДАЛЬНОЕ ОКНО РЕГИСТРАЦИИ ПОСТАВЩИКА С OTP И ТРЕБОВАНИЯМИ К ПАРОЛЮ */}
       {/* ========================================================= */}
       {showRegisterModal && (
         <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card fade-in" style={{ width: '100%', maxWidth: '460px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '480px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -311,8 +367,8 @@ const LoginPage = () => {
             {regStep === 1 ? (
               <form onSubmit={handleSendRegOtp}>
                 <div style={{ marginBottom: '0.85rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>ФИО / Наименование <span style={{ color: 'red' }}>*</span></label>
-                  <input type="text" className="form-control" placeholder="Иванов Иван Иванович" value={regForm.full_name} onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} required />
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>ФИО / Наименование организации <span style={{ color: 'red' }}>*</span></label>
+                  <input type="text" className="form-control" placeholder="Иванов Иван Иванович / ТОО «Компания»" value={regForm.full_name} onChange={e => setRegForm(p => ({ ...p, full_name: e.target.value }))} required />
                 </div>
 
                 <div style={{ marginBottom: '0.85rem' }}>
@@ -325,18 +381,89 @@ const LoginPage = () => {
                   <input type="tel" className="form-control" placeholder="+7 (707) 123-45-67" value={regForm.phone} onChange={e => setRegForm(p => ({ ...p, phone: e.target.value }))} />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Пароль <span style={{ color: 'red' }}>*</span></label>
-                    <input type={showRegPassword ? "text" : "password"} className="form-control" placeholder="Мин. 8 символов" value={regForm.password} onChange={e => setRegForm(p => ({ ...p, password: e.target.value }))} required />
+                {/* Пароль и Подтверждение с Генерацией и Глазиком */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.85rem', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
+                      Пароль и подтверждение <span style={{ color: 'red' }}>*</span>
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={handleGenerateRegPassword}
+                      style={{ background: 'none', border: 'none', color: 'var(--pk-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', padding: 0 }}
+                    >
+                      <Sparkles size={14} /> Сгенерировать пароль
+                    </button>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Повтор пароля <span style={{ color: 'red' }}>*</span></label>
-                    <input type={showRegPassword ? "text" : "password"} className="form-control" placeholder="Повторите пароль" value={regForm.confirm_password} onChange={e => setRegForm(p => ({ ...p, confirm_password: e.target.value }))} required />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>Пароль</label>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type={showRegPassword ? "text" : "password"} 
+                          className="form-control" 
+                          placeholder="Пароль" 
+                          value={regForm.password} 
+                          onChange={e => setRegForm(p => ({ ...p, password: e.target.value }))} 
+                          required 
+                          style={{ paddingRight: '2.2rem', fontSize: '0.85rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegPassword(!showRegPassword)}
+                          title={showRegPassword ? "Скрыть пароль" : "Показать пароль"}
+                          style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
+                        >
+                          {showRegPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>Повтор пароля</label>
+                      <div style={{ position: 'relative' }}>
+                        <input 
+                          type={showRegConfirmPassword ? "text" : "password"} 
+                          className="form-control" 
+                          placeholder="Повторите" 
+                          value={regForm.confirm_password} 
+                          onChange={e => setRegForm(p => ({ ...p, confirm_password: e.target.value }))} 
+                          required 
+                          style={{ paddingRight: '2.2rem', fontSize: '0.85rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                          title={showRegConfirmPassword ? "Скрыть пароль" : "Показать пароль"}
+                          style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
+                        >
+                          {showRegConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Визуальный Индикатор Требований к Паролю (Админ-стандарт) */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', fontSize: '0.75rem', background: '#ffffff', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ color: isRegLengthValid ? '#16a34a' : '#94a3b8', fontWeight: isRegLengthValid ? 700 : 400, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      {isRegLengthValid ? '✓' : '○'} Мин. 8 символов
+                    </span>
+                    <span style={{ color: (isRegHasLetters && isRegHasDigits) ? '#16a34a' : '#94a3b8', fontWeight: (isRegHasLetters && isRegHasDigits) ? 700 : 400, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      {(isRegHasLetters && isRegHasDigits) ? '✓' : '○'} Буквы и цифры
+                    </span>
+                    <span style={{ color: isRegMatch ? '#16a34a' : '#94a3b8', fontWeight: isRegMatch ? 700 : 400, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      {isRegMatch ? '✓' : '○'} Совпадение паролей
+                    </span>
                   </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} disabled={isLoading}>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.8rem' }} 
+                  disabled={isLoading}
+                >
                   {isLoading ? 'Отправка...' : '📩 Получить код подтверждения (OTP)'}
                 </button>
               </form>
@@ -392,11 +519,11 @@ const LoginPage = () => {
 
 
       {/* ========================================================= */}
-      {/* 🔐 МОДАЛЬНОЕ ОКНО «ЗАБЫЛИ ПАРОЛЬ?» */}
+      {/* 🔐 МОДАЛЬНОЕ ОКНО «ЗАБЫЛИ ПАРОЛЬ?» С ГЛАЗИКОМ И ТРЕБОВАНИЯМИ */}
       {/* ========================================================= */}
       {showForgotModal && (
         <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card fade-in" style={{ width: '100%', maxWidth: '420px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+          <div className="card fade-in" style={{ width: '100%', maxWidth: '440px', background: '#ffffff', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -438,8 +565,45 @@ const LoginPage = () => {
                 </div>
 
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>Новый пароль (мин. 8 символов)</label>
-                  <input type="password" className="form-control" placeholder="••••••••" value={forgotForm.new_password} onChange={e => setForgotForm(p => ({ ...p, new_password: e.target.value }))} required />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', margin: 0 }}>Новый пароль</label>
+                    <button 
+                      type="button" 
+                      onClick={handleGenerateForgotPassword}
+                      style={{ background: 'none', border: 'none', color: 'var(--pk-primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem', padding: 0 }}
+                    >
+                      <Sparkles size={14} /> Сгенерировать
+                    </button>
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showForgotNewPassword ? "text" : "password"} 
+                      className="form-control" 
+                      placeholder="••••••••" 
+                      value={forgotForm.new_password} 
+                      onChange={e => setForgotForm(p => ({ ...p, new_password: e.target.value }))} 
+                      required 
+                      style={{ paddingRight: '2.5rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
+                      title={showForgotNewPassword ? "Скрыть пароль" : "Показать пароль"}
+                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
+                    >
+                      {showForgotNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
+                  {/* Требования к новому паролю */}
+                  <div style={{ display: 'flex', gap: '0.8rem', fontSize: '0.75rem', marginTop: '0.5rem', color: '#64748b' }}>
+                    <span style={{ color: isForgotLengthValid ? '#16a34a' : '#94a3b8', fontWeight: isForgotLengthValid ? 700 : 400 }}>
+                      {isForgotLengthValid ? '✓' : '○'} Мин. 8 символов
+                    </span>
+                    <span style={{ color: (isForgotHasLetters && isForgotHasDigits) ? '#16a34a' : '#94a3b8', fontWeight: (isForgotHasLetters && isForgotHasDigits) ? 700 : 400 }}>
+                      {(isForgotHasLetters && isForgotHasDigits) ? '✓' : '○'} Буквы и цифры
+                    </span>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>

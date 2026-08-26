@@ -53,6 +53,11 @@ def decode_token(token: str) -> Optional[dict]:
 import re
 
 def validate_password_policy(password: str) -> tuple[bool, str]:
-    if not password or len(password) < 6:
-        return False, "Пароль должен содержать не менее 6 символов"
+    if not password or len(password) < 8:
+        return False, "Пароль должен содержать не менее 8 символов"
+    if not re.search(r"[0-9]", password):
+        return False, "Пароль должен содержать хотя бы одну цифру"
+    if not re.search(r"[a-zA-Zа-яА-ЯёЁ]", password):
+        return False, "Пароль должен содержать хотя бы одну букву"
     return True, "Пароль соответствует политике безопасности"
+
