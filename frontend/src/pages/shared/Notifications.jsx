@@ -104,21 +104,6 @@ const Notifications = () => {
     toast.success('История уведомлений очищена');
   };
 
-  const triggerTestNotification = () => {
-    const newNotif = {
-      id: `test-${Date.now()}`,
-      type: 'info',
-      title: 'Системное событие безопасности',
-      message: 'Реальное push-уведомление успешно доставлено в ваш кабинет.',
-      time: 'Только что',
-      read: false
-    };
-    const updated = [newNotif, ...notifications];
-    setNotifications(updated);
-    localStorage.setItem(`notifications_${user?.id || 'guest'}`, JSON.stringify(updated));
-    toast.success('Новое реальное уведомление доставлено!');
-  };
-
   const filteredNotifications = notifications.filter(n => {
     if (filter === 'unread') return !n.read;
     if (filter === 'important') return n.type === 'warning';
@@ -143,14 +128,12 @@ const Notifications = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button onClick={triggerTestNotification} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
-            <RefreshCw size={14} /> Добавить событие
-          </button>
           {unreadCount > 0 && (
             <button onClick={markAllAsRead} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
               <Check size={14} /> Прочитать все
             </button>
           )}
+
           {notifications.length > 0 && (
             <button onClick={clearAllNotifications} className="btn btn-outline btn-sm" style={{ color: 'var(--pk-danger)', borderColor: 'var(--pk-danger)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}>
               <Trash2 size={14} /> Очистить
