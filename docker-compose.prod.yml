@@ -52,6 +52,13 @@ services:
       USE_SQLITE: "false"
       ADMIN_PASSWORD: "Asia@Procurement2025!"
       SECRET_KEY: "asia_partners_super_secure_jwt_secret_key_prod_2026"
+      SMTP_HOST: "smtp.yandex.ru"
+      SMTP_PORT: "465"
+      SMTP_USER: "asiapartners.procurement@yandex.kz"
+      SMTP_PASSWORD: "xgkjgrodqrnrmchh"
+      SMTP_FROM_NAME: "Asia Partners Procurement"
+      SMTP_FROM_EMAIL: "asiapartners.procurement@yandex.kz"
+
     volumes:
       - uploads_data_prod:/app/uploads
     depends_on:
