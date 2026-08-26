@@ -566,12 +566,19 @@ async def delete_tender(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
-    if tender.status != TenderStatus.DRAFT:
-        raise HTTPException(status_code=400, detail="Удалять можно только черновики. Для отзыва опубликованного тендера используйте ОТМЕНА.")
     if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
         raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого тендера")
     
-    from app.models.models import Lot, QualificationRequirement, TenderDocument
+    # Проверяем наличие поданных заявок от поставщиков
+    from app.models.models import Bid, Lot, QualificationRequirement, TenderDocument, Protocol, Contract
+    bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender_id))
+    bids = bids_res.scalars().all()
+    if bids:
+        raise HTTPException(status_code=400, detail="Нельзя безвозвратно удалить закупку, по которой поставщики уже подали заявки. Воспользуйтесь функцией «Отмена закупки».")
+
+    # Удаляем каскадно связанные документы, протоколы, контракты и лоты
+    await db.execute(delete(Contract).where(Contract.tender_id == tender_id))
+    await db.execute(delete(Protocol).where(Protocol.tender_id == tender_id))
     await db.execute(delete(Lot).where(Lot.tender_id == tender_id))
     await db.execute(delete(QualificationRequirement).where(QualificationRequirement.tender_id == tender_id))
     await db.execute(delete(TenderDocument).where(TenderDocument.tender_id == tender_id))
@@ -581,6 +588,8 @@ async def delete_tender(
     db.add(log)
     await db.commit()
     await cache_manager.delete("tenders:*")
+    return {"message": "Тендер успешно удален"}
+
 
 
 def generate_protocol_bilingual_html(tender_number: str, title: str, start_price: float, winner_name: str, winner_bin: str, winner_price: float, signer_name: str, signer_bin: str, eds_hash: str, bids_list: list, lots_list: list = None) -> str:

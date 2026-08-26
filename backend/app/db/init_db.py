@@ -131,7 +131,8 @@ async def init_db(clean_all: bool = False):
             from datetime import timedelta, datetime
 
             tenders_count = (await db.execute(select(Tender))).scalars().all()
-            if not tenders_count:
+            if should_clean and not tenders_count:
+
                 organizer = (await db.execute(select(User).where(User.username == "info@asiapartners.kz"))).scalar_one_or_none()
                 org_id = organizer.id if organizer else 1
                 org_code = organizer.computed_account_code if organizer else "ORG00000002"
