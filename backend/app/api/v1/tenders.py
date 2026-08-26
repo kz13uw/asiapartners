@@ -78,15 +78,16 @@ async def list_tenders(
         # Для администраторов или отчетов показываем все тендеры
         pass
     elif status_filter and status_filter.lower() in ["published", "accepting", "active"]:
-        query = query.where(status_col.in_(["published", "accepting"]))
+        query = query.where(status_col == "published")
     elif status_filter:
         query = query.where(status_col == status_filter.lower())
     else:
         query = query.where(
             status_col.in_([
-                "published", "accepting", "evaluation", "evaluating", "review", "completed"
+                "published", "evaluation", "evaluating", "review", "completed"
             ])
         )
+
 
 
     if search:

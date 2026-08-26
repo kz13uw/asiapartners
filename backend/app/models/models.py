@@ -33,11 +33,12 @@ class TenderSubjectType(str, enum.Enum):
 
 class TenderStatus(str, enum.Enum):
     DRAFT = "draft"                          # Черновик
-    ACCEPTING = "accepting"                  # Прием заявок (ЗЦП)
-    PUBLISHED = "published"                  # Опубликован
-    EVALUATION = "evaluation"                # Подведение итогов (Рассмотрение ценовых предложений)
+    PUBLISHED = "published"                  # Опубликован (Прием заявок)
+    ACCEPTING = "published"                  # Синоним для обратной совместимости
+    EVALUATION = "evaluation"                # Подведение итогов (Рассмотрение)
     COMPLETED = "completed"                  # Завершен
     CANCELLED = "cancelled"                  # Отменен
+
 
 
 class BidStatus(str, enum.Enum):
