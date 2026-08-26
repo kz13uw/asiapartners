@@ -64,12 +64,18 @@ const ReportsPage = () => {
   // Scope datasets depending on role & filters
   const filteredTenders = useMemo(() => {
     return tenders.filter(t => {
-      if (isOrganizer && t.company_name !== organizerCompanyName) return false;
-      if (!isOrganizer && filters.target_company !== 'all' && t.company_name !== filters.target_company) return false;
-      if (filters.category !== 'all' && !(t.category_name || '').includes(filters.category)) return false;
+      if (isOrganizer) {
+        if (t.organizer_id && user?.id && t.organizer_id !== user.id) return false;
+      } else {
+        if (filters.target_company !== 'all') {
+          const compName = t.company_name || t.organizer_company_name || t.organizer?.company?.full_name || '';
+          if (!compName.includes(filters.target_company)) return false;
+        }
+      }
+      if (filters.category !== 'all' && !(t.category_name || t.category?.name || '').includes(filters.category)) return false;
       return true;
     });
-  }, [tenders, isOrganizer, organizerCompanyName, filters.target_company, filters.category]);
+  }, [tenders, isOrganizer, user?.id, filters.target_company, filters.category]);
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(s => {
@@ -80,10 +86,33 @@ const ReportsPage = () => {
   }, [suppliers, isOrganizer, organizerCompanyName, filters.target_company]);
 
   // Aggregate metrics
-  const totalBudget = useMemo(() => filteredTenders.reduce((sum, t) => sum + (t.start_price || t.budget || 0), 0), [filteredTenders]);
-  const totalContractAmount = useMemo(() => filteredTenders.reduce((sum, t) => sum + (t.final_price || t.start_price || 0), 0), [filteredTenders]);
-  const totalSavings = Math.max(0, totalBudget - totalContractAmount);
-  const savingsPct = totalBudget > 0 ? ((totalSavings / totalBudget) * 100).toFixed(1) : '0';
+  const totalBudget = useMemo(() => {
+    return filteredTenders.reduce((sum, t) => sum + Number(t.start_price || t.budget || 0), 0);
+  }, [filteredTenders]);
+
+  const totalContractAmount = useMemo(() => {
+    return filteredTenders.reduce((sum, t) => {
+      const finalPrice = t.current_lowest_price || t.final_price || t.winning_price || t.start_price;
+      return sum + Number(finalPrice || 0);
+    }, 0);
+  }, [filteredTenders]);
+
+  const totalSavings = useMemo(() => {
+    return Math.max(0, totalBudget - totalContractAmount);
+  }, [totalBudget, totalContractAmount]);
+
+  const savingsPct = useMemo(() => {
+    return totalBudget > 0 ? ((totalSavings / totalBudget) * 100).toFixed(1) : '0.0';
+  }, [totalBudget, totalSavings]);
+
+  const getTenderPluralText = (count) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod100 >= 11 && mod100 <= 19) return `${count} тендеров`;
+    if (mod10 === 1) return `${count} тендер`;
+    if (mod10 >= 2 && mod10 <= 4) return `${count} тендера`;
+    return `${count} тендеров`;
+  };
 
   const formatMoney = (val) => Number(val || 0).toLocaleString('ru-RU') + ' ₸';
 
@@ -102,7 +131,7 @@ const ReportsPage = () => {
             `"${(tnd.company_name || 'Asia Partners').replace(/"/g, '""')}"`,
             `"${tnd.method === 'zcp' ? 'Запрос цен' : 'Открытый тендер'}"`,
             `"${tnd.start_price || 0}"`,
-            `"${tnd.final_price || tnd.start_price || 0}"`,
+            `"${tnd.current_lowest_price || tnd.final_price || tnd.start_price || 0}"`,
             `"${(tnd.winner || '—').replace(/"/g, '""')}"`,
             `"${tnd.status || 'active'}"`
           ].join(';'));
@@ -120,19 +149,20 @@ const ReportsPage = () => {
             `"${(sup.company_served || 'Asia Partners').replace(/"/g, '""')}"`,
             `"${sup.email || ''}"`,
             `"${sup.phone || ''}"`,
-            `"${sup.bids_submitted || 0}"`,
-            `"${sup.wins_count || 0}"`,
-            `"${sup.total_contracts || 0}"`
+            `"${sup.bids_count || 0}"`,
+            `"${sup.won_count || 0}"`,
+            `"${sup.total_sum || 0}"`
           ].join(';'));
         });
       }
     }
 
-    const blob = new Blob(["\ufeff" + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = '\uFEFF' + csvLines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Report_Asia_Partners_${activeReportTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Report_${activeReportTab}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -397,7 +427,8 @@ const ReportsPage = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid var(--pk-primary)' }}>
               <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>Проведено процедур</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>{filteredTenders.length} тендеров</div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>{getTenderPluralText(filteredTenders.length)}</div>
+
             </div>
 
             <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16a34a' }}>
