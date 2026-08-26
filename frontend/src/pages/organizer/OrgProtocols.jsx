@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Search, Edit2, Eye, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../../store/useLanguageStore';
 
 const OrgProtocols = () => {
+  const { lang, t } = useTranslation();
   const navigate = useNavigate();
+
   const [protocols] = useState([
     {
       id: 1,

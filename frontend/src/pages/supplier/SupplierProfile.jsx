@@ -3,10 +3,13 @@ import { Verified, FileText, Upload, RefreshCcw, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { useCompany } from '../../hooks/useCompany';
+import { useTranslation } from '../../store/useLanguageStore';
 
 const SupplierProfile = () => {
+  const { lang, t } = useTranslation();
   const { company, loading } = useCompany();
   const [profile, setProfile] = useState(null);
+
   const [ustavDoc, setUstavDoc] = useState(() => {
     try {
       const saved = localStorage.getItem('profile_ustav_doc');

@@ -4,6 +4,7 @@ import { ShieldCheck, FileText, CheckCircle2, Download, Upload, Trash2, Package,
 
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import { useTranslation } from '../../store/useLanguageStore';
 import { tendersAPI, bidsAPI } from '../../api';
 import EcpModal from '../../components/EcpModal';
 
@@ -18,10 +19,12 @@ const formatPriceKzt = (amount) => {
 };
 
 const TenderDetails = () => {
+  const { lang, t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
+
   
   const isSupplierUser = user?.role === 'supplier' || user?.role === 'PO';
   const isSupplierCabinet = location.pathname.startsWith('/supplier') || isSupplierUser;

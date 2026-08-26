@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Trophy, Layers, XCircle, FileText, CheckCircle2, AlertCircle, FileX, PackageOpen } from 'lucide-react';
 import { tendersAPI } from '../../api';
+import { useTranslation } from '../../store/useLanguageStore';
 
 const SupplierHistory = () => {
+  const { lang, t } = useTranslation();
   const [bids, setBids] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 

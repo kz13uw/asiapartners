@@ -3,13 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FileArchive, CreditCard, Check, X, FileSignature, Building, User, Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
+import { useTranslation } from '../../store/useLanguageStore';
 import { tendersAPI, bidsAPI } from '../../api';
 import EcpModal from '../../components/EcpModal';
 
 const EvaluateTender = () => {
+  const { lang, t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
   
   const [tender, setTender] = useState(null);
   const [bids, setBids] = useState([]);

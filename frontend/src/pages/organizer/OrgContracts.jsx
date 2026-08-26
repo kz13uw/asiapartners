@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Search, FilePlus, FileText, Folder, Eye } from 'lucide-react';
+import { useTranslation } from '../../store/useLanguageStore';
 
 const OrgContracts = () => {
+  const { lang, t } = useTranslation();
   const [contracts] = useState([
+
     {
       id: 1,
       number: '№ 2024-C-01',
