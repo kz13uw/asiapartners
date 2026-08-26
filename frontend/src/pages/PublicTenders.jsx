@@ -27,12 +27,16 @@ const PublicTenders = () => {
   }, []);
 
 
-  const filteredTenders = tenders.filter(tender =>
-    tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tender.organizer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tender.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tender.number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTenders = tenders.filter(tender => {
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) return true;
+    const title = (tender.title || '').toLowerCase();
+    const orgName = (tender.organizer_name || '').toLowerCase();
+    const compName = (tender.company_name || '').toLowerCase();
+    const num = (tender.number || '').toLowerCase();
+    return title.includes(term) || orgName.includes(term) || compName.includes(term) || num.includes(term);
+  });
+
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
