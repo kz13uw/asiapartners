@@ -65,10 +65,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     
     result = await db.execute(
         select(User).where(
-            (func.lower(User.email) == uname) | (func.lower(User.username) == uname)
+            (func.lower(User.email) == uname) | 
+            (func.lower(User.username) == uname) | 
+            (func.lower(User.account_code) == uname) |
+            (User.iin_bin == uname)
         )
     )
     user = result.scalars().first()
+
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")

@@ -150,33 +150,26 @@ const AdminDashboard = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await adminAPI.createUser(payload);
-      if (res.data) {
-        addMockUser(res.data);
-      } else {
-        addMockUser(payload);
-      }
-      toast.success('Пользователь успешно создан и сохранен в системе!');
+      await adminAPI.createUser(payload);
+      toast.success('🎉 Пользователь успешно создан и сохранен в базе данных!');
       refetch();
       setIsUserModalOpen(false);
       setUserFormData({ iin_bin: '', full_name: '', email: '', role: 'organizer', password: '', company_address: '' });
       setConfirmPassword('');
     } catch (error) {
-      console.warn("Backend user creation notice:", error);
-      const errMsg = error.response?.data?.detail;
-      if (errMsg && typeof errMsg === 'string') {
-        toast.error(`⚠️ ${errMsg}`);
-      } else {
-        addMockUser(payload);
-        toast.success('Пользователь успешно создан и сохранен!');
-        setIsUserModalOpen(false);
-        setUserFormData({ iin_bin: '', full_name: '', email: '', role: 'organizer', password: '', company_address: '' });
-        setConfirmPassword('');
+      console.error("Backend user creation error:", error);
+      let errMsg = error.response?.data?.detail;
+      if (Array.isArray(errMsg)) {
+        errMsg = errMsg.map(e => e.msg || JSON.stringify(e)).join(', ');
+      } else if (typeof errMsg === 'object') {
+        errMsg = JSON.stringify(errMsg);
       }
+      toast.error(`⚠️ ${errMsg || 'Ошибка при создании пользователя в базе данных'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const generateNextCategoryCode = () => {
     const numericCodes = (categories || [])
