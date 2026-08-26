@@ -733,28 +733,22 @@ const TenderDetails = () => {
                       Участие в коммерческой закупке
                     </h4>
                     <p style={{ fontSize: '0.86rem', color: '#475569', margin: 0, lineHeight: 1.45 }}>
-                      Для подачи ценового предложения и загрузки квалификационных документов необходимо авторизоваться по ЭЦП или зарегистрироваться в качестве Поставщика.
+                      Для подачи ценового предложения и загрузки документов необходимо войти или зарегистрироваться в качестве Поставщика.
                     </p>
+
                   </div>
                 </div>
                 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => setShowEdsModal(true)}
-                    style={{ padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.9rem' }}
-                  >
-                    🔑 Авторизация по ЭЦП
-                  </button>
                   <Link
                     to="/login"
-                    className="btn btn-outline"
+                    className="btn btn-primary"
                     style={{ padding: '0.75rem 1.5rem', fontWeight: 700, fontSize: '0.9rem' }}
                   >
                     Войти в кабинет
                   </Link>
                 </div>
+
               </div>
             )}
           </div>
