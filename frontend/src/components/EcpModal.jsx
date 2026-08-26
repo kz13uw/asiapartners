@@ -164,49 +164,46 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
 
           if (isExplicitError && !signedCms) {
-            // 🔄 Многоуровневый фолбэк для любых версий NCALayer на Windows/Mac:
+
+            // 🔄 Многоуровневый каскадный фолбэк для всех версий NCALayer (Mac / Windows):
             const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
 
-            // 1. Попытка: меняем keyType на альтернативный (SIGNATURE <-> AUTHENTICATION)
+            // 1. Попытка (NCALayer 1.0): commonUtils с правильным коротким кодом ("AUTH" или "SIGNATURE")
             if (!ws.current._retryCount) {
               ws.current._retryCount = 1;
-              const altKeyType = isAuth ? 'SIGNATURE' : 'AUTHENTICATION';
-              console.log(`[NCALayer] Fallback 1: trying alternate keyType (${altKeyType})...`);
+              const keyType = isAuth ? 'AUTH' : 'SIGNATURE';
+              console.log(`[NCALayer 1.0] Fallback 1: commonUtils (${keyType})...`);
               const v1Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
                 method: 'createCMSSignatureFromBase64',
-                args: ['PKCS12', altKeyType, dataToSign, '', true]
+                args: ['PKCS12', keyType, dataToSign, '', true]
               };
               ws.current.send(JSON.stringify(v1Payload));
               return;
             }
-            // 2. Попытка: пустой тип ключа ''
+
+            // 2. Попытка (NCALayer 1.0): альтернативный тип ключа ("SIGNATURE" для auth или "AUTH" для sign)
             if (ws.current._retryCount === 1) {
               ws.current._retryCount = 2;
-              console.log('[NCALayer] Fallback 2: trying empty keyType (any key)...');
+              const altKeyType = isAuth ? 'SIGNATURE' : 'AUTH';
+              console.log(`[NCALayer 1.0] Fallback 2: commonUtils (${altKeyType})...`);
               const v2Payload = {
                 module: 'kz.gov.pki.knca.commonUtils',
                 method: 'createCMSSignatureFromBase64',
-                args: ['PKCS12', '', dataToSign, '', true]
+                args: ['PKCS12', altKeyType, dataToSign, '', true]
               };
               ws.current.send(JSON.stringify(v2Payload));
               return;
             }
-            // 3. Попытка: NCALayer 2.0 basics.sign
+
+            // 3. Попытка (NCALayer 1.0): без фильтра типа ключа ("")
             if (ws.current._retryCount === 2) {
               ws.current._retryCount = 3;
-              console.log('[NCALayer] Fallback 3: basics.sign...');
+              console.log('[NCALayer 1.0] Fallback 3: commonUtils (any key)...');
               const v3Payload = {
-                module: 'kz.gov.pki.knca.basics',
-                method: 'sign',
-                args: {
-                  allowedStorages: ['PKCS12'],
-                  format: 'cms',
-                  data: dataToSign,
-                  signingParams: { decode: true, encapsulate: true, digested: false },
-                  signerParams: {},
-                  locale: 'ru'
-                }
+                module: 'kz.gov.pki.knca.commonUtils',
+                method: 'createCMSSignatureFromBase64',
+                args: ['PKCS12', '', dataToSign, '', true]
               };
               ws.current.send(JSON.stringify(v3Payload));
               return;
@@ -217,7 +214,6 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             setErrorMessage(errMsg);
             return;
           }
-
 
 
           if (signedCms) {
@@ -261,7 +257,6 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
   };
 
-
   const requestNcaSignature = () => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       setNcaStatus('not_running');
@@ -273,23 +268,33 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     const nonceToSign = activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now());
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
-    // 🌐 Официальный стандарт SIGEX / НУЦ РК (согласно документации Java NCALayer для Windows/Mac)
-    const keyType = isAuth ? 'AUTHENTICATION' : 'SIGNATURE';
-    const sigexPayload = {
-      module: 'kz.gov.pki.knca.commonUtils',
-      method: 'createCMSSignatureFromBase64',
-      args: ['PKCS12', keyType, base64DataToSign, '', true]
+    // 🌐 Официальный стандарт НУЦ РК: NCALayer 2.0 (kz.gov.pki.knca.basics)
+    const nca2Payload = {
+      module: 'kz.gov.pki.knca.basics',
+      method: 'sign',
+      args: {
+        allowedStorages: ['PKCS12'],
+        format: 'cms',
+        data: base64DataToSign,
+        signingParams: {
+          decode: true,
+          encapsulate: true,
+          digested: false
+        },
+        signerParams: {},
+        locale: 'ru'
+      }
     };
 
-    console.log(`[NCALayer SIGEX] → Sending request (keyType=${keyType}):`, JSON.stringify(sigexPayload));
+    console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
     try {
-      ws.current.send(JSON.stringify(sigexPayload));
+      ws.current.send(JSON.stringify(nca2Payload));
     } catch (e) {
       console.error('[NCALayer] Send error:', e);
       setStep(4);
-      setErrorMessage('Ошибка отправки запроса в NCALayer. Нажмите "Открыть окно NCALayer снова".');
-    }
+      }
   };
+
 
 
 
