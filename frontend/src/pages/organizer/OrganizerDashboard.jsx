@@ -25,14 +25,20 @@ const OrganizerDashboard = () => {
   const handleDeleteTender = async (id, title) => {
     if (!window.confirm(`Вы уверены, что хотите полностью удалить тендер "${title}"?`)) return;
     try {
-      await tendersAPI.delete(id);
+      if (typeof id === 'number' && id < 1000000000) {
+        await tendersAPI.delete(id);
+      }
+      removeLocalDraft(id);
       toast.success('Тендер успешно удален');
-      refetch();
+      await refetch();
     } catch (e) {
+      removeLocalDraft(id);
       setLocalTenders(prev => prev.filter(item => item.id !== id));
       toast.success('Тендер успешно удален');
+      await refetch();
     }
   };
+
 
   const handleDuplicateTender = async (id, title) => {
     try {

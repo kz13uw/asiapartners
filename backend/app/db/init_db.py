@@ -126,7 +126,7 @@ async def init_db(clean_all: bool = False):
 
             await db.commit()
 
-            # 3. Миграция статусов и создание демонстрационных закупок
+            # 3. Базовая настройка категорий и структуры (без создания жестко захаркоженных демо-тендеров)
             from app.models.models import TenderMethod, TenderStatus
             from datetime import timedelta, datetime
             from sqlalchemy import update
@@ -139,126 +139,9 @@ async def init_db(clean_all: bool = False):
             )
             await db.commit()
 
-            tenders_count = (await db.execute(select(Tender))).scalars().all()
-            if not tenders_count:
 
-                organizer = (await db.execute(select(User).where(User.username == "info@asiapartners.kz"))).scalar_one_or_none()
-                org_id = organizer.id if organizer else 1
-                org_code = organizer.computed_account_code if organizer else "ORG00000002"
-                materials_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "materials"))).scalar_one_or_none()
-                construction_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "construction"))).scalar_one_or_none()
-                agri_cat = (await db.execute(select(ProcurementCategory).where(ProcurementCategory.code == "agri_goods"))).scalar_one_or_none()
+            print("База данных проинициализирована! Пользователи и структуры созданы.")
 
-                sample_tenders = [
-                    Tender(
-                        number="T-2026-000001",
-                        title="Поставка портландцемента М500 для объектов холдинга",
-                        description="Закупка портландцемента марки М500 Д0 в объеме 500 тонн для объектов строительства холдинга Asia Partners.",
-                        subject_type=TenderSubjectType.GOODS,
-                        category_id=materials_cat.id if materials_cat else 1,
-                        method=TenderMethod.ZCP,
-                        start_price=15000000.0,
-                        current_lowest_price=15000000.0,
-                        status=TenderStatus.PUBLISHED,
-                        deadline_at=datetime.utcnow() + timedelta(days=10),
-                        delivery_place="г. Семей, ул. Кабанбай Батыра 42",
-                        organizer_id=org_id,
-                        organizer_code=org_code,
-                        published_at=datetime.utcnow()
-                    ),
-                    Tender(
-                        number="W-2026-000002",
-                        title="Строительно-монтажные работы по возведению складского комплекса",
-                        description="Выполнение комплекса СМР по объекту 'Складской логистический терминал Asia Partners'.",
-                        subject_type=TenderSubjectType.SERVICES_WORKS,
-                        category_id=construction_cat.id if construction_cat else 2,
-                        method=TenderMethod.ZCP,
-                        start_price=45000000.0,
-                        current_lowest_price=45000000.0,
-                        status=TenderStatus.PUBLISHED,
-                        deadline_at=datetime.utcnow() + timedelta(days=14),
-                        delivery_place="ВКО, г. Семей, Промзона",
-                        organizer_id=org_id,
-                        organizer_code=org_code,
-                        published_at=datetime.utcnow()
-                    ),
-                    Tender(
-                        number="T-2026-000003",
-                        title="Поставка комплексных минеральных удобрений и агрохимии",
-                        description="Закупка аммофоса и селитры аммиачной для посевной кампании агропредприятий холдинга.",
-                        subject_type=TenderSubjectType.GOODS,
-                        category_id=agri_cat.id if agri_cat else 3,
-                        method=TenderMethod.ZCP,
-                        start_price=8500000.0,
-                        current_lowest_price=8500000.0,
-                        status=TenderStatus.PUBLISHED,
-                        deadline_at=datetime.utcnow() + timedelta(days=7),
-                        delivery_place="Абайская область, Бородулихинский район",
-                        organizer_id=org_id,
-                        organizer_code=org_code,
-                        published_at=datetime.utcnow()
-                    ),
-                ]
-
-                for t_item in sample_tenders:
-                    exist_t = (await db.execute(select(Tender).where(Tender.number == t_item.number))).scalar_one_or_none()
-                    if not exist_t:
-                        db.add(t_item)
-                await db.flush()
-
-                # 4. Тестовые заявки поставщиков для проверки Вскрытия / Оценки
-                from app.models.models import BidStatus
-                supplier_user = (await db.execute(select(User).where(User.email == "supplier@asia.kz"))).scalar_one_or_none()
-                if not supplier_user:
-                    supplier_user = User(
-                        username="supplier@asia.kz",
-                        full_name="ТОО СтройСервис Азия",
-                        email="supplier@asia.kz",
-                        hashed_password=get_password_hash("admin123"),
-                        role=UserRole.SUPPLIER,
-                        status=UserStatus.ACTIVE,
-                        iin_bin="987654321012"
-                    )
-                    db.add(supplier_user)
-                    await db.flush()
-
-                supplier_comp = (await db.execute(select(Company).where(Company.bin == "987654321012"))).scalar_one_or_none()
-                if not supplier_comp:
-                    supplier_comp = Company(
-                        bin="987654321012",
-                        full_name="ТОО СтройСервис Азия",
-                        legal_form="ТОО",
-                        address="г. Семей, ул. Ауэзова 12",
-                        phone="+7 7222 55 44 33",
-                        email="supplier@asia.kz",
-                        director_name="Касымов Асхат Берикович",
-                        is_accredited=True,
-                        owner_id=supplier_user.id
-                    )
-                    db.add(supplier_comp)
-                    await db.flush()
-
-                b1 = Bid(
-                    tender_id=sample_tenders[0].id,
-                    supplier_id=supplier_user.id,
-                    company_id=supplier_comp.id,
-                    price=14200000.0,
-                    status=BidStatus.SUBMITTED,
-                    eds_hash="demo_bid_signature_001"
-                )
-                b2 = Bid(
-                    tender_id=sample_tenders[1].id,
-                    supplier_id=supplier_user.id,
-                    company_id=supplier_comp.id,
-                    price=43500000.0,
-                    status=BidStatus.SUBMITTED,
-                    eds_hash="demo_bid_signature_002"
-                )
-                db.add(b1)
-                db.add(b2)
-                await db.commit()
-
-            print("База данных проинициализирована! Учетные записи, закупки и заявки созданы.")
     except Exception as e:
         print(f"[DB SEED NOTICE] Skipped seed: {e}")
 

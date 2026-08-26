@@ -581,16 +581,12 @@ async def delete_tender(
     if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
         raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого тендера")
     
-    # Проверяем наличие поданных заявок от поставщиков
-    from app.models.models import Bid, Lot, QualificationRequirement, TenderDocument, Protocol, Contract
-    bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender_id))
-    bids = bids_res.scalars().all()
-    if bids:
-        raise HTTPException(status_code=400, detail="Нельзя безвозвратно удалить закупку, по которой поставщики уже подали заявки. Воспользуйтесь функцией «Отмена закупки».")
-
-    # Удаляем каскадно связанные документы, протоколы, контракты и лоты
+    # Удаляем каскадно все связанные заявки, элементы заявок, документы, протоколы, контракты и лоты
+    from app.models.models import Bid, BidItem, Lot, QualificationRequirement, TenderDocument, Protocol, Contract
     await db.execute(delete(Contract).where(Contract.tender_id == tender_id))
     await db.execute(delete(Protocol).where(Protocol.tender_id == tender_id))
+    await db.execute(delete(BidItem).where(BidItem.bid_id.in_(select(Bid.id).where(Bid.tender_id == tender_id))))
+    await db.execute(delete(Bid).where(Bid.tender_id == tender_id))
     await db.execute(delete(Lot).where(Lot.tender_id == tender_id))
     await db.execute(delete(QualificationRequirement).where(QualificationRequirement.tender_id == tender_id))
     await db.execute(delete(TenderDocument).where(TenderDocument.tender_id == tender_id))
@@ -601,6 +597,7 @@ async def delete_tender(
     await db.commit()
     await cache_manager.delete("tenders:*")
     return {"message": "Тендер успешно удален"}
+
 
 
 
