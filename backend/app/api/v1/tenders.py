@@ -16,14 +16,15 @@ router = APIRouter()
 
 
 def generate_tender_number(subject_type: str = "goods", tender_id: Optional[int] = None) -> str:
-    subj = str(subject_type).lower()
-    prefix = "U" if ("service" in subj or "work" in subj) else "T"
-    import time, random
-    ts = int(time.time()) % 100000
+    subj = str(subject_type or "goods").lower()
+    prefix = "W" if ("service" in subj or "work" in subj) else "T"
+    year = datetime.utcnow().year
     if tender_id:
-        return f"{prefix}{ts:05d}{tender_id:04d}"
-    num = random.randint(1000, 9999)
-    return f"{prefix}{ts:05d}{num:04d}"
+        return f"{prefix}-{year}-{int(tender_id):06d}"
+    import random
+    rnd = random.randint(100, 999)
+    return f"{prefix}-{year}-TMP{rnd}"
+
 
 
 def require_role(*roles: UserRole):

@@ -141,7 +141,7 @@ async def init_db(clean_all: bool = False):
 
                 sample_tenders = [
                     Tender(
-                        number="TNK-2026-001",
+                        number="T-2026-000001",
                         title="Поставка портландцемента М500 для объектов холдинга",
                         description="Закупка портландцемента марки М500 Д0 в объеме 500 тонн для объектов строительства холдинга Asia Partners.",
                         subject_type=TenderSubjectType.GOODS,
@@ -157,7 +157,7 @@ async def init_db(clean_all: bool = False):
                         published_at=datetime.utcnow()
                     ),
                     Tender(
-                        number="TNK-2026-002",
+                        number="W-2026-000002",
                         title="Строительно-монтажные работы по возведению складского комплекса",
                         description="Выполнение комплекса СМР по объекту 'Складской логистический терминал Asia Partners'.",
                         subject_type=TenderSubjectType.SERVICES_WORKS,
@@ -173,7 +173,7 @@ async def init_db(clean_all: bool = False):
                         published_at=datetime.utcnow()
                     ),
                     Tender(
-                        number="TNK-2026-003",
+                        number="T-2026-000003",
                         title="Поставка комплексных минеральных удобрений и агрохимии",
                         description="Закупка аммофоса и селитры аммиачной для посевной кампании агропредприятий холдинга.",
                         subject_type=TenderSubjectType.GOODS,
@@ -188,6 +188,7 @@ async def init_db(clean_all: bool = False):
                         organizer_code=org_code,
                         published_at=datetime.utcnow()
                     ),
+
                 ]
                 for t_item in sample_tenders:
                     exist_t = (await db.execute(select(Tender).where(Tender.number == t_item.number))).scalar_one_or_none()
