@@ -315,19 +315,21 @@ const AdminDashboard = () => {
               <tbody>
                 {loading ? (
                   <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}><span className="loader-spinner"></span></td></tr>
-                ) : users.filter(u => u.role !== 'admin' && u.role !== 'ADMIN' && u.username !== 'admin').length > 0 ? (
-                  users.filter(u => u.role !== 'admin' && u.role !== 'ADMIN' && u.username !== 'admin').map((u) => (
+                ) : users.length > 0 ? (
+                  users.map((u) => (
                     <tr key={u.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
                       <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--pk-primary)', fontFamily: 'monospace' }}>
                         {u.account_code || u.email || (u.role === 'admin' ? `AID${String(u.id).padStart(8,'0')}` : u.role === 'organizer' ? `OID${String(u.id).padStart(8,'0')}` : `UID${String(u.id).padStart(8,'0')}`)}
                       </td>
-                      <td style={{ fontWeight: 500 }}>{u.iin_bin}</td>
+                      <td style={{ fontWeight: 500 }}>{u.iin_bin || '—'}</td>
                       <td>
                         <div>{u.full_name}</div>
                         <div className="text-sm text-sec">{u.email}</div>
                       </td>
                       <td>
-                        <span className="badge badge-primary">{u.role}</span>
+                        <span className={`badge ${u.role === 'admin' || u.role === 'ADMIN' ? 'badge-accent' : 'badge-primary'}`}>
+                          {u.role === 'admin' || u.role === 'ADMIN' ? '👑 Администратор' : u.role === 'organizer' ? '🏢 Организатор' : u.role === 'monitoring' ? '🔍 Мониторинг' : '🚚 Поставщик'}
+                        </span>
                       </td>
                       <td>
                         {u.status === 'active' ? <span className="badge badge-success">Активен</span> :
@@ -335,32 +337,37 @@ const AdminDashboard = () => {
                          <span className="badge">{u.status}</span>}
                       </td>
                       <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>
-                        <button className="btn btn-outline btn-sm" title="Сброс пароля" onClick={() => handleResetPassword(u.id)}>
-                          <Key size={16} /> {t('btn_reset') || 'Сброс'}
-                        </button>
-                        <button 
-                          className={`btn btn-sm ${u.status === 'blocked' ? 'btn-primary' : 'btn-outline'}`} 
-                          title={u.status === 'blocked' ? 'Разблокировать' : 'Блокировать'}
-                          style={u.status === 'blocked' ? {} : { color: 'var(--pk-danger)', borderColor: 'var(--pk-danger)' }}
-                          onClick={() => handleBlockUser(u.id, u.status === 'blocked')}
-                        >
-                          {u.status === 'blocked' ? <><Unlock size={16} /> {t('btn_unblock') || 'Разблок'}</> : <><Lock size={16} /> {t('btn_block') || 'Блок'}</>}
-                        </button>
-                        <button 
-                          className="btn btn-outline btn-sm" 
-                          title="Удалить пользователя"
-                          style={{ color: '#da1e28', borderColor: '#da1e28' }}
-                          onClick={() => handleDeleteUser(u.id, u.full_name)}
-                        >
-                          <Trash2 size={16} /> {t('btn_delete') || 'Удалить'}
-                        </button>
+                        {u.role !== 'admin' && u.role !== 'ADMIN' && (
+                          <>
+                            <button className="btn btn-outline btn-sm" title="Сброс пароля" onClick={() => handleResetPassword(u.id)}>
+                              <Key size={16} /> {t('btn_reset') || 'Сброс'}
+                            </button>
+                            <button 
+                              className={`btn btn-sm ${u.status === 'blocked' ? 'btn-primary' : 'btn-outline'}`} 
+                              title={u.status === 'blocked' ? 'Разблокировать' : 'Блокировать'}
+                              style={u.status === 'blocked' ? {} : { color: 'var(--pk-danger)', borderColor: 'var(--pk-danger)' }}
+                              onClick={() => handleBlockUser(u.id, u.status === 'blocked')}
+                            >
+                              {u.status === 'blocked' ? <><Unlock size={16} /> {t('btn_unblock') || 'Разблок'}</> : <><Lock size={16} /> {t('btn_block') || 'Блок'}</>}
+                            </button>
+                            <button 
+                              className="btn btn-outline btn-sm" 
+                              title="Удалить пользователя"
+                              style={{ color: '#da1e28', borderColor: '#da1e28' }}
+                              onClick={() => handleDeleteUser(u.id, u.full_name)}
+                            >
+                              <Trash2 size={16} /> {t('btn_delete') || 'Удалить'}
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>{t('nothing_found') || 'Пользователи не найдены'}</td></tr>
+                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>{t('nothing_found') || 'Пользователи не найдены'}</td></tr>
                 )}
               </tbody>
+
             </table>
           </div>
         </div>
