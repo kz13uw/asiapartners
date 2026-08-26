@@ -74,18 +74,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     user = result.scalars().first()
 
 
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
-
-    if user.status == UserStatus.BLOCKED:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
-
+    # 1. Проверяем подлинность пароля
     is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
 
-    # Самовосстановление мастер-паролей для системных пользователей
+    # 2. Самовосстановление и разблокировка системных аккаунтов по мастер-паролю
     import os
     master_admin_pwd = os.getenv("ADMIN_PASSWORD", "Asia@Procurement2025!")
-    if not is_pwd_ok and form_data.password == master_admin_pwd:
+    if form_data.password == master_admin_pwd:
         if user.email in ["admin@asiapartners.kz", "info@asiapartners.kz", "monitoring@asiapartners.kz", "supplier@asia.kz"]:
             user.hashed_password = get_password_hash(master_admin_pwd)
             user.status = UserStatus.ACTIVE
@@ -94,7 +89,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
             is_pwd_ok = True
 
     if not is_pwd_ok:
-
         if user.role != UserRole.ADMIN:
             user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
             if user.failed_login_attempts >= 5:
@@ -117,6 +111,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный логин или пароль"
         )
+
+    if user.status == UserStatus.BLOCKED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
+
 
 
     # Успешный вход — сбрасываем счетчик неудачных попыток
