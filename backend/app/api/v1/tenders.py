@@ -71,21 +71,23 @@ async def list_tenders(
     # Открытый публичный реестр: показываем опубликованные закупки (прием заявок, рассмотрение, завершенные)
     query = select(Tender).options(*get_tender_options())
 
+    from sqlalchemy import cast, String
+    status_col = func.lower(cast(Tender.status, String))
+
     if status_filter and status_filter.lower() == 'all':
         # Для администраторов или отчетов показываем все тендеры
         pass
     elif status_filter and status_filter.lower() in ["published", "accepting", "active"]:
-        query = query.where(Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.PUBLISHED, "accepting", "published"]))
+        query = query.where(status_col.in_(["published", "accepting"]))
     elif status_filter:
-        query = query.where(Tender.status == status_filter)
+        query = query.where(status_col == status_filter.lower())
     else:
         query = query.where(
-            Tender.status.in_([
-                TenderStatus.ACCEPTING, TenderStatus.PUBLISHED, "accepting", "published",
-                TenderStatus.EVALUATION, "evaluating", "review",
-                TenderStatus.COMPLETED, "completed"
+            status_col.in_([
+                "published", "accepting", "evaluation", "evaluating", "review", "completed"
             ])
         )
+
 
     if search:
         query = query.where(
@@ -139,13 +141,15 @@ async def get_tender(
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
-    if tender.status == TenderStatus.DRAFT:
+    st_str = str(tender.status.value if hasattr(tender.status, 'value') else tender.status).lower()
+    if st_str == 'draft':
         if not current_user or (current_user.id != tender.organizer_id and current_user.role != UserRole.ADMIN):
             raise HTTPException(status_code=403, detail="Черновик закупки доступен только создавшему его организатору")
 
     # Авто-проверка истечения срока и количества заявок
     now = datetime.utcnow()
-    if tender.status in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED, TenderStatus.EVALUATION] and tender.deadline_at and tender.deadline_at <= now:
+    if st_str in ['accepting', 'published', 'evaluation'] and tender.deadline_at and tender.deadline_at <= now:
+
         from app.models.models import Bid, BidStatus, Protocol
         bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender_id, Bid.status != BidStatus.REJECTED))
         bids = bids_res.scalars().all()
