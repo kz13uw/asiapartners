@@ -111,10 +111,14 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
         clearTimeout(connTimeout.current);
         setNcaStatus('connected');
         console.log(`[NCALayer] Connected successfully via ${targetUrl}`);
-        // 🚀 АВТОМАТИЧЕСКИЙ ВЫЗОВ NCALayer сразу при подключении!
-        setTimeout(() => {
-          requestNcaSignature();
-        }, 100);
+
+        // 🚀 Фоновое создание сессии бэкенда без блокировки WebSocket
+        edsAPI.createSession(action, targetId).then((sessRes) => {
+          if (sessRes?.data) setActiveSession(sessRes.data);
+        }).catch((e) => console.warn('[EDS] Session creation local fallback:', e));
+
+        // 🚀 Мгновенная отправка запроса в NCALayer (0 мс задержки для Windows)
+        requestNcaSignature();
       };
 
       socket.onclose = () => {
@@ -254,7 +258,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
   };
 
-  const requestNcaSignature = async () => {
+  const requestNcaSignature = () => {
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       setNcaStatus('not_running');
       toast.error('Приложение NCALayer не запущено. Повторите подключение.');
@@ -262,19 +266,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
 
     setStep(2);
-    let nonceToSign = 'AsiaPartners_AuthData_' + Date.now();
-
-    try {
-      // Создаём сессию на бэкенде, получаем одноразовый nonce
-      const sessRes = await edsAPI.createSession(action, targetId);
-      const sessData = sessRes.data;
-      setActiveSession(sessData);
-      nonceToSign = sessData.nonce;
-      console.log('[EDS] Session created:', sessData.connection_id, 'nonce:', nonceToSign);
-    } catch (err) {
-      console.warn('[EDS] Session creation failed, using local nonce:', err);
-    }
-
+    const nonceToSign = activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now());
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
     // 🌐 Официальный стандарт SIGEX / НУЦ РК (работает на Windows и Mac)
@@ -284,9 +276,16 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       args: ['PKCS12', '', base64DataToSign, '', true]
     };
 
-    console.log('[NCALayer SIGEX] → Sending request:', JSON.stringify(sigexPayload));
-    ws.current.send(JSON.stringify(sigexPayload));
+    console.log('[NCALayer SIGEX] → Sending request immediately:', JSON.stringify(sigexPayload));
+    try {
+      ws.current.send(JSON.stringify(sigexPayload));
+    } catch (e) {
+      console.error('[NCALayer] Send error:', e);
+      setStep(4);
+      setErrorMessage('Ошибка отправки запроса в NCALayer. Нажмите "Открыть окно NCALayer снова".');
+    }
   };
+
 
 
 
