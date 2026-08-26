@@ -42,21 +42,19 @@ export const getProcurementMethodName = (method) => {
  * Отображение бейджа статуса
  */
 export const renderStatusBadge = (status) => {
-  switch (status) {
+  const st = (status || '').toLowerCase();
+  switch (st) {
     case 'published':
+    case 'accepting':
+    case 'bidding':
+    case 'open':
     case 'active':
       return (
         <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac', fontWeight: 700, padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.78rem', display: 'inline-block' }}>
-          Опубликован
+          Опубликован (Прием заявок)
         </span>
       );
-    case 'bidding':
-    case 'open':
-      return (
-        <span className="badge" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', fontWeight: 700, padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.78rem', display: 'inline-block' }}>
-          Прием заявок
-        </span>
-      );
+
     case 'evaluation':
     case 'review':
       return (
