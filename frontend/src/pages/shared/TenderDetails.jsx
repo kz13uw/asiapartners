@@ -463,7 +463,7 @@ const TenderDetails = () => {
                           ФИО представителя
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>
-                          {tender.organizer?.full_name || tender.contact_person || 'Представитель Заказчика'}
+                          {tender.organizer_full_name || tender.organizer?.full_name || tender.contact_person || (user?.id === tender.organizer_id ? user?.full_name : null) || 'Официальный Представитель'}
                         </td>
                       </tr>
 
@@ -472,7 +472,7 @@ const TenderDetails = () => {
                           Должность
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', wordBreak: 'break-word' }}>
-                          {tender.organizer?.position || 'Ответственный сотрудник'}
+                          {tender.organizer_position || tender.organizer?.position || 'Ответственный сотрудник'}
                         </td>
                       </tr>
 
@@ -481,9 +481,10 @@ const TenderDetails = () => {
                           E-Mail
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0284c7', fontWeight: 600, wordBreak: 'break-word' }}>
-                          {tender.organizer?.email || tender.contact_email || '—'}
+                          {tender.organizer_email || tender.organizer?.email || tender.contact_email || '—'}
                         </td>
                       </tr>
+
                     </tbody>
                   </table>
                 </div>

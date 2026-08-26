@@ -407,6 +407,9 @@ class TenderOut(BaseModel):
     organizer_id: int
     organizer_code: Optional[str] = None
     organizer_name: Optional[str] = None
+    organizer_full_name: Optional[str] = None
+    organizer_position: Optional[str] = None
+    organizer_email: Optional[str] = None
     created_at: datetime
     published_at: Optional[datetime] = None
     lots: list[LotOut] = []
@@ -427,9 +430,15 @@ class TenderOut(BaseModel):
             d = getattr(data, '__dict__', {})
             if 'organizer' in d and d['organizer'] is not None:
                 org = d['organizer']
-                if hasattr(org, 'full_name'):
-                    data.organizer_name = org.full_name
+                if hasattr(org, 'full_name') and org.full_name:
+                    data.organizer_full_name = org.full_name
+                    data.organizer_name = getattr(org, 'company_name', None) or org.full_name
+                if hasattr(org, 'email') and org.email:
+                    data.organizer_email = org.email
+                if hasattr(org, 'position') and getattr(org, 'position', None):
+                    data.organizer_position = org.position
         return data
+
 
     class Config:
         from_attributes = True
