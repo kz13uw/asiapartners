@@ -511,7 +511,8 @@ async def publish_tender(
         if tender.status not in [TenderStatus.DRAFT, TenderStatus.ACCEPTING]:
             raise HTTPException(status_code=400, detail="Можно публиковать только черновик")
 
-        tender.status = TenderStatus.ACCEPTING
+        tender.status = TenderStatus.PUBLISHED
+
         tender.eds_hash = sig
         tender.published_at = datetime.utcnow()
 

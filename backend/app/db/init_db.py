@@ -126,13 +126,21 @@ async def init_db(clean_all: bool = False):
 
             await db.commit()
 
-            # 3. Тестовые закупки для демонстрации
+            # 3. Миграция статусов и создание демонстрационных закупок
             from app.models.models import TenderMethod, TenderStatus
             from datetime import timedelta, datetime
+            from sqlalchemy import update
+
+            # Миграция статуса 'accepting' -> 'published' в существующей базе данных
+            await db.execute(
+                update(Tender)
+                .where(Tender.status == "accepting")
+                .values(status=TenderStatus.PUBLISHED)
+            )
+            await db.commit()
 
             tenders_count = (await db.execute(select(Tender))).scalars().all()
             if not tenders_count:
-
 
                 organizer = (await db.execute(select(User).where(User.username == "info@asiapartners.kz"))).scalar_one_or_none()
                 org_id = organizer.id if organizer else 1
@@ -151,7 +159,7 @@ async def init_db(clean_all: bool = False):
                         method=TenderMethod.ZCP,
                         start_price=15000000.0,
                         current_lowest_price=15000000.0,
-                        status=TenderStatus.ACCEPTING,
+                        status=TenderStatus.PUBLISHED,
                         deadline_at=datetime.utcnow() + timedelta(days=10),
                         delivery_place="г. Семей, ул. Кабанбай Батыра 42",
                         organizer_id=org_id,
@@ -167,7 +175,7 @@ async def init_db(clean_all: bool = False):
                         method=TenderMethod.ZCP,
                         start_price=45000000.0,
                         current_lowest_price=45000000.0,
-                        status=TenderStatus.ACCEPTING,
+                        status=TenderStatus.PUBLISHED,
                         deadline_at=datetime.utcnow() + timedelta(days=14),
                         delivery_place="ВКО, г. Семей, Промзона",
                         organizer_id=org_id,
@@ -183,15 +191,15 @@ async def init_db(clean_all: bool = False):
                         method=TenderMethod.ZCP,
                         start_price=8500000.0,
                         current_lowest_price=8500000.0,
-                        status=TenderStatus.ACCEPTING,
+                        status=TenderStatus.PUBLISHED,
                         deadline_at=datetime.utcnow() + timedelta(days=7),
                         delivery_place="Абайская область, Бородулихинский район",
                         organizer_id=org_id,
                         organizer_code=org_code,
                         published_at=datetime.utcnow()
                     ),
-
                 ]
+
                 for t_item in sample_tenders:
                     exist_t = (await db.execute(select(Tender).where(Tender.number == t_item.number))).scalar_one_or_none()
                     if not exist_t:
