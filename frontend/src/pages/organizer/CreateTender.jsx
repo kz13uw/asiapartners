@@ -515,9 +515,10 @@ const CreateTender = () => {
       service_start_date: '',
       service_end_date: '',
       warranty_months: 12,
-      delivery_place: 'г. Семей, Объект Азия Парк'
+      delivery_place: ''
     }
   ]);
+
 
   const calculateLot = (lotItem) => {
     const qty = parseFloat(lotItem.quantity) || 0;
@@ -588,7 +589,8 @@ const CreateTender = () => {
       service_start_date: '',
       service_end_date: '',
       warranty_months: 12,
-      delivery_place: formData.delivery_place || 'г. Семей, Объект Азия'
+      delivery_place: formData.delivery_place || ''
+
     });
 
     const updatedLots = [...lots, newLot];
@@ -779,7 +781,8 @@ const CreateTender = () => {
                 type="text" 
                 name="delivery_place" 
                 className="form-control" 
-                placeholder="например: г. Семей, Объект Азия Парк" 
+                placeholder="Адрес поставки / выполнения работ" 
+
                 value={formData.delivery_place || ''} 
                 onChange={handleChange}
               />

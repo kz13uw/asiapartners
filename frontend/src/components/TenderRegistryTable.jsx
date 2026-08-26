@@ -146,12 +146,13 @@ const TenderRegistryTable = ({
         </thead>
         <tbody>
           {tenders.map((tnd) => {
-            const tenderNumber = tnd.number || tnd.tender_number || `17522776-${tnd.id}`;
+            const tenderNumber = tnd.number || tnd.tender_number || `T-${tnd.id}`;
             const detailUrl = tnd.status === 'draft' 
               ? `/organizer/tenders/${tnd.id}/edit` 
-              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/app/tenders/${tnd.id}`);
-            const organizerName = tnd.company_name || tnd.organizer_name || 'КГУ "Общеобразовательная школа № 215" Управления образования города Алматы';
-            const lotName = tnd.lot_name || tnd.title || 'Панель интерактивная';
+              : (isSupplierUser ? `/supplier/tenders/${tnd.id}` : `/tenders/${tnd.id}`);
+            const organizerName = tnd.organizer_company_name || tnd.company_name || tnd.organizer_name || tnd.organizer?.company?.full_name || tnd.organizer?.full_name || 'Asia Partners';
+            const lotName = tnd.title || tnd.lot_name || '—';
+
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
             const quantity = tnd.quantity || 1;
             const totalPrice = tnd.start_price || tnd.budget || tnd.sum || 0;

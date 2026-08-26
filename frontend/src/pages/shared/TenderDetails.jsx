@@ -49,9 +49,7 @@ const TenderDetails = () => {
   const effectiveLots = (tender?.lots && tender.lots.length > 0)
     ? tender.lots
     : [
-        { id: 1, lot_number: 1, title: `${tender?.title || 'Поставка оборудования'} (Лот №1)`, description: tender?.description || 'Поставка основному наименованию продукции/оборудования по спецификации заказчика в полном объеме с предоставлением гарантии.', quantity: 1, unit: 'компл', unit_price: Math.round((tender?.start_price || 3000000) * 0.6), start_price: Math.round((tender?.start_price || 3000000) * 0.6), delivery_place: tender?.delivery_place || 'г. Алматы' },
-        { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', description: 'Поставка оригинальных комплектующих, расходных материалов и сопутствующих узлов по ГОСТ/СТ РК.', quantity: 1, unit: 'парти', unit_price: Math.round((tender?.start_price || 3000000) * 0.25), start_price: Math.round((tender?.start_price || 3000000) * 0.25), delivery_place: tender?.delivery_place || 'г. Алматы' },
-        { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и сервисного обслуживания (Лот №3)', description: 'Выполнение работ по доставке, установке, настройке оборудования и предоставление сервисного обслуживания.', quantity: 1, unit: 'услуга', unit_price: Math.round((tender?.start_price || 3000000) * 0.15), start_price: Math.round((tender?.start_price || 3000000) * 0.15), delivery_place: tender?.delivery_place || 'г. Алматы' }
+        { id: 1, lot_number: 1, title: tender?.title || 'Лот №1', description: tender?.description || '', quantity: 1, unit: 'лот', unit_price: tender?.start_price || 0, start_price: tender?.start_price || 0, delivery_place: tender?.delivery_place || '' }
       ];
 
   useEffect(() => {
@@ -59,10 +57,9 @@ const TenderDetails = () => {
       const lotsToUse = (tender.lots && tender.lots.length > 0)
         ? tender.lots
         : [
-            { id: 1, lot_number: 1, title: `${tender.title || 'Поставка оборудования'} (Лот №1)`, description: tender.description || 'Поставка основных товаров по спецификации заказчика.', start_price: Math.round((tender.start_price || 3000000) * 0.6) },
-            { id: 2, lot_number: 2, title: 'Комплектующие материалы и расходники (Лот №2)', description: 'Поставка оригинальных комплектующих и материалов.', start_price: Math.round((tender.start_price || 3000000) * 0.25) },
-            { id: 3, lot_number: 3, title: 'Услуги монтажа, настройки и сервисного обслуживания (Лот №3)', description: 'Монтаж, пусконаладка и сервис.', start_price: Math.round((tender.start_price || 3000000) * 0.15) }
+            { id: 1, lot_number: 1, title: tender.title || 'Лот №1', description: tender.description || '', start_price: tender.start_price || 0 }
           ];
+
 
       const allIds = lotsToUse.map((l, idx) => l.id || idx + 1);
       setSelectedLotIds(allIds);
