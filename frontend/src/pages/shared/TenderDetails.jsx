@@ -620,6 +620,7 @@ const TenderDetails = () => {
                   Протоколы вскрытия заявки и подведения итогов подписываются ЭЦП KalkanCrypt.
                 </p>
                 
+                {/* Закупка отменена или не состоялась */}
                 {tender.status === 'cancelled' || (tender.bids && tender.bids.length === 0 && new Date(tender.deadline_at) <= new Date()) ? (
                   <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '8px', padding: '1.25rem', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -646,17 +647,41 @@ const TenderDetails = () => {
                       <FileText size={16} style={{ marginRight: '0.4rem' }} /> Скачать протокол итогов (PDF / HTML)
                     </a>
                   </div>
-                ) : (
-                  <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id || 1}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП</div>
+                ) : (tender.status === 'published' || tender.status === 'accepting' || tender.status === 'draft') ? (
+                  /* Активный приём заявок — Протокол вскрытия ещё НЕ сформирован */
+                  <div style={{ background: '#f8fafc', padding: '1.75rem 1.25rem', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                    <Clock size={38} color="#0284c7" style={{ marginBottom: '0.5rem' }} />
+                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                      Приём заявок продолжается (Протокол вскрытия ещё не сформирован)
                     </div>
-                    <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.3rem 0.6rem' }}>
-                      ✓ Подписан ЭЦП
-                    </span>
+                    <div style={{ fontSize: '0.83rem', color: '#64748b', marginTop: '0.35rem', maxWidth: '520px', margin: '0.35rem auto 0 auto' }}>
+                      Официальный протокол вскрытия конвертов с заявками формируется и подписывается ЭЦП автоматически после завершения срока приёма заявок.
+                    </div>
+                  </div>
+                ) : (
+                  /* Вскрытие или Итоги подведены — Показываем готовый Протокол */
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>Протокол вскрытия № P-{tender.id}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.1rem' }}>Статус: Сформирован и заверен ЭЦП KalkanCrypt</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span className="badge badge-success" style={{ backgroundColor: '#dcfce7', color: '#15803d', fontWeight: 700, padding: '0.35rem 0.65rem' }}>
+                        ✓ Подписан ЭЦП
+                      </span>
+                      <a
+                        href={`/api/v1/tenders/${tender.id}/protocol/pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                      >
+                        <FileText size={14} /> Скачать PDF
+                      </a>
+                    </div>
                   </div>
                 )}
+
               </div>
             )}
 
