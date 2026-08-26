@@ -265,27 +265,17 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
 
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
-    // 🚀 Первичный метод: NCALayer 2.0 (kz.gov.pki.knca.basics)
-    const nca2Payload = {
-      module: 'kz.gov.pki.knca.basics',
-      method: 'sign',
-      args: {
-        allowedStorages: ['PKCS12'],
-        format: 'cms',
-        data: base64DataToSign,
-        signingParams: {
-          decode: true,
-          encapsulate: true,
-          digested: false
-        },
-        signerParams: {},
-        locale: lang === 'kz' ? 'kz' : 'ru'
-      }
+    // 🌐 Официальный стандарт SIGEX / НУЦ РК (работает на Windows и Mac)
+    const sigexPayload = {
+      module: 'kz.gov.pki.knca.commonUtils',
+      method: 'createCMSSignatureFromBase64',
+      args: ['PKCS12', '', base64DataToSign, '', true]
     };
 
-    console.log('[NCALayer 2.0] → Sending request:', JSON.stringify(nca2Payload));
-    ws.current.send(JSON.stringify(nca2Payload));
+    console.log('[NCALayer SIGEX] → Sending request:', JSON.stringify(sigexPayload));
+    ws.current.send(JSON.stringify(sigexPayload));
   };
+
 
 
 
