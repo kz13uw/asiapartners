@@ -63,6 +63,30 @@ export const useAuthStore = create(
         }
       },
 
+      registerSupplier: async (formData) => {
+        try {
+          const res = await authAPI.registerSupplier(formData);
+          const { access_token, refresh_token, ...userData } = res.data;
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
+          
+          const normalizedUser = {
+            id: userData.user_id || userData.id,
+            role: userData.role || 'supplier',
+            full_name: userData.full_name,
+            username: formData.email,
+            email: formData.email,
+            ...userData
+          };
+          set({ user: normalizedUser, token: access_token, isAuthenticated: true });
+          return normalizedUser;
+        } catch (error) {
+          console.error('API Registration error:', error);
+          throw error;
+        }
+      },
+
+
       logout: async () => {
         try {
           await authAPI.logout();

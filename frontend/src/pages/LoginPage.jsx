@@ -9,7 +9,8 @@ import { authAPI } from '../api';
 const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { login } = useAuthStore();
+  const { login, registerSupplier } = useAuthStore();
+
 
   // Основная форма входа
   const [email, setEmail] = useState('');
@@ -175,7 +176,7 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      const res = await authAPI.registerSupplier({
+      await registerSupplier({
         email: regForm.email.trim(),
         password: regForm.password,
         confirm_password: regForm.confirm_password,
@@ -184,15 +185,11 @@ const LoginPage = () => {
         phone: regForm.phone.trim() || null
       });
 
-      const tokenData = res.data;
-      localStorage.setItem('access_token', tokenData.access_token);
-      localStorage.setItem('refresh_token', tokenData.refresh_token);
-
       toast.success('🎉 Аккаунт поставщика успешно создан!');
       setShowRegisterModal(false);
       navigate('/supplier/dashboard');
-      window.location.reload();
     } catch (e) {
+
       const msg = e.response?.data?.detail || 'Ошибка регистрации. Проверьте код.';
       toast.error(msg);
     } finally {
