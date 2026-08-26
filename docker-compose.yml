@@ -40,6 +40,16 @@ services:
       retries: 5
 
   # ==============================
+  # NCANode (Верификация ЭЦП НУЦ РК)
+  # ==============================
+  ncanode:
+    image: ncanode/ncanode:latest
+    container_name: asia_ncanode
+    restart: unless-stopped
+    ports:
+      - "14579:14579"
+
+  # ==============================
   # FastAPI Backend
   # ==============================
   backend:
@@ -54,6 +64,7 @@ services:
       USE_SQLITE: "false"
       DATABASE_URL: "postgresql+asyncpg://asia:asia_pass@db:5432/asia_procurement"
       SEED_TEST_DATA: "false"
+      NCANODE_URL: "http://ncanode:14579"
     ports:
       - "8000:8000"
     volumes:
@@ -64,6 +75,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ncanode:
+        condition: service_started
+
 
   # ==============================
   # React Frontend (dev mode)
