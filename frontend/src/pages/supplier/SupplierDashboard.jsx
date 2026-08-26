@@ -33,6 +33,8 @@ const SupplierDashboard = () => {
     } catch (e) {}
   };
 
+  const [publicTenders, setPublicTenders] = useState([]);
+
   useEffect(() => {
     const fetchBids = async () => {
       setLoading(true);
@@ -49,6 +51,17 @@ const SupplierDashboard = () => {
     };
     fetchBids();
 
+    const fetchPublicTenders = async () => {
+      try {
+        const res = await tendersAPI.list();
+        const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        setPublicTenders(items);
+      } catch (e) {
+        setPublicTenders([]);
+      }
+    };
+    fetchPublicTenders();
+
     const fetchNotifications = async () => {
       try {
         const { notificationsAPI } = await import('../../api');
@@ -63,6 +76,7 @@ const SupplierDashboard = () => {
     };
     fetchNotifications();
   }, [user]);
+
 
 
   const handleRevokeClick = async (bidId, tenderId, tenderTitle, tenderStatus) => {
@@ -191,6 +205,13 @@ const SupplierDashboard = () => {
             Мои Документы ({documents.length})
           </div>
           <div 
+            className={`tab ${activeTab === 'available' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('available')}
+            style={{ padding: '1rem', cursor: 'pointer', borderBottom: activeTab === 'available' ? '2px solid var(--pk-primary)' : 'none', color: activeTab === 'available' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'available' ? 600 : 400 }}
+          >
+            ⚡ Доступные закупки ({publicTenders.length})
+          </div>
+          <div 
             className={`tab ${activeTab === 'notif' ? 'active' : ''}`} 
             onClick={() => setActiveTab('notif')}
             style={{ padding: '1rem', cursor: 'pointer', borderBottom: activeTab === 'notif' ? '2px solid var(--pk-primary)' : 'none', color: activeTab === 'notif' ? 'var(--pk-primary)' : 'var(--pk-text-secondary)', fontWeight: activeTab === 'notif' ? 600 : 400 }}
@@ -198,6 +219,7 @@ const SupplierDashboard = () => {
             Уведомления
           </div>
         </div>
+
         
         {/* TAB 1: My Bids */}
         {activeTab === 'tenders' && (
@@ -323,6 +345,27 @@ const SupplierDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* TAB 3: Available Tenders */}
+
+        {activeTab === 'available' && (
+          <div className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#0f172a', fontWeight: 800 }}>
+                Единый реестр открытых закупок (Asia Partners)
+              </h4>
+              <Link to="/tenders" className="btn btn-outline btn-sm">Открыть страницу поиска</Link>
+            </div>
+
+            <TenderRegistryTable 
+              tenders={publicTenders}
+              loading={loading}
+              userRole="supplier"
+              emptyText="Опубликованные закупки отсутствуют"
+            />
+          </div>
+        )}
+
 
         {/* TAB 3: Notifications */}
         {activeTab === 'notif' && (

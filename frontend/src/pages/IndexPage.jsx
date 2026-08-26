@@ -213,7 +213,7 @@ const IndexPage = () => {
             >
               Войти / Зарегистрироваться <ArrowRight size={18} />
             </Link>
-            <Link to="/tenders" style={{
+            <Link to="/public-tenders" style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
               background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.25)',
               color: '#ffffff', fontWeight: 600, fontSize: '1rem',
@@ -224,6 +224,7 @@ const IndexPage = () => {
             >
               Реестр закупок <ChevronRight size={18} />
             </Link>
+
           </div>
 
           {/* ── Animated Stats ── */}

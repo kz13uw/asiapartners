@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, UserPlus, Lock, Unlock, Key, X, Layers, Plus, Trash2, Tag, Building2, Sprout, Hotel, Truck, Factory, Eye, EyeOff, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { ShieldCheck, UserPlus, Lock, Unlock, Key, X, Layers, Plus, Trash2, Tag, Building2, Sprout, Hotel, Truck, Factory, Eye, EyeOff, RefreshCw, Check, AlertCircle, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAdmin } from '../../hooks/useAdmin';
-import { adminAPI, categoriesAPI } from '../../api';
+import { adminAPI, categoriesAPI, tendersAPI } from '../../api';
 import { useTranslation } from '../../store/useLanguageStore';
+import TenderRegistryTable from '../../components/TenderRegistryTable';
 
 const defaultCategoriesMock = [
   { id: 1, name: "🏗️ Строительство и Девелопмент", code: "construction", icon: "building", description: "Гражданское и промышленное строительство, СМР, строительные материалы", is_active: true },
@@ -16,8 +17,11 @@ const defaultCategoriesMock = [
 const AdminDashboard = () => {
   const { lang, t } = useTranslation();
   const { users, stats, loading, refetch, addMockUser, updateMockUserStatus, deleteMockUser } = useAdmin();
-  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'categories'
+  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'categories' | 'tenders'
+  const [adminTenders, setAdminTenders] = useState([]);
+  const [tendersLoading, setTendersLoading] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   const [userFormData, setUserFormData] = useState({ iin_bin: '', full_name: '', email: '', role: 'organizer', password: '', company_address: '' });
@@ -89,6 +93,25 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  const fetchAdminTenders = useCallback(async () => {
+    setTendersLoading(true);
+    try {
+      const res = await tendersAPI.list({ status: 'all' });
+      const items = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      setAdminTenders(items);
+    } catch (e) {
+      console.warn("Error fetching tenders for admin:", e);
+      setAdminTenders([]);
+    } finally {
+      setTendersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdminTenders();
+  }, [fetchAdminTenders]);
+
 
   const handleBlockUser = async (id, isBlocked) => {
     try {
@@ -294,7 +317,27 @@ const AdminDashboard = () => {
         >
           <Layers size={18} /> {t('nav_categories')}
         </button>
+
+        <button 
+          onClick={() => { setActiveTab('tenders'); fetchAdminTenders(); }}
+          style={{ 
+            padding: '0.6rem 1.25rem', 
+            borderRadius: '10px', 
+            fontWeight: 600, 
+            border: 'none',
+            cursor: 'pointer',
+            background: activeTab === 'tenders' ? 'var(--pk-primary)' : 'transparent',
+            color: activeTab === 'tenders' ? '#fff' : 'var(--pk-text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <Package size={18} /> Реестр тендеров ({adminTenders.length})
+        </button>
       </div>
+
+
 
       {/* Вкладка 1: Пользователи */}
       {activeTab === 'users' && (
@@ -421,6 +464,41 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Вкладка 3: Реестр тендеров */}
+      {activeTab === 'tenders' && (
+        <div className="card fade-in" style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <h4 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: 800 }}>
+              Единый реестр закупок холдинга (Панель Администратора)
+            </h4>
+            <button 
+              className="btn btn-outline btn-sm"
+              onClick={fetchAdminTenders}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <RefreshCw size={14} /> Обновить
+            </button>
+          </div>
+
+          <TenderRegistryTable 
+            tenders={adminTenders}
+            loading={tendersLoading}
+            userRole="admin"
+            emptyText="Закупки в базе данных не найдены"
+            onDelete={async (id) => {
+              try {
+                await tendersAPI.delete(id);
+                toast.success('Тендер успешно удален');
+                fetchAdminTenders();
+              } catch (err) {
+                toast.error('Не удалось удалить тендер');
+              }
+            }}
+          />
+        </div>
+      )}
+
 
       {/* Модалка создания пользователя */}
       {isUserModalOpen && (
