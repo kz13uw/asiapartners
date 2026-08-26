@@ -113,9 +113,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     db.add(log)
     await db.commit()
 
-    if not user.account_code:
+    if not user.account_code or (user.email and user.account_code != user.email):
         from app.models.models import generate_account_code
-        user.account_code = generate_account_code(user.id, user.role)
+        user.account_code = generate_account_code(user.id, user.role, user.email)
         await db.commit()
 
     token_data = {"sub": str(user.id), "role": user.role.value}
@@ -184,7 +184,7 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         )
         db.add(user)
         await db.flush()
-        user.account_code = generate_account_code(user.id, user.role)
+        user.account_code = generate_account_code(user.id, user.role, user.email)
     else:
         if req_email: user.email = req_email
         if req_phone: user.phone = req_phone
@@ -217,8 +217,8 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
             if company.owner_id is None: company.owner_id = user.id
             company.is_accredited = True
 
-    if not user.account_code:
-        user.account_code = generate_account_code(user.id, user.role)
+    if not user.account_code or (user.email and user.account_code != user.email):
+        user.account_code = generate_account_code(user.id, user.role, user.email)
 
     user.last_login = datetime.utcnow()
     await db.commit()

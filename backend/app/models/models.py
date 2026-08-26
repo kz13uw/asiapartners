@@ -57,8 +57,10 @@ class ContractStatus(str, enum.Enum):
     TERMINATED = "terminated"
 
 
-def generate_account_code(user_id: int, role: str | UserRole) -> str:
-    """Генерация уникального кода аккаунта: AID00000001, OID00000001, UID00000001"""
+def generate_account_code(user_id: Optional[int], role: str | UserRole, email: Optional[str] = None) -> str:
+    """Генерация кода аккаунта (уникальная почта в качестве ID аккаунта)"""
+    if email and str(email).strip():
+        return str(email).strip().lower()
     role_val = role.value if isinstance(role, UserRole) else str(role)
     if role_val == UserRole.ADMIN.value:
         prefix = "AID"
@@ -66,7 +68,8 @@ def generate_account_code(user_id: int, role: str | UserRole) -> str:
         prefix = "OID"
     else:
         prefix = "UID"
-    return f"{prefix}{user_id:08d}"
+    uid = user_id or 0
+    return f"{prefix}{uid:08d}"
 
 
 # ============================================================
@@ -77,7 +80,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    account_code: Mapped[Optional[str]] = mapped_column(String(20), unique=True, index=True, nullable=True)
+    account_code: Mapped[Optional[str]] = mapped_column(String(255), unique=True, index=True, nullable=True)
     username: Mapped[Optional[str]] = mapped_column(String(100), unique=True, index=True, nullable=True)
     iin_bin: Mapped[Optional[str]] = mapped_column(String(12), unique=True, index=True, nullable=True)
     full_name: Mapped[str] = mapped_column(String(255))
@@ -97,11 +100,14 @@ class User(Base):
 
     @property
     def computed_account_code(self) -> str:
+        if self.email and self.email.strip():
+            return self.email.strip().lower()
         if self.account_code:
             return self.account_code
         if self.id:
-            return generate_account_code(self.id, self.role)
+            return generate_account_code(self.id, self.role, self.email)
         return ""
+
 
 
 class UserCertificate(Base):

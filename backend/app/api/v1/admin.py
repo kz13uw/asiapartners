@@ -60,7 +60,7 @@ async def create_internal_user(
     db.add(user)
     await db.flush()
     from app.models.models import generate_account_code
-    user.account_code = generate_account_code(user.id, user.role)
+    user.account_code = generate_account_code(user.id, user.role, user.email)
 
     if body.company_address:
         from app.models.models import Company

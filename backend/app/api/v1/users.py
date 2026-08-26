@@ -86,8 +86,10 @@ async def update_my_profile(
 ):
     if body.full_name:
         current_user.full_name = body.full_name.strip()
-    if body.email:
-        current_user.email = body.email.strip()
+    if body.email and body.email.strip():
+        email_clean = body.email.strip().lower()
+        current_user.email = email_clean
+        current_user.account_code = email_clean
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)

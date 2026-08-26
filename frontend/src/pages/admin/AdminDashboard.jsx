@@ -323,7 +323,7 @@ const AdminDashboard = () => {
                   users.filter(u => u.role !== 'admin' && u.role !== 'ADMIN' && u.username !== 'admin').map((u) => (
                     <tr key={u.id} style={{ borderBottom: '1px solid var(--pk-border)' }}>
                       <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--pk-primary)', fontFamily: 'monospace' }}>
-                        {u.account_code || (u.role === 'admin' ? `AID${String(u.id).padStart(8,'0')}` : u.role === 'organizer' ? `OID${String(u.id).padStart(8,'0')}` : `UID${String(u.id).padStart(8,'0')}`)}
+                        {u.account_code || u.email || (u.role === 'admin' ? `AID${String(u.id).padStart(8,'0')}` : u.role === 'organizer' ? `OID${String(u.id).padStart(8,'0')}` : `UID${String(u.id).padStart(8,'0')}`)}
                       </td>
                       <td style={{ fontWeight: 500 }}>{u.iin_bin}</td>
                       <td>

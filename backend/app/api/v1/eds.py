@@ -158,7 +158,7 @@ async def verify_eds_session(
             )
             db.add(user)
             await db.flush()
-            user.account_code = generate_account_code(user.id, user.role)
+            user.account_code = generate_account_code(user.id, user.role, user.email)
         else:
             if payload.email: user.email = payload.email
             if payload.phone: user.phone = payload.phone
@@ -196,7 +196,7 @@ async def verify_eds_session(
             "refresh_token": refresh_token,
             "token_type": "bearer",
             "user_id": user.id,
-            "account_code": user.account_code or generate_account_code(user.id, user.role),
+            "account_code": user.computed_account_code,
             "role": user.role.value,
             "full_name": user.full_name,
             "is_new_user": is_new_user

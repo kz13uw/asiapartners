@@ -69,12 +69,14 @@ class UserOut(BaseModel):
         if hasattr(data, 'id') and getattr(data, 'id', None):
             uid = getattr(data, 'id')
             role = getattr(data, 'role', UserRole.SUPPLIER)
+            email = getattr(data, 'email', None)
             code = getattr(data, 'account_code', None)
-            if not code:
-                code = generate_account_code(uid, role)
+            if not code or (email and code != email):
+                code = generate_account_code(uid, role, email)
                 if hasattr(data, '__dict__'):
                     data.account_code = code
         return data
+
 
     class Config:
         from_attributes = True

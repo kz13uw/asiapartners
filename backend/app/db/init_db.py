@@ -107,7 +107,7 @@ async def init_db(clean_all: bool = False):
             await db.flush()
             all_users = (await db.execute(select(User))).scalars().all()
             for u in all_users:
-                u.account_code = generate_account_code(u.id, u.role)
+                u.account_code = generate_account_code(u.id, u.role, u.email)
             await db.commit()
 
             # 2. Категории закупок холдинга Asia Partners
