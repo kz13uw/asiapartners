@@ -276,7 +276,7 @@ const LoginPage = () => {
                 className="form-control" 
                 value={email} 
                 onChange={e => setEmail(e.target.value)} 
-                placeholder="supplier@asia.kz или ваш email" 
+                placeholder="Ваш email" 
                 required 
                 style={{ paddingLeft: '2.5rem' }}
               />
