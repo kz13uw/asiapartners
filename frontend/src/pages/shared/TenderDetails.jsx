@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import { ShieldCheck, FileText, CheckCircle2, Download, Upload, Trash2, Package, Calendar, MapPin, Award, ArrowLeft, RefreshCw, Send, Check, Building2, UserCheck, Mail, AlertTriangle, X } from 'lucide-react';
+import { ShieldCheck, FileText, CheckCircle2, Download, Upload, Trash2, Package, Calendar, Clock, MapPin, Award, ArrowLeft, RefreshCw, Send, Check, Building2, UserCheck, Mail, AlertTriangle, X } from 'lucide-react';
+
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
 import { tendersAPI, bidsAPI } from '../../api';
