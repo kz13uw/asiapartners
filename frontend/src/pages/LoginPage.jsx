@@ -36,6 +36,30 @@ const LoginPage = () => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [isEmailTaken, setIsEmailTaken] = useState(false);
+
+  // Живая проверка на совпадение email в базе данных
+  useEffect(() => {
+    const emailTrimmed = (regForm.email || '').trim();
+    if (!emailTrimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      setIsEmailTaken(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authAPI.checkEmail(emailTrimmed);
+        if (res.data && res.data.exists) {
+          setIsEmailTaken(true);
+        } else {
+          setIsEmailTaken(false);
+        }
+      } catch (err) {
+        setIsEmailTaken(false);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [regForm.email]);
+
 
   // Модальное окно «Забыли пароль?»
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -152,10 +176,15 @@ const LoginPage = () => {
       toast.error('Заполните все обязательные поля');
       return;
     }
+    if (isEmailTaken) {
+      toast.error('email уже используется');
+      return;
+    }
     if (!isRegPwdPolicyOk) {
       toast.error('Пароль должен содержать не менее 8 символов, включая буквы и цифры');
       return;
     }
+
     if (!isRegMatch) {
       toast.error('Введённые пароли не совпадают');
       return;
@@ -455,7 +484,14 @@ const LoginPage = () => {
                       value={regForm.email} 
                       onChange={e => setRegForm(p => ({ ...p, email: e.target.value }))} 
                       required 
+                      style={isEmailTaken ? { borderColor: '#dc2626', backgroundColor: '#fef2f2' } : {}}
                     />
+                    {isEmailTaken && (
+                      <div style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        ⚠️ email уже используется
+                      </div>
+                    )}
+
                   </div>
 
                   <div>

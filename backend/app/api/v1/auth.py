@@ -325,7 +325,7 @@ async def send_otp(
 
     if body.purpose == "register":
         if existing_user:
-            raise HTTPException(status_code=400, detail="Пользователь с такой почтой уже зарегистрирован. Войдите по логину и паролю.")
+            raise HTTPException(status_code=400, detail="email уже используется")
     elif body.purpose == "reset_password":
         if not existing_user:
             raise HTTPException(status_code=404, detail="Пользователь с такой почтой не найден в системе.")
@@ -340,6 +340,25 @@ async def send_otp(
         logger.warning(f"OTP email failed for {email_clean}, fallback code logged to console.")
 
     return {"message": f"Код подтверждения успешно отправлен на {email_clean}"}
+
+
+class CheckEmailRequest(BaseModel):
+    email: str
+
+
+@router.post("/check-email", summary="Проверить свободен ли Email")
+async def check_email_availability(body: CheckEmailRequest, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import func
+    email_clean = (body.email or "").strip().lower()
+    if not email_clean or "@" not in email_clean:
+        return {"exists": False, "message": "Некорректный email"}
+
+    result = await db.execute(select(User).where(func.lower(User.email) == email_clean))
+    user = result.scalar_one_or_none()
+    if user:
+        return {"exists": True, "message": "email уже используется"}
+    return {"exists": False, "message": "Email свободен"}
+
 
 
 @router.post("/verify-otp", summary="Проверить OTP-код")

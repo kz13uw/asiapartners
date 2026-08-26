@@ -66,7 +66,10 @@ export const authAPI = {
     API.post('/auth/register-supplier', data),
   resetPassword: (data) =>
     API.post('/auth/reset-password', data),
+  checkEmail: (email) =>
+    API.post('/auth/check-email', { email }),
 };
+
 
 
 // ===== TENDERS =====
