@@ -36,12 +36,15 @@ const TenderSearch = () => {
   };
 
   const filteredTenders = tenders.filter(tender => {
-    const matchesSearch = tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tender.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          tender.organizer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = (searchTerm || '').trim().toLowerCase();
+    const title = (tender.title || '').toLowerCase();
+    const number = (tender.number || '').toLowerCase();
+    const org = (tender.organizer_name || '').toLowerCase();
+    const matchesSearch = !term || title.includes(term) || number.includes(term) || org.includes(term);
     const matchesMethod = methodFilter === 'all' || tender.method === methodFilter;
     return matchesSearch && matchesMethod;
   });
+
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>

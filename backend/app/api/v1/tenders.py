@@ -57,8 +57,8 @@ from app.core.cache import cache_response, cache_manager
 # ===== PUBLIC =====
 
 @router.get("", response_model=TenderListOut, summary="Реестр открытых тендеров (публичный)")
-@cache_response(ttl_seconds=30, prefix="tenders")
 async def list_tenders(
+
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     search: str = Query(None),
