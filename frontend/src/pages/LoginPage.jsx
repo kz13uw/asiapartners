@@ -43,9 +43,11 @@ const LoginPage = () => {
   const [forgotForm, setForgotForm] = useState({
     email: '',
     otp_code: '',
-    new_password: ''
+    new_password: '',
+    confirm_password: ''
   });
   const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [forgotCooldown, setForgotCooldown] = useState(0);
 
   // Проверка требований к паролю (как в админ-панели и профиле)
@@ -60,7 +62,8 @@ const LoginPage = () => {
   const isForgotLengthValid = evalForgotPwd.length >= 8;
   const isForgotHasLetters = /[a-zA-Zа-яА-ЯёЁ]/.test(evalForgotPwd);
   const isForgotHasDigits = /[0-9]/.test(evalForgotPwd);
-  const isForgotPwdPolicyOk = isForgotLengthValid && isForgotHasLetters && isForgotHasDigits;
+  const isForgotMatch = evalForgotPwd.length > 0 && evalForgotPwd === forgotForm.confirm_password;
+  const isForgotPwdPolicyOk = isForgotLengthValid && isForgotHasLetters && isForgotHasDigits && isForgotMatch;
 
   // Генератор надежного пароля (как в Админке)
   const generateStrongPassword = () => {
@@ -92,10 +95,12 @@ const LoginPage = () => {
 
   const handleGenerateForgotPassword = () => {
     const pwd = generateStrongPassword();
-    setForgotForm(p => ({ ...p, new_password: pwd }));
+    setForgotForm(p => ({ ...p, new_password: pwd, confirm_password: pwd }));
     setShowForgotNewPassword(true);
+    setShowForgotConfirmPassword(true);
     toast.success('⚡ Сгенерирован надежный пароль!');
   };
+
 
   // Таймеры обратного отсчета Cooldown
   useEffect(() => {
@@ -230,14 +235,19 @@ const LoginPage = () => {
   // 2. Сохранение нового пароля по OTP
   const handleResetPassword = async (e) => {
     if (e) e.preventDefault();
-    if (!forgotForm.otp_code || !forgotForm.new_password) {
-      toast.error('Заполните код и новый пароль');
+    if (!forgotForm.otp_code || !forgotForm.new_password || !forgotForm.confirm_password) {
+      toast.error('Заполните OTP-код, новый пароль и повтор пароля');
+      return;
+    }
+    if (forgotForm.new_password !== forgotForm.confirm_password) {
+      toast.error('Новый пароль и его подтверждение не совпадают!');
       return;
     }
     if (!isForgotPwdPolicyOk) {
-      toast.error('Новый пароль должен содержать не менее 8 символов, включая буквы и цифры');
+      toast.error('Новый пароль должен содержать не менее 8 символов, включая буквы и цифры!');
       return;
     }
+
 
     setIsLoading(true);
     try {
@@ -644,7 +654,7 @@ const LoginPage = () => {
                   />
                 </div>
 
-                <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155', margin: 0 }}>Новый пароль</label>
                     <button 
@@ -655,11 +665,11 @@ const LoginPage = () => {
                       <Sparkles size={14} /> Сгенерировать
                     </button>
                   </div>
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', marginBottom: '0.65rem' }}>
                     <input 
                       type={showForgotNewPassword ? "text" : "password"} 
                       className="form-control" 
-                      placeholder="••••••••" 
+                      placeholder="Новый пароль" 
                       value={forgotForm.new_password} 
                       onChange={e => setForgotForm(p => ({ ...p, new_password: e.target.value }))} 
                       required 
@@ -675,16 +685,42 @@ const LoginPage = () => {
                     </button>
                   </div>
 
-                  {/* Требования к новому паролю */}
-                  <div style={{ display: 'flex', gap: '0.8rem', fontSize: '0.75rem', marginTop: '0.5rem', color: '#64748b' }}>
+                  {/* Поле повтора пароля */}
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>Подтвердите новый пароль</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showForgotConfirmPassword ? "text" : "password"} 
+                      className="form-control" 
+                      placeholder="Повторите новый пароль" 
+                      value={forgotForm.confirm_password} 
+                      onChange={e => setForgotForm(p => ({ ...p, confirm_password: e.target.value }))} 
+                      required 
+                      style={{ paddingRight: '2.5rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)}
+                      title={showForgotConfirmPassword ? "Скрыть пароль" : "Показать пароль"}
+                      style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
+                    >
+                      {showForgotConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
+                  {/* Требования к новому паролю и совпадение */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', fontSize: '0.75rem', marginTop: '0.65rem', color: '#64748b', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                     <span style={{ color: isForgotLengthValid ? '#16a34a' : '#94a3b8', fontWeight: isForgotLengthValid ? 700 : 400 }}>
                       {isForgotLengthValid ? '✓' : '○'} Мин. 8 символов
                     </span>
                     <span style={{ color: (isForgotHasLetters && isForgotHasDigits) ? '#16a34a' : '#94a3b8', fontWeight: (isForgotHasLetters && isForgotHasDigits) ? 700 : 400 }}>
                       {(isForgotHasLetters && isForgotHasDigits) ? '✓' : '○'} Буквы и цифры
                     </span>
+                    <span style={{ color: isForgotMatch ? '#16a34a' : '#94a3b8', fontWeight: isForgotMatch ? 700 : 400 }}>
+                      {isForgotMatch ? '✓' : '○'} Совпадение паролей
+                    </span>
                   </div>
                 </div>
+
 
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setForgotStep(1)} style={{ flex: 1, justifyContent: 'center' }}>
