@@ -14,14 +14,25 @@ const ProfileSettings = () => {
     email: user?.email || '',
   });
 
+  const [companyData, setCompanyData] = useState(null);
+
   useEffect(() => {
     if (user) {
       setProfileData({
         full_name: user.full_name || '',
         email: user.email || '',
       });
+      if (user.role === 'supplier' || user.role === 'organizer') {
+        usersAPI.myCompany().then(res => {
+          setCompanyData(res.data);
+        }).catch(() => {
+          setCompanyData(null);
+        });
+      }
     }
   }, [user]);
+
+
 
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
@@ -229,21 +240,22 @@ const ProfileSettings = () => {
           <div className="grid-2" style={{ gap: '1.25rem' }}>
             <div className="form-group">
               <label className="form-label">{t('th_iin_bin') || 'БИН / ИИН'}</label>
-              <input type="text" className="form-control" defaultValue={user?.iin_bin || "123456789012"} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
+              <input type="text" className="form-control" value={companyData?.bin || user?.iin_bin || 'Не указан'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
             <div className="form-group">
               <label className="form-label">{t('lbl_company_name') || 'Наименование организации'}</label>
-              <input type="text" className="form-control" defaultValue={profileData.company_name || 'ТОО Asia Partners'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
+              <input type="text" className="form-control" value={companyData?.full_name || companyData?.name || user?.full_name || 'Не указано'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('lbl_full_name') || 'ФИО Руководителя'}</label>
-              <input type="text" className="form-control" defaultValue={profileData.full_name} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
+              <label className="form-label">{t('lbl_full_name') || 'ФИО Руководителя / Контактное лицо'}</label>
+              <input type="text" className="form-control" value={companyData?.director_name || profileData.full_name || user?.full_name || 'Не указано'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
             <div className="form-group">
               <label className="form-label">{t('lbl_company_address') || 'Юридический адрес'}</label>
-              <input type="text" className="form-control" defaultValue="Республика Казахстан, г. Астана, ул. Достык, 1" disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
+              <input type="text" className="form-control" value={companyData?.address || 'Не указан'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
             </div>
           </div>
+
           <p style={{ fontSize: '0.85rem', color: 'var(--pk-text-sec)', marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             * Изменение юридических данных организации возможно через ЭЦП или администратора.
           </p>

@@ -13,16 +13,10 @@ export const useCompany = () => {
       const res = await usersAPI.myCompany();
       setCompany(res.data);
     } catch (err) {
-      console.warn('API failed, using mock data for Company');
-      // Mock data for Supplier Profile
-      setCompany({
-        bin: '123456789012',
-        name: 'ТОО "Тестовый Поставщик"',
-        address: 'г. Семей, ул. Абая 1',
-        bank_details: 'IBAN KZ123456789012345678, БИК KZKXAAAA',
-        status: 'approved'
-      });
+      console.warn('No company profile found for user yet');
+      setCompany(null);
     } finally {
+
       setLoading(false);
     }
   }, []);
