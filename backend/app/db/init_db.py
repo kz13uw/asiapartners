@@ -19,8 +19,17 @@ async def init_db(clean_all: bool = False):
             if should_clean:
                 await conn.run_sync(Base.metadata.drop_all)
             await conn.run_sync(Base.metadata.create_all)
+
+            # 🚀 Гарантированная авто-миграция колонок для PostgreSQL
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE tenders ADD COLUMN IF NOT EXISTS vat_mode VARCHAR(50) DEFAULT 'include_vat'"))
+            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS vat_mode VARCHAR(50) DEFAULT 'include_vat'"))
+            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS vat_rate DOUBLE PRECISION DEFAULT 16.0"))
+            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS vat_amount DOUBLE PRECISION DEFAULT 0.0"))
+            await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS total_price_without_vat DOUBLE PRECISION DEFAULT 0.0"))
     except Exception as e:
         print(f"[DB INIT NOTICE] Skipped auto schema sync: {e}")
+
 
     try:
         async with AsyncSessionLocal() as db:
