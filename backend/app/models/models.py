@@ -376,6 +376,8 @@ class Protocol(Base):
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     tender: Mapped[Tender] = relationship("Tender", back_populates="protocols")
+    signer: Mapped[Optional[User]] = relationship("User", foreign_keys=[signed_by])
+
 
 
 class Contract(Base):
