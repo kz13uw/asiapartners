@@ -561,52 +561,6 @@ const TenderDetails = () => {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Блок 4: Документация и прикрепленные файлы */}
-                <div style={{ marginBottom: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', background: '#ffffff' }}>
-                  <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', borderBottom: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>📁 Документация к закупке ({tender.documents?.length || 0})</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setActiveTab('docs')}
-                      style={{ background: 'none', border: 'none', color: '#0284c7', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
-                    >
-                      Перейти к документам →
-                    </button>
-                  </div>
-
-                  <div style={{ padding: '1rem' }}>
-                    {tender.documents && tender.documents.length > 0 ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
-                        {tender.documents.map((doc, i) => (
-                          <a
-                            key={doc.id || i}
-                            href={doc.file_path || '#'}
-                            download={doc.file_name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '8px', textDecoration: 'none', color: '#0f172a', background: '#f8fafc', transition: 'all 0.2s' }}
-                          >
-                            <FileText size={22} color="#0284c7" />
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                              <div style={{ fontWeight: 700, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {doc.file_name}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                {doc.doc_type || 'Документ закупки'} • {doc.file_size ? (doc.file_size >= 1048576 ? (doc.file_size / 1048576).toFixed(2) + ' МБ' : Math.round(doc.file_size / 1024) + ' КБ') : '1 МБ'}
-                              </div>
-                            </div>
-                            <Download size={16} color="#0284c7" />
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', padding: '1rem' }}>
-                        Документация к закупке не прикреплена организатором
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -652,6 +606,7 @@ const TenderDetails = () => {
                       </div>
                     </div>
                   )}
+
 
 
                 </div>
