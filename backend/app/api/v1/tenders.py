@@ -41,6 +41,31 @@ def strip_tz(dt: Optional[datetime]) -> Optional[datetime]:
     return dt
 
 
+def parse_int_file_size(v: any) -> int:
+    if v is None:
+        return 1024
+    if isinstance(v, int):
+        return v
+    if isinstance(v, float):
+        return int(v)
+    if isinstance(v, str):
+        v_str = v.upper().replace(" ", "").replace(",", ".")
+        import re
+        match = re.search(r'[\d\.]+', v_str)
+        if match:
+            try:
+                num = float(match.group(0))
+                if "МБ" in v_str or "MB" in v_str:
+                    return int(num * 1024 * 1024)
+                if "КБ" in v_str or "KB" in v_str:
+                    return int(num * 1024)
+                return int(num)
+            except Exception:
+                return 1024
+    return 1024
+
+
+
 def get_tender_options():
     from app.models.models import User
     return [
@@ -225,15 +250,17 @@ async def create_tender(
 
         if body.documents:
             for doc in body.documents:
+                raw_sz = doc.get('size') if doc.get('size') is not None else doc.get('file_size')
                 db.add(TenderDocument(
                     tender_id=tender.id,
                     doc_type=doc.get('category', 'ПСД'),
                     file_name=doc.get('name', 'Документ'),
                     file_path=f"/uploads/tenders/{tender.id}/" + doc.get('name', 'file'),
-                    file_size=doc.get('size', 1024),
+                    file_size=parse_int_file_size(raw_sz),
                     hash_sha256="demo_hash_" + str(tender.id),
                     uploaded_by=current_user.id
                 ))
+
 
         # Сохранение квалификационных требований
         if body.qual_requirements:
@@ -469,15 +496,17 @@ async def update_tender(
         if docs:
             await db.execute(delete(TenderDocument).where(TenderDocument.tender_id == tender_id))
             for doc in docs:
+                raw_sz = doc.get('size') if doc.get('size') is not None else doc.get('file_size')
                 db.add(TenderDocument(
                     tender_id=tender_id,
                     doc_type=doc.get('category', 'ПСД'),
                     file_name=doc.get('name', 'Документ'),
                     file_path=f"/uploads/tenders/{tender_id}/" + doc.get('name', 'file'),
-                    file_size=doc.get('size', 1024),
+                    file_size=parse_int_file_size(raw_sz),
                     hash_sha256="demo_hash_" + str(tender_id),
                     uploaded_by=current_user.id
                 ))
+
 
     for field, value in update_data.items():
         setattr(tender, field, value)

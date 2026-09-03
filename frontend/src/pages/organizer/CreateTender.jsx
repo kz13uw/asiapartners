@@ -52,6 +52,7 @@ const CreateTender = () => {
       id: Date.now() + Math.random(),
       name: file.name,
       size: (file.size / (1024 * 1024)).toFixed(2) + ' МБ',
+      raw_size: file.size,
       fileObj: file
     }));
     setPsdFiles(prev => [...prev, ...valid]);
@@ -67,11 +68,13 @@ const CreateTender = () => {
       id: Date.now() + Math.random(),
       name: file.name,
       size: (file.size / (1024 * 1024)).toFixed(2) + ' МБ',
+      raw_size: file.size,
       fileObj: file
     }));
     setContractFiles(prev => [...prev, ...valid]);
     toast.success(`Файл проекта договора добавлен: ${valid.map(f => f.name).join(', ')}`);
   };
+
 
   const removeContractFile = (id) => {
     setContractFiles(prev => prev.filter(f => f.id !== id));
@@ -374,9 +377,10 @@ const CreateTender = () => {
         requires_license: requiresLicense,
         license_category: requiresLicense ? licenseCategory : null,
         documents: [
-          ...psdFiles.map(f => ({ name: f.name, category: 'ПСД', size: f.size })),
-          ...contractFiles.map(f => ({ name: f.name, category: 'Проект договора', size: f.size }))
+          ...psdFiles.map(f => ({ name: f.name, category: 'ПСД', size: f.raw_size || f.size_bytes || (typeof f.size === 'number' ? f.size : 1024) })),
+          ...contractFiles.map(f => ({ name: f.name, category: 'Проект договора', size: f.raw_size || f.size_bytes || (typeof f.size === 'number' ? f.size : 1024) }))
         ],
+
         qual_requirements: qualRequirements.map(q => ({
           code: q.code || 'general',
           title: q.title,
