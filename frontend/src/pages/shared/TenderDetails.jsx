@@ -35,7 +35,7 @@ const TenderDetails = () => {
   const [bidPrice, setBidPrice] = useState('');
   const [techSpecNotes, setTechSpecNotes] = useState('');
   const [selectedLotIds, setSelectedLotIds] = useState([]);
-  const [lotPrices, setLotPrices] = useState({});
+  const [lotUnitPrices, setLotUnitPrices] = useState({});
   const [lotSpecs, setLotSpecs] = useState({});
   const [supplierFiles, setSupplierFiles] = useState([]);
   const [vaultDocs, setVaultDocs] = useState([]);
@@ -68,6 +68,30 @@ const TenderDetails = () => {
         { id: 1, lot_number: 1, title: tender?.title || 'Лот №1', description: tender?.description || '', quantity: 1, unit: 'лот', unit_price: tender?.start_price || 0, start_price: tender?.start_price || 0, delivery_place: tender?.delivery_place || '' }
       ];
 
+  const calculateTotalBidPrice = (unitPricesObj, selectedIds) => {
+    const ids = selectedIds !== undefined ? selectedIds : selectedLotIds;
+    const prices = unitPricesObj !== undefined ? unitPricesObj : lotUnitPrices;
+
+    let total = 0;
+    ids.forEach(lotId => {
+      const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+      const qty = parseFloat(lot.quantity) || 1;
+      const uPrice = parseFloat(prices[lotId]);
+      if (!isNaN(uPrice) && uPrice > 0) {
+        total += uPrice * qty;
+      }
+    });
+    return total;
+  };
+
+  const getLotTotalPrice = (lotId) => {
+    const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+    const qty = parseFloat(lot.quantity) || 1;
+    const uPrice = parseFloat(lotUnitPrices[lotId]);
+    if (isNaN(uPrice) || uPrice <= 0) return 0;
+    return uPrice * qty;
+  };
+
   useEffect(() => {
     if (tender) {
       const lotsToUse = (tender.lots && tender.lots.length > 0)
@@ -76,22 +100,20 @@ const TenderDetails = () => {
             { id: 1, lot_number: 1, title: tender.title || 'Лот №1', description: tender.description || '', start_price: tender.start_price || 0 }
           ];
 
-
       const allIds = lotsToUse.map((l, idx) => l.id || idx + 1);
       setSelectedLotIds(allIds);
-      const initPrices = {};
+
+      // БЕЗ ТЕСТОВЫХ И ПРЕДЗАПОЛНЕННЫХ ЗНАЧЕНИЙ — поля пустые для ввода поставщиком!
+      const initUnitPrices = {};
       const initSpecs = {};
-      let total = 0;
       lotsToUse.forEach((l, idx) => {
         const lotId = l.id || idx + 1;
-        const priceVal = l.start_price || l.unit_price || 0;
-        initPrices[lotId] = priceVal;
+        initUnitPrices[lotId] = '';
         initSpecs[lotId] = '';
-        total += priceVal;
       });
-      setLotPrices(initPrices);
+      setLotUnitPrices(initUnitPrices);
       setLotSpecs(initSpecs);
-      setBidPrice(total);
+      setBidPrice('');
     }
   }, [tender]);
 
@@ -103,9 +125,10 @@ const TenderDetails = () => {
       nextIds = [...selectedLotIds, lotId];
     }
     setSelectedLotIds(nextIds);
-    const total = nextIds.reduce((sum, idKey) => sum + Number(lotPrices[idKey] || 0), 0);
+    const total = calculateTotalBidPrice(lotUnitPrices, nextIds);
     setBidPrice(total || '');
   };
+
 
   const loadVaultDocs = () => {
     try {
@@ -189,32 +212,49 @@ const TenderDetails = () => {
 
   const handleSubmitClick = (e) => {
     if (e) e.preventDefault();
-    const priceNum = Number(bidPrice);
-    if (!bidPrice || isNaN(priceNum) || priceNum <= 0) {
-      toast.error('Введите корректное ценовое предложение');
-      return;
-    }
-    if (priceNum >= tender.start_price) {
-      toast.error(`Ваше ценовое предложение должно быть строго ниже стартовой суммы (${formatPriceKzt(tender.start_price)} ₸)`);
-      return;
-    }
-    if (tender?.lots && tender.lots.length > 1 && selectedLotIds.length === 0) {
+
+    if (selectedLotIds.length === 0) {
       toast.error('Выберите хотя бы 1 лот для участия в закупке');
       return;
     }
+
+    for (const lotId of selectedLotIds) {
+      const lot = effectiveLots.find(l => (l.id || 1) === lotId);
+      const lotNum = lot?.lot_number || lotId;
+      const uPrice = parseFloat(lotUnitPrices[lotId]);
+      if (!lotUnitPrices[lotId] || isNaN(uPrice) || uPrice <= 0) {
+        toast.error(`Укажите предложенную цену за 1 ед. по лоту №${lotNum}`);
+        return;
+      }
+    }
+
+    const priceNum = Number(bidPrice);
+    if (!bidPrice || isNaN(priceNum) || priceNum <= 0) {
+      toast.error('Итоговая сумма ценового предложения должна быть больше 0');
+      return;
+    }
+
+    if (tender?.start_price && priceNum >= tender.start_price) {
+      toast.error(`Ваше ценовое предложение (${formatPriceKzt(priceNum)} ₸) должно быть строго ниже стартовой суммы (${formatPriceKzt(tender.start_price)} ₸)`);
+      return;
+    }
+
     setShowEdsModal(true);
   };
 
   const processBidSubmission = async (signedCms) => {
     setIsSubmitting(true);
     try {
-      const itemsPayload = (tender?.lots && tender.lots.length > 0)
-        ? selectedLotIds.map(lotId => ({
-            lot_id: lotId,
-            price: Number(lotPrices[lotId] || 0),
-            proposed_tech_spec: lotSpecs[lotId] || techSpecNotes || ""
-          }))
-        : [];
+      const itemsPayload = selectedLotIds.map(lotId => {
+        const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+        const qty = parseFloat(lot.quantity) || 1;
+        const uPrice = parseFloat(lotUnitPrices[lotId]) || 0;
+        return {
+          lot_id: lotId,
+          price: uPrice * qty,
+          proposed_tech_spec: lotSpecs[lotId] || techSpecNotes || ""
+        };
+      });
 
       const payload = {
         tender_id: tender.id,
@@ -244,6 +284,7 @@ const TenderDetails = () => {
       setShowBidFormModal(false);
     }
   };
+
 
   if (!tender) {
     return (
@@ -853,25 +894,33 @@ const TenderDetails = () => {
                         </div>
 
                         {isChecked && (
-                          <div style={{ marginTop: '0.75rem', paddingLeft: '1.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', borderLeft: '3px solid #3b82f6', width: '100%', boxSizing: 'border-box' }}>
+                          <div style={{ marginTop: '0.75rem', paddingLeft: '1.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', borderLeft: '3px solid #3b82f6', width: '100%', boxSizing: 'border-box' }}>
                             <div>
-                              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                                Предложенная цена по лоту №{lot.lot_number || idx + 1} (₸):
+                              <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                                Предложенная цена за 1 {lot.unit || 'ед.'} по лоту №{lot.lot_number || idx + 1} (₸):
                               </label>
                               <input
                                 type="number"
+                                step="any"
+                                min="0"
                                 className="form-control"
-                                value={lotPrices[lotId] || ''}
+                                value={lotUnitPrices[lotId] || ''}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  setLotPrices(prev => ({ ...prev, [lotId]: val }));
-                                  const newPrices = { ...lotPrices, [lotId]: val };
-                                  const total = selectedLotIds.reduce((sum, idKey) => sum + Number(newPrices[idKey] || 0), 0);
+                                  const newUnitPrices = { ...lotUnitPrices, [lotId]: val };
+                                  setLotUnitPrices(newUnitPrices);
+                                  const total = calculateTotalBidPrice(newUnitPrices);
                                   setBidPrice(total || '');
                                 }}
-                                placeholder="Укажите цену за лот"
-                                style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1d4ed8', maxWidth: '350px' }}
+                                placeholder={`Укажите цену за 1 ${lot.unit || 'ед.'}`}
+                                style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1d4ed8', maxWidth: '360px' }}
                               />
+
+                              {Boolean(lotUnitPrices[lotId]) && parseFloat(lotUnitPrices[lotId]) > 0 && (
+                                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', padding: '0.45rem 0.75rem', marginTop: '0.35rem', fontSize: '0.82rem', color: '#0369a1', fontWeight: 600 }}>
+                                  🧮 Итоговая сумма по лоту: {lot.quantity || 1} {lot.unit || 'ед.'} × {formatPriceKzt(lotUnitPrices[lotId])} ₸ = <strong style={{ color: '#1d4ed8', fontSize: '0.92rem' }}>{formatPriceKzt(getLotTotalPrice(lotId))} ₸</strong>
+                                </div>
+                              )}
                             </div>
                             <div>
                               <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
@@ -888,6 +937,7 @@ const TenderDetails = () => {
                             </div>
                           </div>
                         )}
+
                       </div>
                     );
                   })}
@@ -908,8 +958,9 @@ const TenderDetails = () => {
                     style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1d4ed8', padding: '0.75rem 1rem', background: '#e0f2fe', borderColor: '#7dd3fc', cursor: 'not-allowed', width: '100%' }}
                   />
                   <div style={{ fontSize: '0.8rem', color: '#0369a1', marginTop: '0.35rem', fontWeight: 600 }}>
-                    🔒 Поле нередактируемое (складывается автоматически из цен выбранных лотов выше).
+                    🔒 Поле нередактируемое (складывается автоматически из расчёта цен выбранных лотов выше: Цена за 1 ед. × Количество).
                   </div>
+
                 </div>
               </div>
 
