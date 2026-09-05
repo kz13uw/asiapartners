@@ -389,20 +389,32 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                     Для работы с ЭЦП убедитесь, что приложение <strong>NCALayer запущено</strong> на вашем компьютере.
                   </p>
 
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-                    <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#fda4af', color: '#be123c', fontWeight: 600, flex: 1, justifyContent: 'center', padding: '0.6rem' }}>
-                      <Download size={15} style={{ marginRight: '0.4rem' }} /> Скачать NCALayer
-                    </a>
-                    <button 
-                      className="btn btn-primary btn-sm" 
-                      onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} 
-                      style={{ fontWeight: 700, flex: 1, justifyContent: 'center', padding: '0.6rem' }}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                      <a href="https://pki.gov.kz/ncalayer/" target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{ borderColor: '#fda4af', color: '#be123c', fontWeight: 600, flex: 1, justifyContent: 'center', padding: '0.6rem' }}>
+                        <Download size={15} style={{ marginRight: '0.4rem' }} /> Скачать NCALayer
+                      </a>
+                      <button 
+                        className="btn btn-primary btn-sm" 
+                        onClick={() => { currentUrlIdx.current = 0; connectNCALayer(); }} 
+                        style={{ fontWeight: 700, flex: 1, justifyContent: 'center', padding: '0.6rem' }}
+                      >
+                        <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Повторить подключение
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={handleFallbackSign}
+                      style={{ width: '100%', borderColor: '#cbd5e1', color: '#334155', fontWeight: 700, padding: '0.6rem', fontSize: '0.82rem', background: '#ffffff', borderRadius: '8px' }}
                     >
-                      <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Повторить подключение
+                      ⚡ Оформить заявку без NCALayer (Тестовая подпись)
                     </button>
                   </div>
                 </div>
               )}
+
 
 
               {ncaStatus === 'connected' && (

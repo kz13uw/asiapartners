@@ -74,9 +74,9 @@ const TenderDetails = () => {
 
     let total = 0;
     ids.forEach(lotId => {
-      const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+      const lot = effectiveLots.find(l => String(l.id || 1) === String(lotId)) || {};
       const qty = parseFloat(lot.quantity) || 1;
-      const uPrice = parseFloat(prices[lotId]);
+      const uPrice = parseFloat(prices[lotId] || prices[String(lotId)]);
       if (!isNaN(uPrice) && uPrice > 0) {
         total += uPrice * qty;
       }
@@ -85,12 +85,13 @@ const TenderDetails = () => {
   };
 
   const getLotTotalPrice = (lotId) => {
-    const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+    const lot = effectiveLots.find(l => String(l.id || 1) === String(lotId)) || {};
     const qty = parseFloat(lot.quantity) || 1;
-    const uPrice = parseFloat(lotUnitPrices[lotId]);
+    const uPrice = parseFloat(lotUnitPrices[lotId] || lotUnitPrices[String(lotId)]);
     if (isNaN(uPrice) || uPrice <= 0) return 0;
     return uPrice * qty;
   };
+
 
   useEffect(() => {
     if (tender) {
