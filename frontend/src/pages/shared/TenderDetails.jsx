@@ -45,21 +45,9 @@ const TenderDetails = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user && location.pathname === `/tenders/${id}`) {
-      if (user.role === 'organizer' || user.role === 'admin') {
-        navigate(`/organizer/tenders/${id}`, { replace: true });
-        return;
-      }
-      if (user.role === 'supplier') {
-        navigate(`/supplier/tenders/${id}`, { replace: true });
-        return;
-      }
-      navigate(`/app/tenders/${id}`, { replace: true });
-      return;
-    }
     fetchTenderAndBids();
     loadVaultDocs();
-  }, [id, user, location.pathname]);
+  }, [id, user]);
 
 
   const effectiveLots = (tender?.lots && tender.lots.length > 0)

@@ -179,7 +179,13 @@ const TenderRegistryTable = ({
               >
                 {/* 1. № лота */}
                 <td style={{ padding: '0.85rem 1rem', fontWeight: 700, fontFamily: 'Consolas, Monaco, monospace', color: '#1e293b', whiteSpace: 'nowrap', verticalAlign: 'top' }}>
-                  {tenderNumber}
+                  <Link 
+                    to={detailUrl} 
+                    style={{ color: '#1e293b', textDecoration: 'none' }}
+                    title="Открыть подробные сведения об объявлении"
+                  >
+                    {tenderNumber}
+                  </Link>
                 </td>
 
                 {/* 2. Наименование объявления (Ссылка + Заказчик) */}
@@ -198,9 +204,13 @@ const TenderRegistryTable = ({
 
                 {/* 3. Наименование и описание лота */}
                 <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
-                  <div style={{ fontWeight: 700, color: '#1d4ed8', fontSize: '0.88rem', marginBottom: '0.2rem' }}>
+                  <Link 
+                    to={detailUrl} 
+                    style={{ fontWeight: 700, color: '#1d4ed8', fontSize: '0.88rem', marginBottom: '0.2rem', textDecoration: 'none', display: 'inline-block' }}
+                    title="Открыть подробные сведения об объявлении"
+                  >
                     {lotName}
-                  </div>
+                  </Link>
                   <div style={{ fontSize: '0.78rem', color: '#475569', lineHeight: 1.3 }}>
                     {lotDesc}
                   </div>
