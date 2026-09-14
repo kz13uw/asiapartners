@@ -306,6 +306,8 @@ const TenderDetails = () => {
   const startDate = tender.start_date ? new Date(tender.start_date).toLocaleString('ru-RU') : (tender.created_at ? new Date(tender.created_at).toLocaleString('ru-RU') : '—');
   const deadlineDate = tender.deadline_at ? new Date(tender.deadline_at).toLocaleString('ru-RU') : '—';
   const totalSum = formatPriceKzt(tender.start_price || tender.budget || 0);
+  const bidsCount = tender.bids_count !== undefined ? tender.bids_count : (tender.bids ? tender.bids.length : 0);
+
   const handleBackNavigation = (e) => {
     if (e) e.preventDefault();
     if (window.history.length > 1) {
@@ -372,6 +374,11 @@ const TenderDetails = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Срок окончания приема заявок</span>
               <input type="text" readOnly className="form-control" value={deadlineDate} style={{ background: '#e2e8f0', borderColor: '#cbd5e1', fontWeight: 700, fontSize: '0.85rem', color: '#dc2626' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '190px 1fr', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>Количество поданных заявок</span>
+              <input type="text" readOnly className="form-control" value={`${bidsCount} заявка(и)`} style={{ background: '#eff6ff', borderColor: '#bfdbfe', fontWeight: 800, fontSize: '0.85rem', color: '#1d4ed8' }} />
             </div>
           </div>
 
