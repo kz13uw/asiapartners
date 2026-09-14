@@ -310,16 +310,19 @@ const TenderDetails = () => {
 
   const handleBackNavigation = (e) => {
     if (e) e.preventDefault();
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      const token = localStorage.getItem('access_token');
-      if (token || user) {
-        navigate('/supplier/dashboard');
-      } else {
-        navigate('/public-tenders');
-      }
+    if (location.pathname.startsWith('/tenders/') || !user) {
+      navigate('/public-tenders');
+      return;
     }
+    if (user?.role === 'organizer' && location.pathname.startsWith('/organizer/')) {
+      navigate('/organizer/dashboard');
+      return;
+    }
+    if (user?.role === 'supplier' && location.pathname.startsWith('/supplier/')) {
+      navigate('/supplier/dashboard');
+      return;
+    }
+    navigate('/public-tenders');
   };
 
   return (

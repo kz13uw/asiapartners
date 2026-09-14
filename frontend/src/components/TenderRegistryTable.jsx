@@ -150,11 +150,14 @@ const TenderRegistryTable = ({
             const tenderNumber = tnd.number || tnd.tender_number || `T-${tnd.id}`;
             
             const getDetailUrl = () => {
+              if (userRole === 'public' || location.pathname === '/public-tenders' || location.pathname.startsWith('/tenders')) {
+                return `/tenders/${tnd.id}`;
+              }
               if (tnd.status === 'draft') return `/organizer/tenders/${tnd.id}/edit`;
-              if (userRole === 'organizer' || user?.role === 'organizer' || location.pathname.startsWith('/organizer/')) return `/organizer/tenders/${tnd.id}`;
-              if (userRole === 'supplier' || user?.role === 'supplier' || location.pathname.startsWith('/supplier/')) return `/supplier/tenders/${tnd.id}`;
-              if (userRole === 'admin' || user?.role === 'admin' || location.pathname.startsWith('/admin/')) return `/organizer/tenders/${tnd.id}`;
-              if (user) return `/app/tenders/${tnd.id}`;
+              if (userRole === 'organizer' || (user?.role === 'organizer' && location.pathname.startsWith('/organizer/'))) return `/organizer/tenders/${tnd.id}`;
+              if (userRole === 'supplier' || (user?.role === 'supplier' && location.pathname.startsWith('/supplier/'))) return `/supplier/tenders/${tnd.id}`;
+              if (userRole === 'admin' || (user?.role === 'admin' && location.pathname.startsWith('/admin/'))) return `/organizer/tenders/${tnd.id}`;
+              if (user && location.pathname.startsWith('/app/')) return `/app/tenders/${tnd.id}`;
               return `/tenders/${tnd.id}`;
             };
             const detailUrl = getDetailUrl();
