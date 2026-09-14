@@ -86,53 +86,50 @@ from app.core.cache import cache_response, cache_manager
 
 @router.get("", response_model=TenderListOut, summary="Реестр открытых тендеров (публичный)")
 async def list_tenders(
-
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     search: str = Query(None),
     method: str = Query(None),
     category_id: int = Query(None),
+    year: int = Query(None),
     status_filter: str = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy.orm import selectinload
-    # Открытый публичный реестр: показываем опубликованные закупки (прием заявок, рассмотрение, завершенные)
+    from sqlalchemy import cast, String, extract
+    
     query = select(Tender).options(*get_tender_options())
-
-    from sqlalchemy import cast, String
     status_col = func.lower(cast(Tender.status, String))
 
-    if status_filter and status_filter.lower() == 'all':
-        # Для администраторов или отчетов показываем все тендеры
-        pass
-    elif status_filter and status_filter.lower() in ["published", "accepting", "active"]:
-        query = query.where(status_col == "published")
-    elif status_filter:
-        query = query.where(status_col == status_filter.lower())
-    else:
-        query = query.where(
-            status_col.in_([
-                "published", "evaluation", "evaluating", "review", "completed"
-            ])
-        )
+    # Скрываем черновики из публичного реестра
+    query = query.where(status_col != "draft")
 
+    if status_filter:
+        sf = status_filter.lower().strip()
+        if sf == 'active':
+            query = query.where(status_col.in_(["published", "accepting", "bidding", "open", "active", "evaluation", "evaluating", "review"]))
+        elif sf in ['closed', 'completed']:
+            query = query.where(status_col.in_(["completed", "finished", "closed", "cancelled", "canceled"]))
+        elif sf != 'all':
+            query = query.where(status_col == sf)
 
+    if year:
+        query = query.where(extract('year', Tender.created_at) == year)
 
     if search:
+        search_term = f"%{search.strip()}%"
         query = query.where(
-            (Tender.title.ilike(f"%{search}%")) |
-            (Tender.number.ilike(f"%{search}%")) |
-            (Tender.delivery_place.ilike(f"%{search}%"))
+            (Tender.title.ilike(search_term)) |
+            (Tender.number.ilike(search_term)) |
+            (Tender.delivery_place.ilike(search_term))
         )
     if method:
         query = query.where(Tender.method == method)
     if category_id:
         query = query.where(Tender.category_id == category_id)
 
-
-
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))
-    total = total_result.scalar()
+    total = total_result.scalar() or 0
 
     query = query.offset((page - 1) * size).limit(size).order_by(Tender.created_at.desc())
     result = await db.execute(query)

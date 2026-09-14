@@ -240,9 +240,33 @@ const TenderRegistryTable = ({
                   </span>
                 </td>
 
-                {/* 8. Статус */}
+                {/* 8. Статус и Протокол итогов */}
                 <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
-                  {renderStatusBadge(tnd.status)}
+                  <div>{renderStatusBadge(tnd.status)}</div>
+                  {['completed', 'finished', 'closed', 'cancelled', 'canceled'].includes((tnd.status || '').toLowerCase()) && (
+                    <a
+                      href={`/api/v1/tenders/${tnd.id}/protocol/pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        marginTop: '0.4rem',
+                        fontSize: '0.74rem',
+                        color: '#1d4ed8',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        backgroundColor: '#eff6ff',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '5px',
+                        border: '1px solid #bfdbfe'
+                      }}
+                      title="Просмотреть/скачать официальный Протокол итогов (PDF)"
+                    >
+                      <FileText size={12} /> Протокол итогов
+                    </a>
+                  )}
                 </td>
 
                 {/* 8. Опциональные действия (для кабинета организатора/черновиков) */}
