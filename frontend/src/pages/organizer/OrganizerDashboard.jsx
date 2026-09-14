@@ -94,16 +94,10 @@ const OrganizerDashboard = () => {
         </div>
       </div>
 
-      <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem', marginBottom: '2rem' }}>
+      <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">{t('stat_tenders')}</div>
           <div className="stat-value text-primary" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--pk-primary)' }}>{localTenders.length}</div>
-        </div>
-        <div className="stat-card card">
-          <div className="stat-title text-sec text-sm">Подано заявок</div>
-          <div className="stat-value" style={{ fontSize: '2rem', fontWeight: 700, color: '#1d4ed8' }}>
-            {localTenders.reduce((sum, t) => sum + (t.bids_count !== undefined ? t.bids_count : (t.bids?.length || 0)), 0)}
-          </div>
         </div>
         <div className="stat-card card">
           <div className="stat-title text-sec text-sm">Черновики тендеров</div>
