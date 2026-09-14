@@ -158,7 +158,7 @@ const PublicTenders = () => {
             >
               <option value="all">Все тендеры (Активные и Закрытые)</option>
               <option value="active">🟢 Активные тендеры (Прием заявок)</option>
-              <option value="closed">⚪ Завершенные / Закрытые тендеры</option>
+              <option value="closed">⚪ Завершенные тендеры</option>
             </select>
           </div>
 

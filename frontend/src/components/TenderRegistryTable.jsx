@@ -243,7 +243,7 @@ const TenderRegistryTable = ({
                 {/* 8. Статус и Протокол итогов */}
                 <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
                   <div>{renderStatusBadge(tnd.status)}</div>
-                  {['completed', 'finished', 'closed', 'cancelled', 'canceled'].includes((tnd.status || '').toLowerCase()) && (
+                  {['completed', 'finished', 'closed'].includes((tnd.status || '').toLowerCase()) && (
                     <a
                       href={`/api/v1/tenders/${tnd.id}/protocol/pdf`}
                       target="_blank"

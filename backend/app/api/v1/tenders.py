@@ -101,15 +101,15 @@ async def list_tenders(
     query = select(Tender).options(*get_tender_options())
     status_col = func.lower(cast(Tender.status, String))
 
-    # Скрываем черновики из публичного реестра
-    query = query.where(status_col != "draft")
+    # Скрываем черновики и отмененные тендеры из публичного реестра
+    query = query.where(status_col.not_in(["draft", "cancelled", "canceled"]))
 
     if status_filter:
         sf = status_filter.lower().strip()
         if sf == 'active':
             query = query.where(status_col.in_(["published", "accepting", "bidding", "open", "active", "evaluation", "evaluating", "review"]))
         elif sf in ['closed', 'completed']:
-            query = query.where(status_col.in_(["completed", "finished", "closed", "cancelled", "canceled"]))
+            query = query.where(status_col.in_(["completed", "finished", "closed"]))
         elif sf != 'all':
             query = query.where(status_col == sf)
 
