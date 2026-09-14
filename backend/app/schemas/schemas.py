@@ -415,6 +415,7 @@ class TenderOut(BaseModel):
     organizer_email: Optional[str] = None
     created_at: datetime
     published_at: Optional[datetime] = None
+    bids_count: int = 0
     lots: list[LotOut] = []
     qual_requirements: list[QualificationRequirementOut] = []
     documents: list[TenderDocumentOut] = []
@@ -453,6 +454,15 @@ class TenderOut(BaseModel):
                 lot_vat = getattr(first_lot, 'vat_mode', None) if hasattr(first_lot, 'vat_mode') else (first_lot.get('vat_mode') if isinstance(first_lot, dict) else None)
                 if lot_vat:
                     data.vat_mode = lot_vat
+
+            # Подтягиваем bids_count из связи bids при наличии
+            bids = getattr(data, 'bids', None) or d.get('bids', None)
+            if bids is not None and isinstance(bids, (list, tuple, set)):
+                if hasattr(data, '__dict__'):
+                    data.bids_count = len(bids)
+            elif isinstance(data, dict):
+                if 'bids' in data and data['bids'] is not None:
+                    data['bids_count'] = len(data['bids'])
         return data
 
 

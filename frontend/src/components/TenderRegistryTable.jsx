@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Package, Clock, Eye, Edit3, Send, Copy, Ban, Trash2, ArrowRight } from 'lucide-react';
+import { Package, Clock, Eye, Edit3, Send, Copy, Ban, Trash2, ArrowRight, FileText } from 'lucide-react';
 import { useTranslation } from '../store/useLanguageStore';
 import { useAuthStore } from '../store/authStore';
 
@@ -89,7 +89,7 @@ export const renderStatusBadge = (status) => {
 
 /**
  * Единый компонент Реестра тендеров (ГОСЗАКУП / ASIA PARTNERS СТАНДАРТ)
- * Колонки: № лота | Наименование объявления | Наименование и описание лота | Кол-во | Сумма, тг. | Способ закупки | Статус
+ * Колонки: № лота | Наименование объявления | Наименование и описание лота | Кол-во | Сумма, тг. | Способ закупки | Заявок | Статус
  */
 const TenderRegistryTable = ({ 
   tenders = [], 
@@ -132,12 +132,13 @@ const TenderRegistryTable = ({
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.86rem', tableLayout: 'auto' }}>
         <thead>
           <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
-            <th style={{ padding: '0.85rem 1rem', width: '14%', whiteSpace: 'nowrap' }}>№ лота</th>
-            <th style={{ padding: '0.85rem 1rem', width: '28%' }}>Наименование объявления</th>
-            <th style={{ padding: '0.85rem 1rem', width: '24%' }}>Наименование и описание лота</th>
-            <th style={{ padding: '0.85rem 1rem', width: '7%', textAlign: 'center', whiteSpace: 'nowrap' }}>Кол-во</th>
-            <th style={{ padding: '0.85rem 1rem', width: '13%', whiteSpace: 'nowrap' }}>Сумма, тг.</th>
-            <th style={{ padding: '0.85rem 1rem', width: '14%' }}>Способ закупки</th>
+            <th style={{ padding: '0.85rem 1rem', width: '13%', whiteSpace: 'nowrap' }}>№ лота</th>
+            <th style={{ padding: '0.85rem 1rem', width: '26%' }}>Наименование объявления</th>
+            <th style={{ padding: '0.85rem 1rem', width: '22%' }}>Наименование и описание лота</th>
+            <th style={{ padding: '0.85rem 1rem', width: '6%', textAlign: 'center', whiteSpace: 'nowrap' }}>Кол-во</th>
+            <th style={{ padding: '0.85rem 1rem', width: '12%', whiteSpace: 'nowrap' }}>Сумма, тг.</th>
+            <th style={{ padding: '0.85rem 1rem', width: '12%' }}>Способ закупки</th>
+            <th style={{ padding: '0.85rem 0.75rem', width: '8%', textAlign: 'center', whiteSpace: 'nowrap' }}>Заявок</th>
             <th style={{ padding: '0.85rem 1rem', width: '10%', whiteSpace: 'nowrap' }}>Статус</th>
             {(onDelete || onDuplicate || onCancel || onPublish) && (
               <th style={{ padding: '0.85rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Действия</th>
@@ -161,12 +162,11 @@ const TenderRegistryTable = ({
 
             const lotName = tnd.title || tnd.lot_name || '—';
 
-
-
             const lotDesc = tnd.category_name || (tnd.subject_type === 'goods' ? 'Товар / Оборудование' : 'Услуги / Работы');
             const quantity = tnd.quantity || 1;
             const totalPrice = tnd.start_price || tnd.budget || tnd.sum || 0;
             const methodText = getProcurementMethodName(tnd.procurement_method || tnd.method);
+            const bidsCount = tnd.bids_count !== undefined ? tnd.bids_count : (tnd.bids ? tnd.bids.length : 0);
 
             return (
               <tr 
@@ -193,7 +193,7 @@ const TenderRegistryTable = ({
                   </div>
                 </td>
 
-                {/* 3. Наименование и описание лота (БЕЗ СЛОВА "ИСТОРИЯ") */}
+                {/* 3. Наименование и описание лота */}
                 <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
                   <div style={{ fontWeight: 700, color: '#1d4ed8', fontSize: '0.88rem', marginBottom: '0.2rem' }}>
                     {lotName}
@@ -218,7 +218,29 @@ const TenderRegistryTable = ({
                   {methodText}
                 </td>
 
-                {/* 7. Статус */}
+                {/* 7. Заявок */}
+                <td style={{ padding: '0.85rem 0.75rem', textAlign: 'center', verticalAlign: 'top' }}>
+                  <span 
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '0.25rem', 
+                      padding: '0.25rem 0.55rem', 
+                      borderRadius: '6px', 
+                      backgroundColor: bidsCount > 0 ? '#eff6ff' : '#f8fafc', 
+                      color: bidsCount > 0 ? '#1d4ed8' : '#64748b', 
+                      border: `1px solid ${bidsCount > 0 ? '#bfdbfe' : '#e2e8f0'}`,
+                      fontWeight: 700, 
+                      fontSize: '0.8rem' 
+                    }}
+                    title={`Подано заявок от участников: ${bidsCount}`}
+                  >
+                    <FileText size={13} />
+                    {bidsCount}
+                  </span>
+                </td>
+
+                {/* 8. Статус */}
                 <td style={{ padding: '0.85rem 1rem', verticalAlign: 'top' }}>
                   {renderStatusBadge(tnd.status)}
                 </td>

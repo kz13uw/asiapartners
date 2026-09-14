@@ -489,6 +489,15 @@ const TenderDetails = () => {
 
                       <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
+                          Подано заявок от участников
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#1d4ed8', fontWeight: 800, fontSize: '0.95rem' }}>
+                          📥 {tender.bids_count !== undefined ? tender.bids_count : (tender.bids ? tender.bids.length : 0)} заявка(и)
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#334155', background: '#fafafa', borderRight: '1px solid #e2e8f0' }}>
                           Сумма закупки
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 800, fontSize: '0.95rem' }}>

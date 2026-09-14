@@ -73,7 +73,8 @@ def get_tender_options():
         selectinload(Tender.qual_requirements),
         selectinload(Tender.documents),
         selectinload(Tender.organizer).selectinload(User.company),
-        selectinload(Tender.category)
+        selectinload(Tender.category),
+        selectinload(Tender.bids)
     ]
 
 
