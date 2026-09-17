@@ -86,6 +86,8 @@ class UserCreate(BaseModel):
 class AdminUserUpdate(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    company_name: Optional[str] = None
+    company_address: Optional[str] = None
 
 class UserOut(BaseModel):
     id: int
@@ -95,6 +97,7 @@ class UserOut(BaseModel):
     full_name: str
     email: Optional[str] = None
     phone: Optional[str] = None
+    company_name: Optional[str] = None
     company_address: Optional[str] = None
     role: UserRole
     status: UserStatus

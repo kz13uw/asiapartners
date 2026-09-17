@@ -92,6 +92,18 @@ async def get_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+    from app.models.models import Company
+    comp_res = await db.execute(select(Company).where(Company.owner_id == user.id))
+    comp = comp_res.scalar_one_or_none()
+    
+    if comp:
+        user.company_name = comp.full_name
+        user.company_address = comp.address
+    else:
+        user.company_name = None
+        user.company_address = None
+        
     return user
 
 
@@ -112,13 +124,22 @@ async def update_user_admin(
     if body.phone is not None:
         user.phone = body.phone
 
-    if body.full_name is not None:
+    if body.full_name is not None or body.company_name is not None or body.company_address is not None:
         from app.models.models import Company
         comp_res = await db.execute(select(Company).where(Company.owner_id == user.id))
         comp = comp_res.scalar_one_or_none()
         if comp:
-            comp.full_name = body.full_name
+            if body.company_name is not None:
+                comp.full_name = body.company_name
+            elif body.full_name is not None and not body.company_name: # fallback
+                comp.full_name = body.full_name
+            
+            if body.company_address is not None:
+                comp.address = body.company_address
             db.add(comp)
+            
+            user.company_name = comp.full_name
+            user.company_address = comp.address
 
     db.add(user)
     
