@@ -44,7 +44,7 @@ const DraftTenders = () => {
           category_id: draftItem.category_id || null,
           method: draftItem.method || 'zcp',
           start_price: draftItem.start_price || 100000,
-          deadline_at: draftItem.deadline_at || new Date(Date.now() + 14*86400000).toISOString(),
+          deadline_at: draftItem.deadline_at || (() => { const d = new Date(); d.setDate(d.getDate() + 14); const pad = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`; })(),
           delivery_place: draftItem.delivery_place || null,
           requires_license: !!draftItem.requires_license,
           status: 'draft'

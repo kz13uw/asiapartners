@@ -157,7 +157,7 @@ const CreateTender = () => {
             category_id: tnd.category_id ? String(tnd.category_id) : '',
             method: tnd.method || 'zcp',
             start_price: tnd.start_price || '',
-            deadline_at: tnd.deadline_at ? new Date(tnd.deadline_at).toISOString().slice(0, 16) : '',
+            deadline_at: tnd.deadline_at ? String(tnd.deadline_at).replace('Z', '').substring(0, 16) : '',
             delivery_place: tnd.delivery_place || ''
           });
 
@@ -349,15 +349,16 @@ const CreateTender = () => {
 
     const safeIsoDate = (val, defaultDays = null) => {
       if (!val) {
-        if (defaultDays !== null) return new Date(Date.now() + defaultDays * 86400000).toISOString();
+        if (defaultDays !== null) {
+          const d = new Date();
+          d.setDate(d.getDate() + defaultDays);
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+        }
         return null;
       }
-      const d = new Date(val);
-      if (isNaN(d.getTime())) {
-        if (defaultDays !== null) return new Date(Date.now() + defaultDays * 86400000).toISOString();
-        return null;
-      }
-      return d.toISOString();
+      if (val.length === 16) return val + ':00';
+      return val;
     };
 
     try {
