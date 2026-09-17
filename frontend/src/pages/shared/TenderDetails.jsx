@@ -43,8 +43,10 @@ const TenderDetails = () => {
   const [showEdsModal, setShowEdsModal] = useState(false);
   const [showBidFormModal, setShowBidFormModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingError, setLoadingError] = useState(false);
 
   useEffect(() => {
+    setLoadingError(false);
     fetchTenderAndBids();
     loadVaultDocs();
   }, [id, user]);

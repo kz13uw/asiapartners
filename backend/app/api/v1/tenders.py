@@ -158,15 +158,23 @@ async def my_tenders(
 
 @router.get("/{tender_id}", response_model=TenderOut, summary="Карточка тендера")
 async def get_tender(
-    tender_id: int,
+    tender_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user),
 ):
     from sqlalchemy.orm import selectinload
-    result = await db.execute(select(Tender).options(*get_tender_options()).where(Tender.id == tender_id))
+    tid_str = str(tender_id).strip()
+    query = select(Tender).options(*get_tender_options())
+    if tid_str.isdigit():
+        query = query.where((Tender.id == int(tid_str)) | (Tender.number == tid_str))
+    else:
+        query = query.where(Tender.number.ilike(tid_str))
+
+    result = await db.execute(query)
     tender = result.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
+
     st_str = str(tender.status.value if hasattr(tender.status, 'value') else tender.status).lower()
     if st_str == 'draft':
         if not current_user or (current_user.id != tender.organizer_id and current_user.role != UserRole.ADMIN):
@@ -177,20 +185,20 @@ async def get_tender(
     if st_str in ['accepting', 'published', 'evaluation'] and tender.deadline_at and tender.deadline_at <= now:
 
         from app.models.models import Bid, BidStatus, Protocol
-        bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender_id, Bid.status != BidStatus.REJECTED))
+        bids_res = await db.execute(select(Bid).where(Bid.tender_id == tender.id, Bid.status != BidStatus.REJECTED))
         bids = bids_res.scalars().all()
         if not bids:
             tender.status = TenderStatus.CANCELLED
             tender.cancellation_reason = "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков"
             
-            p_res = await db.execute(select(Protocol).where(Protocol.tender_id == tender_id, Protocol.protocol_type == "failed"))
+            p_res = await db.execute(select(Protocol).where(Protocol.tender_id == tender.id, Protocol.protocol_type == "failed"))
             if not p_res.scalar_one_or_none():
                 import json
                 failed_proto = Protocol(
-                    tender_id=tender_id,
+                    tender_id=tender.id,
                     protocol_type="failed",
                     protocol_content=json.dumps({
-                        "title": f"Протокол итогов (Закупка не состоялась) № P-FAILED-{tender_id}",
+                        "title": f"Протокол итогов (Закупка не состоялась) № P-FAILED-{tender.id}",
                         "reason": "Закупка признана несостоявшейся в связи с отсутствием поданных заявок от потенциальных поставщиков",
                         "tender_number": tender.number,
                         "tender_title": tender.title,
@@ -198,7 +206,7 @@ async def get_tender(
                         "status": "failed",
                         "created_at": datetime.utcnow().isoformat()
                     }, ensure_ascii=False),
-                    eds_hash=f"auto_failed_sig_{tender_id}",
+                    eds_hash=f"auto_failed_sig_{tender.id}",
                     is_published=True,
                     published_at=datetime.utcnow()
                 )
