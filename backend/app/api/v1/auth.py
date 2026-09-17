@@ -123,10 +123,22 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     db.add(log)
     await db.commit()
 
+    if not user.email:
+        if uname and '@' in uname:
+            user.email = uname
+        elif user.username and '@' in user.username:
+            user.email = user.username
+        elif user.account_code and '@' in user.account_code:
+            user.email = user.account_code
+        if user.email:
+            await db.commit()
+
     if not user.account_code or (user.email and user.account_code != user.email):
         from app.models.models import generate_account_code
         user.account_code = generate_account_code(user.id, user.role, user.email)
         await db.commit()
+
+    user_email = user.email or (user.username if user.username and '@' in user.username else None) or (user.account_code if user.account_code and '@' in user.account_code else None)
 
     token_data = {"sub": str(user.id), "role": user.role.value}
     return TokenResponse(
@@ -136,6 +148,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
+        email=user_email,
+        phone=user.phone,
+        company_name=user.company_name,
+        company_address=user.company_address,
+        iin_bin=user.iin_bin,
     )
 
 
@@ -241,6 +258,11 @@ async def login_by_eds(payload: EdsLoginRequest, db: AsyncSession = Depends(get_
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        company_name=user.company_name,
+        company_address=user.company_address,
+        iin_bin=user.iin_bin,
         is_new_user=is_new_user,
     )
 
@@ -273,6 +295,11 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        company_name=user.company_name,
+        company_address=user.company_address,
+        iin_bin=user.iin_bin,
     )
 
 
@@ -468,6 +495,11 @@ async def register_supplier(
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
+        email=user.email,
+        phone=user.phone,
+        company_name=user.company_name,
+        company_address=user.company_address,
+        iin_bin=user.iin_bin,
         is_new_user=True
     )
 

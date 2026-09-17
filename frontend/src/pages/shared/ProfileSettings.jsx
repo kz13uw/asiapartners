@@ -6,12 +6,18 @@ import { toast } from 'react-hot-toast';
 import { usersAPI } from '../../api';
 
 const ProfileSettings = () => {
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const { t } = useTranslation();
 
   const [companyData, setCompanyData] = useState(null);
 
   useEffect(() => {
+    usersAPI.getMe().then(res => {
+      if (res.data) {
+        updateUser(res.data);
+      }
+    }).catch(err => console.warn("Failed to refresh user profile from API:", err));
+
     if (user && (user.role === 'supplier' || user.role === 'organizer')) {
       usersAPI.myCompany().then(res => {
         setCompanyData(res.data);
@@ -19,7 +25,7 @@ const ProfileSettings = () => {
         setCompanyData(null);
       });
     }
-  }, [user]);
+  }, []);
 
   const [loadingPassword, setLoadingPassword] = useState(false);
 
@@ -127,7 +133,7 @@ const ProfileSettings = () => {
             <input 
               type="email" 
               className="form-control" 
-              value={user?.email || 'Не указан'} 
+              value={user?.email || (user?.username?.includes('@') ? user.username : '') || (user?.account_code?.includes('@') ? user.account_code : '') || 'Не указан'} 
               disabled 
               style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
             />

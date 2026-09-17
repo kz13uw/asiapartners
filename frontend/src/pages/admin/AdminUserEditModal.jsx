@@ -32,7 +32,7 @@ const AdminUserEditModal = ({ userId, isOpen, onClose, onUserUpdated }) => {
         full_name: user.full_name || '',
         phone: user.phone || '',
         iin_bin: user.iin_bin || '',
-        email: user.email || '',
+        email: user.email || (user.username && user.username.includes('@') ? user.username : '') || (user.account_code && user.account_code.includes('@') ? user.account_code : '') || '',
         role: user.role || '',
         status: user.status || '',
         company_name: user.company_name || '',

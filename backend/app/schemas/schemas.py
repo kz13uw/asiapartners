@@ -31,6 +31,11 @@ class TokenResponse(BaseModel):
     account_code: Optional[str] = None
     role: UserRole
     full_name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+    company_address: Optional[str] = None
+    iin_bin: Optional[str] = None
     is_new_user: bool = False  # True при первом входе через ЭЦП — показать форму доп. данных
 
 
@@ -106,11 +111,34 @@ class UserOut(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def ensure_account_code(cls, data: Any) -> Any:
-        if hasattr(data, 'id') and getattr(data, 'id', None):
+        if isinstance(data, dict):
+            uid = data.get('id')
+            role = data.get('role', UserRole.SUPPLIER)
+            email = data.get('email')
+            username = data.get('username')
+            code = data.get('account_code')
+            if not email:
+                if username and '@' in str(username):
+                    email = str(username)
+                    data['email'] = email
+                elif code and '@' in str(code):
+                    email = str(code)
+                    data['email'] = email
+            if uid and (not code or (email and code != email)):
+                data['account_code'] = generate_account_code(uid, role, email)
+        elif hasattr(data, 'id') and getattr(data, 'id', None):
             uid = getattr(data, 'id')
             role = getattr(data, 'role', UserRole.SUPPLIER)
             email = getattr(data, 'email', None)
+            username = getattr(data, 'username', None)
             code = getattr(data, 'account_code', None)
+            if not email:
+                if username and '@' in str(username):
+                    email = str(username)
+                elif code and '@' in str(code):
+                    email = str(code)
+                if hasattr(data, '__dict__') and email:
+                    data.email = email
             if not code or (email and code != email):
                 code = generate_account_code(uid, role, email)
                 if hasattr(data, '__dict__'):
