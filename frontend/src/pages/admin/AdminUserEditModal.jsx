@@ -66,49 +66,51 @@ const AdminUserEditModal = ({ userId, isOpen, onClose, onUserUpdated }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal-content" style={{ maxWidth: '600px', width: '90%' }}>
-        <div className="modal-header">
-          <h3>Профиль пользователя</h3>
-          <button className="btn-close" onClick={onClose}>&times;</button>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '1.5rem 1rem', overflowY: 'auto' }}>
+      <div className="card fade-in" style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: 0 }}>Профиль пользователя</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--pk-text-sec)' }}>
+            &times;
+          </button>
         </div>
         
         {isLoading ? (
           <div style={{ padding: '2rem', textAlign: 'center' }}>Загрузка...</div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Роль в системе</label>
-              <input type="text" className="input" value={formData.role} disabled />
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Роль в системе</label>
+              <input type="text" className="form-control" value={formData.role} disabled />
             </div>
-            <div className="form-group">
-              <label>БИН / ИИН (недоступно для изменения)</label>
-              <input type="text" className="input" value={formData.iin_bin} disabled />
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>БИН / ИИН (недоступно для изменения)</label>
+              <input type="text" className="form-control" value={formData.iin_bin} disabled />
             </div>
-            <div className="form-group">
-              <label>Почта (недоступно для изменения)</label>
-              <input type="email" className="input" value={formData.email} disabled />
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Почта (недоступно для изменения)</label>
+              <input type="email" className="form-control" value={formData.email} disabled />
             </div>
-            <div className="form-group">
-              <label>Наименование организации / ФИО</label>
+            <div className="form-group" style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Наименование организации / ФИО</label>
               <input 
                 type="text" 
-                className="input" 
+                className="form-control" 
                 value={formData.full_name} 
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                 required 
               />
             </div>
-            <div className="form-group">
-              <label>Телефон</label>
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Телефон</label>
               <input 
                 type="text" 
-                className="input" 
+                className="form-control" 
                 value={formData.phone} 
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
               />
             </div>
-            <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-outline" onClick={onClose}>Отмена</button>
               <button type="submit" className="btn btn-primary" disabled={isSaving}>
                 {isSaving ? 'Сохранение...' : 'Сохранить'}
