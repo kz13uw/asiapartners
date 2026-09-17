@@ -83,6 +83,10 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.SUPPLIER
 
 
+class AdminUserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+
 class UserOut(BaseModel):
     id: int
     account_code: Optional[str] = None

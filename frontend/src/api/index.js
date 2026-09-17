@@ -117,7 +117,9 @@ export const suppliersAPI = {
 // ===== ADMIN =====
 export const adminAPI = {
   listUsers: () => API.get('/admin/users'),
+  getUser: (id) => API.get(`/admin/users/${id}`),
   createUser: (data) => API.post('/admin/users', data),
+  updateUser: (id, data) => API.put(`/admin/users/${id}`, data),
   blockUser: (id) => API.patch(`/admin/users/${id}/block`),
   unblockUser: (id) => API.patch(`/admin/users/${id}/unblock`),
   deleteUser: (id) => API.delete(`/admin/users/${id}`),

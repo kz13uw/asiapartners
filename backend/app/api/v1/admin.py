@@ -5,7 +5,7 @@ from typing import Optional
 
 from app.db.session import get_db
 from app.models.models import User, UserRole, UserStatus, AuditLog
-from app.schemas.schemas import UserCreate, UserOut
+from app.schemas.schemas import UserCreate, UserOut, AdminUserUpdate
 from app.api.v1.auth import get_current_user
 from app.api.v1.tenders import require_role
 from app.core.security import get_password_hash
@@ -79,6 +79,54 @@ async def create_internal_user(
     log = AuditLog(user_id=current_user.id, action="CREATE_USER", entity_type="user", entity_id=user.id)
     db.add(log)
     await db.commit()
+    return user
+
+
+@router.get("/users/{user_id}", response_model=UserOut, summary="Получить данные пользователя")
+async def get_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
+
+
+@router.put("/users/{user_id}", response_model=UserOut, summary="Обновить данные пользователя")
+async def update_user_admin(
+    user_id: int,
+    body: AdminUserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if body.full_name is not None:
+        user.full_name = body.full_name
+    if body.phone is not None:
+        user.phone = body.phone
+
+    if body.full_name is not None:
+        from app.models.models import Company
+        comp_res = await db.execute(select(Company).where(Company.owner_id == user.id))
+        comp = comp_res.scalar_one_or_none()
+        if comp:
+            comp.full_name = body.full_name
+            db.add(comp)
+
+    db.add(user)
+    
+    log = AuditLog(user_id=current_user.id, action="UPDATE_USER", entity_type="user", entity_id=user.id)
+    db.add(log)
+    
+    await db.commit()
+    await db.refresh(user)
     return user
 
 

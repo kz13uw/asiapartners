@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShieldCheck, UserPlus, Lock, Unlock, Key, X, Layers, Plus, Trash2, Tag, Building2, Sprout, Hotel, Truck, Factory, Eye, EyeOff, RefreshCw, Check, AlertCircle, Package } from 'lucide-react';
+import { ShieldCheck, UserPlus, Lock, Unlock, Key, X, Layers, Plus, Trash2, Tag, Building2, Sprout, Hotel, Truck, Factory, Eye, EyeOff, RefreshCw, Check, AlertCircle, Package, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAdmin } from '../../hooks/useAdmin';
 import { adminAPI, categoriesAPI, tendersAPI } from '../../api';
 import { useTranslation } from '../../store/useLanguageStore';
 import TenderRegistryTable from '../../components/TenderRegistryTable';
+import AdminUserEditModal from './AdminUserEditModal';
 
 const defaultCategoriesMock = [
   { id: 1, name: "🏗️ Строительство и Девелопмент", code: "construction", icon: "building", description: "Гражданское и промышленное строительство, СМР, строительные материалы", is_active: true },
@@ -21,6 +22,7 @@ const AdminDashboard = () => {
   const [adminTenders, setAdminTenders] = useState([]);
   const [tendersLoading, setTendersLoading] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState(null);
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
@@ -382,6 +384,9 @@ const AdminDashboard = () => {
                       <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>
                         {u.role !== 'admin' && u.role !== 'ADMIN' && (
                           <>
+                            <button className="btn btn-outline btn-sm" title="Профиль" onClick={() => setEditUserId(u.id)}>
+                              <Edit size={16} /> Профиль
+                            </button>
                             <button className="btn btn-outline btn-sm" title="Сброс пароля" onClick={() => handleResetPassword(u.id)}>
                               <Key size={16} /> {t('btn_reset') || 'Сброс'}
                             </button>
@@ -733,6 +738,12 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      <AdminUserEditModal 
+        userId={editUserId} 
+        isOpen={!!editUserId} 
+        onClose={() => setEditUserId(null)} 
+        onUserUpdated={refetch} 
+      />
     </div>
   );
 };
