@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useTranslation } from '../../store/useLanguageStore';
-import { Building, Lock, Eye, EyeOff, RefreshCw, Check, AlertCircle, ShieldCheck, Save } from 'lucide-react';
+import { User, Building, Lock, Eye, EyeOff, RefreshCw, Check, AlertCircle, ShieldCheck, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usersAPI } from '../../api';
 
@@ -96,16 +96,16 @@ const ProfileSettings = () => {
   return (
     <div className="fade-in" style={{ padding: '2rem', maxWidth: '850px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--pk-text-main)', marginBottom: '1.5rem' }}>
-        {t('title_profile_settings') || 'Настройки профиля'}
+        {t('title_profile_settings') || 'Профиль пользователя'}
       </h1>
 
-      {/* Данные профиля и организации */}
-      <div className="card" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px' }}>
+      {/* Учетные данные */}
+      <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem', borderRadius: '12px', border: '1px solid var(--pk-border)', boxShadow: 'none' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Building size={20} color="var(--pk-primary)" />
-          {t('org_credentials') || 'Данные профиля и организации'}
+          <User size={20} color="var(--pk-primary)" />
+          {t('user_credentials') || 'Учетные данные'}
         </h3>
-        
+
         <div className="grid-2" style={{ gap: '1.25rem' }}>
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
@@ -114,22 +114,9 @@ const ProfileSettings = () => {
             <input 
               type="text" 
               className="form-control" 
-              value={user?.full_name || companyData?.director_name || 'Не указано'} 
+              value={user?.full_name || 'Не указано'} 
               disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-              {t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}
-            </label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={companyData?.full_name || companyData?.name || user?.company_name || 'Не указано'} 
-              disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
             />
           </div>
 
@@ -142,33 +129,7 @@ const ProfileSettings = () => {
               className="form-control" 
               value={user?.email || 'Не указан'} 
               disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-              {t('th_phone') || 'Телефон'}
-            </label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={user?.phone || companyData?.phone || 'Не указан'} 
-              disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-              {t('th_iin_bin') || 'БИН / ИИН'}
-            </label>
-            <input 
-              type="text" 
-              className="form-control" 
-              value={companyData?.bin || user?.iin_bin || 'Не указан'} 
-              disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
             />
           </div>
 
@@ -181,27 +142,78 @@ const ProfileSettings = () => {
               className="form-control" 
               value={user?.role || 'user'} 
               disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
             />
           </div>
-
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          
+          <div className="form-group">
             <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-              {t('lbl_company_address') || 'Юридический адрес'}
+              {t('th_phone') || 'Телефон'}
             </label>
             <input 
               type="text" 
               className="form-control" 
-              value={companyData?.address || user?.company_address || 'Не указан'} 
+              value={user?.phone || companyData?.phone || 'Не указан'} 
               disabled 
-              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
             />
           </div>
         </div>
       </div>
 
+      {/* Данные организации */}
+      {(user?.role === 'supplier' || user?.role === 'organizer' || user?.iin_bin || companyData) && (
+        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem', borderRadius: '12px', border: '1px solid var(--pk-border)', boxShadow: 'none' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Building size={20} color="var(--pk-primary)" />
+            {t('org_credentials') || 'Данные организации'}
+          </h3>
+          
+          <div className="grid-2" style={{ gap: '1.25rem' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+                {t('th_iin_bin') || 'ИИН / БИН'}
+              </label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={companyData?.bin || user?.iin_bin || 'Не указан'} 
+                disabled 
+                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+                {t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}
+              </label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={companyData?.full_name || companyData?.name || user?.company_name || 'Не указано'} 
+                disabled 
+                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              />
+            </div>
+            
+            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+                {t('lbl_company_address') || 'Адрес компании'}
+              </label>
+              <input 
+                type="text" 
+                className="form-control" 
+                value={companyData?.address || user?.company_address || 'Не указан'} 
+                disabled 
+                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Безопасность и Смена пароля */}
-      <div className="card" style={{ padding: '2rem', borderRadius: '16px' }}>
+      <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--pk-border)', boxShadow: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Lock size={20} color="var(--pk-primary)" />
