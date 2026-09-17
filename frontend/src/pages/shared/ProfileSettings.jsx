@@ -175,33 +175,22 @@ const ProfileSettings = () => {
                 type="text" 
                 className="form-control" 
                 value={profileData.company_name || ''} 
-                onChange={e => setProfileData({ ...profileData, company_name: e.target.value })} 
-                placeholder='Например: ТОО "Asia Partners"'
+                disabled
+                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
               />
             </div>
             
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('th_email') || 'Email'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
+                {t('th_email') || 'Email / Контакт'}
               </label>
               <input 
                 type="email" 
                 className="form-control" 
-                required 
                 value={profileData.email} 
-                onChange={e => setProfileData({ ...profileData, email: e.target.value.trim() })} 
-                placeholder="example@asiapartners.kz"
+                disabled
+                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
               />
-              {profileData.email && !isEmailValid && (
-                <div style={{ fontSize: '0.78rem', color: '#dc2626', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 500 }}>
-                  <AlertCircle size={14} color="#dc2626" /> {t('warn_invalid_email') || '⚠️ Введите корректный адрес эл. почты'}
-                </div>
-              )}
-              {profileData.email && isEmailValid && (
-                <div style={{ fontSize: '0.78rem', color: '#16a34a', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
-                  <Check size={14} color="#16a34a" /> {t('valid_email_format') || '✓ Корректный адрес электронной почты'}
-                </div>
-              )}
             </div>
 
             <div className="form-group">
