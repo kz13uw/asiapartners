@@ -174,7 +174,7 @@ const ProfileSettings = () => {
               <input 
                 type="text" 
                 className="form-control" 
-                value={profileData.company_name || ''} 
+                value={companyData?.full_name || companyData?.name || user?.company_name || ''} 
                 disabled
                 style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
               />
