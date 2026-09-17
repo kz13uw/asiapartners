@@ -12,6 +12,7 @@ const ProfileSettings = () => {
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
+    company_name: user?.company_name || '',
   });
 
   const [companyData, setCompanyData] = useState(null);
@@ -21,18 +22,23 @@ const ProfileSettings = () => {
       setProfileData({
         full_name: user.full_name || '',
         email: user.email || '',
+        company_name: user.company_name || '',
       });
       if (user.role === 'supplier' || user.role === 'organizer') {
         usersAPI.myCompany().then(res => {
           setCompanyData(res.data);
+          if (res.data?.full_name || res.data?.name) {
+            setProfileData(prev => ({
+              ...prev,
+              company_name: prev.company_name || res.data.full_name || res.data.name
+            }));
+          }
         }).catch(() => {
           setCompanyData(null);
         });
       }
     }
   }, [user]);
-
-
 
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
@@ -75,6 +81,19 @@ const ProfileSettings = () => {
         email: profileData.email.trim(),
       });
       updateUser(res.data);
+
+      if ((user?.role === 'supplier' || user?.role === 'organizer') && profileData.company_name) {
+        try {
+          await usersAPI.updateCompany({
+            full_name: profileData.company_name.trim(),
+            bin: companyData?.bin || user?.iin_bin || '000000000000',
+            legal_form: companyData?.legal_form || 'TOO'
+          });
+        } catch (compErr) {
+          console.error("Error updating company:", compErr);
+        }
+      }
+
       toast.success(t('msg_profile_updated') || 'Учетные данные успешно обновлены!');
     } catch (err) {
       console.error(err);
@@ -174,22 +193,23 @@ const ProfileSettings = () => {
               <input 
                 type="text" 
                 className="form-control" 
-                value={companyData?.full_name || companyData?.name || user?.company_name || ''} 
-                disabled
-                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
+                value={profileData.company_name || ''} 
+                onChange={e => setProfileData({ ...profileData, company_name: e.target.value })} 
+                placeholder='Например: ТОО "Asia Partners"'
               />
             </div>
             
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('th_email') || 'Email / Контакт'}
+                {t('th_email') || 'Email / Контакт'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
               </label>
               <input 
                 type="email" 
                 className="form-control" 
+                required
                 value={profileData.email} 
-                disabled
-                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
+                onChange={e => setProfileData({ ...profileData, email: e.target.value })} 
+                placeholder="example@domain.com"
               />
             </div>
 
