@@ -29,9 +29,9 @@ async def check_expired_tenders():
             logger.info(f"[BROKER] Перевод тендера #{tender.id} ({tender.number}) в статус EVALUATION")
             tender.status = TenderStatus.EVALUATION
 
-            # Автоматически ранжируем заявки по наименьшей цене
+            # Автоматически ранжируем заявки по наименьшей цене (только активные заявки)
             bids_res = await db.execute(
-                select(Bid).where(Bid.tender_id == tender.id).order_by(Bid.price.asc())
+                select(Bid).where(Bid.tender_id == tender.id, Bid.status != BidStatus.REJECTED).order_by(Bid.price.asc())
             )
             bids = bids_res.scalars().all()
 

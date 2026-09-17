@@ -71,9 +71,9 @@ const EvaluateTender = () => {
   };
 
   const handleGenerateProtocol = () => {
-    const qualified = bids.filter(b => b.status === 'qualified');
-    if (qualified.length === 0) {
-      toast.error('Сначала допустите участников к торгам (минимум 1 участник)');
+    const activeBids = bids.filter(b => (b.status || '').toLowerCase() !== 'rejected');
+    if (activeBids.length === 0) {
+      toast.error('Для формирования протокола итогов необходима минимум 1 активная не отклонённая заявка');
       return;
     }
     setShowProtocolModal(true);
@@ -103,8 +103,9 @@ const EvaluateTender = () => {
 
   if (loading || !tender) return <div style={{ padding: '4rem', textAlign: 'center' }}><span className="loader-spinner"></span> Загрузка карточки оценки...</div>;
 
-  const qualifiedCount = bids.filter(b => b.status === 'qualified').length;
-  const calculatedWinner = bids.filter(b => b.status === 'qualified').sort((a,b) => a.price - b.price)[0];
+  const activeBids = bids.filter(b => (b.status || '').toLowerCase() !== 'rejected');
+  const qualifiedCount = activeBids.length;
+  const calculatedWinner = activeBids.sort((a,b) => a.price - b.price)[0];
 
   return (
     <div className="fade-in container" style={{ padding: '2rem 1rem' }}>
@@ -144,8 +145,9 @@ const EvaluateTender = () => {
           </div>
           
           {bids.map((bid) => {
-            const isQualified = bid.status === 'qualified';
-            const isRejected = bid.status === 'rejected';
+            const st = (bid.status || '').toLowerCase();
+            const isQualified = st === 'qualified' || st === 'winner' || st === 'runner_up';
+            const isRejected = st === 'rejected';
 
             return (
               <div 

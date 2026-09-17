@@ -27,9 +27,9 @@ const SupplierHistory = () => {
   }, []);
 
   // Расчёт реальной статистики пользователя
-  const wonCount = bids.filter(b => b.status === 'WINNER' || b.status === 'ACCEPTED' || b.result === 'winner').length;
+  const wonCount = bids.filter(b => ['WINNER', 'ACCEPTED', 'QUALIFIED'].includes((b.status || b.result || '').toUpperCase())).length;
   const totalCount = bids.length;
-  const lostCount = bids.filter(b => b.status === 'REJECTED' || b.status === 'LOST' || b.result === 'rejected').length;
+  const lostCount = bids.filter(b => ['REJECTED', 'LOST', 'CANCELLED'].includes((b.status || b.result || '').toUpperCase())).length;
 
   const filteredBids = bids.filter(item => {
     if (!searchQuery) return true;
@@ -124,18 +124,19 @@ const SupplierHistory = () => {
                     <td>{item.tender_title || item.title || 'Тендерная закупка'}</td>
                     <td style={{ fontWeight: 600 }}>{Number(item.price_offer || item.amount || 0).toLocaleString('ru-RU')} ₸</td>
                     <td>
-                      {(item.status === 'WINNER' || item.status === 'ACCEPTED' || item.result === 'winner') && (
-                        <span className="badge" style={{ background: '#defbe6', color: '#198038', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle2 size={14} /> Победитель</span>
-                      )}
-                      {(item.status === 'RESERVE' || item.result === 'reserve') && (
-                        <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><AlertCircle size={14} /> Второе место (Резерв)</span>
-                      )}
-                      {(item.status === 'REJECTED' || item.status === 'LOST' || item.result === 'rejected') && (
-                        <span className="badge" style={{ background: '#ffe5e5', color: '#da1e28', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><XCircle size={14} /> Не допущен / Отклонён</span>
-                      )}
-                      {(!['WINNER', 'ACCEPTED', 'RESERVE', 'REJECTED', 'LOST', 'winner', 'reserve', 'rejected'].includes(item.status || item.result)) && (
-                        <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>На рассмотрении</span>
-                      )}
+                      {(() => {
+                        const st = (item.status || item.result || '').toUpperCase();
+                        if (['WINNER', 'ACCEPTED', 'QUALIFIED'].includes(st)) {
+                          return <span className="badge" style={{ background: '#defbe6', color: '#198038', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle2 size={14} /> Победитель</span>;
+                        }
+                        if (['RUNNER_UP', 'RESERVE', 'SECOND'].includes(st)) {
+                          return <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><AlertCircle size={14} /> Второе место (Резерв)</span>;
+                        }
+                        if (['REJECTED', 'LOST', 'CANCELLED'].includes(st)) {
+                          return <span className="badge" style={{ background: '#ffe5e5', color: '#da1e28', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><XCircle size={14} /> Не допущен / Отклонён</span>;
+                        }
+                        return <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>Активна / Подана</span>;
+                      })()}
                     </td>
                     <td>{item.updated_at ? new Date(item.updated_at).toLocaleDateString('ru-RU') : (item.date || '—')}</td>
                     <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>

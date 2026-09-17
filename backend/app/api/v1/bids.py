@@ -27,7 +27,6 @@ async def submit_bid(
     if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED]:
         raise HTTPException(status_code=400, detail="Прием ценовых предложений закрыт")
 
-    # [P0-FIX] Проверка дублирования заявки — один поставщик, одна активная заявка
     dup_result = await db.execute(
         select(Bid).where(
             Bid.tender_id == body.tender_id,
@@ -35,11 +34,7 @@ async def submit_bid(
             Bid.status != BidStatus.REJECTED
         )
     )
-    if dup_result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=409,
-            detail="Активная заявка на эту закупку уже подана. Сначала отзовите её, чтобы подать новую версию."
-        )
+    existing_bid = dup_result.scalar_one_or_none()
 
     # Проверяем шаг цены
     if body.price >= tender.start_price:
@@ -47,6 +42,13 @@ async def submit_bid(
             status_code=400, 
             detail=f"Цена ценового предложения должна быть ниже стартовой суммы ({tender.start_price:,.0f} ₸)"
         )
+
+    if existing_bid:
+        if body.price >= existing_bid.price:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ваше новое ценовое предложение ({body.price:,.0f} ₸) должно быть строго ниже предыдущего ({existing_bid.price:,.0f} ₸)"
+            )
 
     # Проверка на антидемпинг
     dumping_threshold = tender.start_price * (1 - (tender.anti_dumping_pct or 20.0) / 100.0)
@@ -56,7 +58,7 @@ async def submit_bid(
     now = datetime.utcnow()
     time_left_seconds = (tender.deadline_at - now).total_seconds()
     auto_extend = tender.auto_extend_minutes or 5
-    MAX_EXTENSIONS = 3  # [P2-FIX] Ограничение на максимальное количество продлений
+    MAX_EXTENSIONS = 3
 
     extension_count = getattr(tender, 'extension_count', 0) or 0
     if 0 < time_left_seconds <= (auto_extend * 60) and extension_count < MAX_EXTENSIONS:
@@ -75,23 +77,32 @@ async def submit_bid(
     from app.models.models import Company
     comp_result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
     company = comp_result.scalar_one_or_none()
-    # [P1-FIX] Больше не создаём компанию-заглушку — требуем регистрации
     if not company:
         raise HTTPException(
             status_code=403,
             detail="Для подачи заявки необходимо зарегистрировать компанию в разделе 'Профиль'. Заполните реквизиты и сохраните их."
         )
 
-    bid = Bid(
-        tender_id=body.tender_id,
-        supplier_id=current_user.id,
-        company_id=company.id,
-        price=body.price or (sum(i.price for i in body.items) if body.items else tender.start_price * 0.95),
-        tech_spec_notes=body.tech_spec_notes,
-        is_anti_dumping_flag=is_dumping,
-        eds_hash=body.eds_hash or "demo_bid_signature",
-    )
-    db.add(bid)
+    if existing_bid:
+        bid = existing_bid
+        bid.price = body.price
+        bid.tech_spec_notes = body.tech_spec_notes or bid.tech_spec_notes
+        bid.is_anti_dumping_flag = is_dumping
+        bid.eds_hash = body.eds_hash or bid.eds_hash
+        bid.submitted_at = datetime.utcnow()
+        bid.version += 1
+        bid.status = BidStatus.SUBMITTED
+    else:
+        bid = Bid(
+            tender_id=body.tender_id,
+            supplier_id=current_user.id,
+            company_id=company.id,
+            price=body.price or (sum(i.price for i in body.items) if body.items else tender.start_price * 0.95),
+            tech_spec_notes=body.tech_spec_notes,
+            is_anti_dumping_flag=is_dumping,
+            eds_hash=body.eds_hash or "demo_bid_signature",
+        )
+        db.add(bid)
     await db.flush()
 
     from app.models.models import BidItem, BidDocument
@@ -156,10 +167,10 @@ async def submit_bid(
     return res_bid.scalar_one()
 
 
-@router.get("/my", response_model=list[BidOut], summary="Мои заявки (для поставщика)")
+@router.get("/my", response_model=list[BidOut], summary="Мои заявки (для любого пользователя)")
 async def my_bids(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.SUPPLIER, UserRole.ADMIN)),
+    current_user: User = Depends(get_current_user),
 ):
     from sqlalchemy.orm import selectinload
     # [P2-FIX] Добавляем загрузку связанного тендера для корректного отображения статуса в кабинете
