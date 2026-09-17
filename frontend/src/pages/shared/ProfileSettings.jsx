@@ -1,46 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useTranslation } from '../../store/useLanguageStore';
-import { Save, User, Building, Lock, Eye, EyeOff, RefreshCw, Check, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Building, Lock, Eye, EyeOff, RefreshCw, Check, AlertCircle, ShieldCheck, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { usersAPI } from '../../api';
 
 const ProfileSettings = () => {
-  const { user, updateUser } = useAuthStore();
+  const { user } = useAuthStore();
   const { t } = useTranslation();
-
-  const [profileData, setProfileData] = useState({
-    full_name: user?.full_name || '',
-    email: user?.email || '',
-    company_name: user?.company_name || '',
-  });
 
   const [companyData, setCompanyData] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        full_name: user.full_name || '',
-        email: user.email || '',
-        company_name: user.company_name || '',
+    if (user && (user.role === 'supplier' || user.role === 'organizer')) {
+      usersAPI.myCompany().then(res => {
+        setCompanyData(res.data);
+      }).catch(() => {
+        setCompanyData(null);
       });
-      if (user.role === 'supplier' || user.role === 'organizer') {
-        usersAPI.myCompany().then(res => {
-          setCompanyData(res.data);
-          if (res.data?.full_name || res.data?.name) {
-            setProfileData(prev => ({
-              ...prev,
-              company_name: prev.company_name || res.data.full_name || res.data.name
-            }));
-          }
-        }).catch(() => {
-          setCompanyData(null);
-        });
-      }
     }
   }, [user]);
 
-  const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
 
   // Смена пароля state
@@ -48,10 +28,6 @@ const ProfileSettings = () => {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Email FLC
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isEmailValid = emailRegex.test(profileData.email);
 
   // Password policy checks (supports Latin & Cyrillic)
   const pwd = passwords.new || '';
@@ -62,46 +38,6 @@ const ProfileSettings = () => {
   const pwdHasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd);
   const pwdIsMatch = pwd.length > 0 && pwd === passwords.confirm;
   const isPwdValid = pwdHasLength && pwdIsMatch && (pwdHasUpper || pwdHasLower) && pwdHasDigit;
-
-  const handleSaveProfile = async (e) => {
-    if (e) e.preventDefault();
-    if (!profileData.full_name || profileData.full_name.trim().length < 2) {
-      toast.error('Введите корректное полное имя!');
-      return;
-    }
-    if (!profileData.email || !isEmailValid) {
-      toast.error(t('err_email_flk') || 'ФЛК: Введите корректный адрес электронной почты!');
-      return;
-    }
-
-    setLoadingProfile(true);
-    try {
-      const res = await usersAPI.updateProfile({
-        full_name: profileData.full_name.trim(),
-        email: profileData.email.trim(),
-      });
-      updateUser(res.data);
-
-      if ((user?.role === 'supplier' || user?.role === 'organizer') && profileData.company_name) {
-        try {
-          await usersAPI.updateCompany({
-            full_name: profileData.company_name.trim(),
-            bin: companyData?.bin || user?.iin_bin || '000000000000',
-            legal_form: companyData?.legal_form || 'TOO'
-          });
-        } catch (compErr) {
-          console.error("Error updating company:", compErr);
-        }
-      }
-
-      toast.success(t('msg_profile_updated') || 'Учетные данные успешно обновлены!');
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.detail || 'Ошибка сохранения профиля');
-    } finally {
-      setLoadingProfile(false);
-    }
-  };
 
   const handleGeneratePassword = () => {
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -163,110 +99,106 @@ const ProfileSettings = () => {
         {t('title_profile_settings') || 'Настройки профиля'}
       </h1>
 
-      {/* Учетные данные */}
+      {/* Данные профиля и организации */}
       <div className="card" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px' }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <User size={20} color="var(--pk-primary)" />
-          {t('user_credentials') || 'Учетные данные'}
+          <Building size={20} color="var(--pk-primary)" />
+          {t('org_credentials') || 'Данные профиля и организации'}
         </h3>
-
-        <form onSubmit={handleSaveProfile}>
-          <div className="grid-2" style={{ gap: '1.25rem', marginBottom: '1.5rem' }}>
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('lbl_full_name') || 'ФИО (Контактное лицо)'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
-              </label>
-              <input 
-                type="text" 
-                className="form-control" 
-                required 
-                value={profileData.full_name} 
-                onChange={e => setProfileData({ ...profileData, full_name: e.target.value })} 
-                placeholder="Иванов Иван Иванович"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}
-              </label>
-              <input 
-                type="text" 
-                className="form-control" 
-                value={profileData.company_name || ''} 
-                onChange={e => setProfileData({ ...profileData, company_name: e.target.value })} 
-                placeholder='Например: ТОО "Asia Partners"'
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('th_email') || 'Email / Контакт'} <span style={{ color: 'var(--pk-danger)' }}>*</span>
-              </label>
-              <input 
-                type="email" 
-                className="form-control" 
-                required
-                value={profileData.email} 
-                onChange={e => setProfileData({ ...profileData, email: e.target.value })} 
-                placeholder="example@domain.com"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
-                {t('th_role') || 'Роль в системе'}
-              </label>
-              <input 
-                type="text" 
-                className="form-control" 
-                value={user?.role || 'user'} 
-                disabled 
-                style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }}
-              />
-            </div>
+        
+        <div className="grid-2" style={{ gap: '1.25rem' }}>
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('lbl_full_name') || 'ФИО (Контактное лицо)'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={user?.full_name || companyData?.director_name || 'Не указано'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary" 
-            disabled={loadingProfile}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <Save size={18} /> {loadingProfile ? 'Сохранение...' : (t('btn_save_profile') || 'Сохранить изменения профиля')}
-          </button>
-        </form>
-      </div>
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('lbl_company_name') || 'Наименование организации (ТОО / ИП)'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={companyData?.full_name || companyData?.name || user?.company_name || 'Не указано'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
+          </div>
 
-      {/* Данные организации если есть */}
-      {(user?.role === 'supplier' || user?.role === 'organizer') && (
-        <div className="card" style={{ padding: '2rem', marginBottom: '2rem', borderRadius: '16px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Building size={20} color="var(--pk-primary)" />
-            {t('org_credentials') || 'Данные организации'}
-          </h3>
-          
-          <div className="grid-2" style={{ gap: '1.25rem' }}>
-            <div className="form-group">
-              <label className="form-label">{t('th_iin_bin') || 'БИН / ИИН'}</label>
-              <input type="text" className="form-control" value={companyData?.bin || user?.iin_bin || 'Не указан'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t('lbl_company_name') || 'Наименование организации'}</label>
-              <input type="text" className="form-control" value={companyData?.full_name || companyData?.name || user?.full_name || 'Не указано'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t('lbl_full_name') || 'ФИО Руководителя / Контактное лицо'}</label>
-              <input type="text" className="form-control" value={companyData?.director_name || profileData.full_name || user?.full_name || 'Не указано'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t('lbl_company_address') || 'Юридический адрес'}</label>
-              <input type="text" className="form-control" value={companyData?.address || 'Не указан'} disabled style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)' }} />
-            </div>
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('th_email') || 'Email / Контакт'}
+            </label>
+            <input 
+              type="email" 
+              className="form-control" 
+              value={user?.email || 'Не указан'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('th_phone') || 'Телефон'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={user?.phone || companyData?.phone || 'Не указан'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('th_iin_bin') || 'БИН / ИИН'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={companyData?.bin || user?.iin_bin || 'Не указан'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('th_role') || 'Роль в системе'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={user?.role || 'user'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
+          </div>
+
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label" style={{ fontWeight: 500, marginBottom: '0.5rem', display: 'block' }}>
+              {t('lbl_company_address') || 'Юридический адрес'}
+            </label>
+            <input 
+              type="text" 
+              className="form-control" 
+              value={companyData?.address || user?.company_address || 'Не указан'} 
+              disabled 
+              style={{ backgroundColor: 'var(--pk-bg-subtle, #f8fafc)', color: 'var(--pk-text-sec)' }} 
+            />
           </div>
         </div>
-
-      )}
+      </div>
 
       {/* Безопасность и Смена пароля */}
       <div className="card" style={{ padding: '2rem', borderRadius: '16px' }}>

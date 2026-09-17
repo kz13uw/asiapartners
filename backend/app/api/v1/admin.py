@@ -120,24 +120,35 @@ async def update_user_admin(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     if body.full_name is not None:
-        user.full_name = body.full_name
+        user.full_name = body.full_name.strip()
     if body.phone is not None:
-        user.phone = body.phone
+        user.phone = body.phone.strip()
 
-    if body.full_name is not None or body.company_name is not None or body.company_address is not None:
-        from app.models.models import Company
-        comp_res = await db.execute(select(Company).where(Company.owner_id == user.id))
-        comp = comp_res.scalar_one_or_none()
-        if comp:
-            if body.company_name is not None:
-                comp.full_name = body.company_name
-            elif body.full_name is not None and not body.company_name: # fallback
-                comp.full_name = body.full_name
+    from app.models.models import Company
+    comp_res = await db.execute(select(Company).where(Company.owner_id == user.id))
+    comp = comp_res.scalar_one_or_none()
+    if comp:
+        if body.company_name is not None:
+            comp.full_name = body.company_name.strip()
+        if body.company_address is not None:
+            comp.address = body.company_address.strip()
+        if body.full_name is not None:
+            comp.director_name = body.full_name.strip()
             
-            if body.company_address is not None:
-                comp.address = body.company_address
+        db.add(comp)
+        user.company_name = comp.full_name
+        user.company_address = comp.address
+    else:
+        if user.role in [UserRole.SUPPLIER, UserRole.ORGANIZER] or body.company_name or body.company_address:
+            comp = Company(
+                owner_id=user.id,
+                bin=user.iin_bin or f"99{user.id:010d}",
+                full_name=body.company_name.strip() if body.company_name else (user.company_name or user.full_name or "Компания"),
+                address=body.company_address.strip() if body.company_address else "",
+                legal_form="TOO",
+                director_name=user.full_name
+            )
             db.add(comp)
-            
             user.company_name = comp.full_name
             user.company_address = comp.address
 
@@ -148,6 +159,11 @@ async def update_user_admin(
     
     await db.commit()
     await db.refresh(user)
+
+    if comp:
+        user.company_name = comp.full_name
+        user.company_address = comp.address
+
     return user
 
 

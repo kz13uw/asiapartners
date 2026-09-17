@@ -13,7 +13,15 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=UserOut, summary="Текущий пользователь")
-async def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
+    company = result.scalar_one_or_none()
+    if company:
+        current_user.company_name = company.full_name
+        current_user.company_address = company.address
     return current_user
 
 
