@@ -113,7 +113,7 @@ const PublicTenders = () => {
   const totalPages = Math.ceil(total / pageSize) || 1;
 
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
+    <div className="container" style={{ padding: '2rem 1rem', width: '100%', maxWidth: '1400px', boxSizing: 'border-box' }}>
       <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.5rem', color: 'var(--pk-primary)' }}>
           Реестр тендеров и закупок «Asia Partners»
@@ -124,27 +124,29 @@ const PublicTenders = () => {
       </div>
 
       {/* Фильтры и Поиск */}
-      <div className="card" style={{ marginBottom: '1.25rem', padding: '1.25rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
-          
-          {/* Поиск по тексту */}
-          <div style={{ gridColumn: 'span 2', minWidth: '260px' }}>
-            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
-              Поиск по наименованию, номеру или заказчику
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Search size={17} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-              <input 
-                type="text" 
-                className="form-control" 
-                style={{ paddingLeft: '2.4rem', fontSize: '0.88rem' }} 
-                placeholder={t('search_placeholder') || 'Введите наименование лота, № тендера или заказчика...'}
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-            </div>
+      <div className="card" style={{ marginBottom: '1.25rem', padding: '1.25rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box' }}>
+        
+        {/* Верхняя строка: Поиск по наименованию во всю ширину */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
+            Поиск по наименованию, номеру или заказчику
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Search size={17} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input 
+              type="text" 
+              className="form-control" 
+              style={{ paddingLeft: '2.4rem', fontSize: '0.88rem', width: '100%', boxSizing: 'border-box' }} 
+              placeholder={t('search_placeholder') || 'Введите наименование лота, № тендера или заказчика...'}
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
           </div>
+        </div>
 
+        {/* Нижняя строка: Статус, Год, Категория и Сброс */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+          
           {/* Статус тендера */}
           <div>
             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
@@ -154,7 +156,7 @@ const PublicTenders = () => {
               className="form-control" 
               value={statusFilter} 
               onChange={handleStatusChange}
-              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b' }}
+              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b', width: '100%' }}
             >
               <option value="all">Все тендеры (Активные и Закрытые)</option>
               <option value="active">🟢 Активные тендеры (Прием заявок)</option>
@@ -171,7 +173,7 @@ const PublicTenders = () => {
               className="form-control" 
               value={selectedYear} 
               onChange={handleYearChange}
-              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b' }}
+              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b', width: '100%' }}
             >
               <option value="all">Все годы</option>
               <option value="2026">2026 год</option>
@@ -190,7 +192,7 @@ const PublicTenders = () => {
               className="form-control" 
               value={selectedCategory} 
               onChange={handleCategoryChange}
-              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b' }}
+              style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1e293b', width: '100%' }}
             >
               <option value="all">Все категории</option>
               {categories.map((cat) => (
@@ -208,7 +210,7 @@ const PublicTenders = () => {
                 type="button" 
                 className="btn btn-outline" 
                 onClick={handleResetFilters}
-                style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', color: '#64748b', borderColor: '#cbd5e1' }}
+                style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', color: '#64748b', borderColor: '#cbd5e1', height: '38px' }}
               >
                 <RotateCcw size={14} /> Сбросить фильтры
               </button>

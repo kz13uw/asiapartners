@@ -117,7 +117,7 @@ const TenderRegistryTable = ({
 
   if (!tenders || tenders.length === 0) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem', borderRadius: '12px' }}>
+      <div className="card" style={{ textAlign: 'center', padding: '3.5rem 1.5rem', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
         <Package size={44} color="#94a3b8" style={{ margin: '0 auto 0.75rem' }} />
         <h4 style={{ margin: '0 0 0.35rem 0', color: '#334155', fontSize: '1.1rem' }}>{emptyText}</h4>
         <p className="text-sec" style={{ maxWidth: '440px', margin: '0 auto', fontSize: '0.85rem' }}>
