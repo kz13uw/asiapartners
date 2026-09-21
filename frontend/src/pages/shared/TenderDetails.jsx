@@ -586,7 +586,7 @@ const TenderDetails = () => {
                         quantity: 1,
                         unit_price: tender.start_price || 1000000,
                         start_price: tender.start_price || 1000000,
-                        delivery_place: 'Алматы'
+                        delivery_place: tender.delivery_place || 'г. Семей'
                       }]).map((lot, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '0.75rem 0.75rem', fontWeight: 700, color: 'var(--pk-primary)' }}>
