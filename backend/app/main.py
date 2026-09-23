@@ -42,11 +42,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — разрешаем React-фронтенд
-# [P1-FIX] Используем ALLOWED_ORIGINS из .env, убрали allow_origin_regex (небезопасно в production)
+# CORS — разрешаем React-фронтенд и внешние сетевые подключения (IP/Домен)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

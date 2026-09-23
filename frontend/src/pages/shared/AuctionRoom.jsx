@@ -19,8 +19,15 @@ const AuctionRoom = () => {
   const [selectedBidPrice, setSelectedBidPrice] = useState(null);
   const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0 });
 
-  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const apiBase = isLocal ? 'http://localhost:8000/api/v1' : '/api/v1';
+  const getApiBase = () => {
+    if (typeof window === 'undefined') return '/api/v1';
+    const { protocol, hostname, port } = window.location;
+    if (port === '5173' || port === '3000' || port === '5174') {
+      return `${protocol}//${hostname}:8000/api/v1`;
+    }
+    return '/api/v1';
+  };
+  const apiBase = getApiBase();
 
   const fetchAuctionData = async () => {
     try {

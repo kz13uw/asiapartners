@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [
+        "*",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -34,15 +35,15 @@ class Settings(BaseSettings):
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
             v_trimmed = v.strip()
-            if not v_trimmed:
-                return ["http://localhost:5173"]
+            if not v_trimmed or v_trimmed == "*":
+                return ["*"]
             if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
                 try:
                     return json.loads(v_trimmed)
                 except Exception:
                     pass
             return [i.strip() for i in v_trimmed.split(",") if i.strip()]
-        return v or ["http://localhost:5173"]
+        return v or ["*"]
 
     # File storage
     UPLOAD_DIR: str = "/app/uploads"
