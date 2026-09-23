@@ -64,17 +64,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     from sqlalchemy import func
     from app.core.security import get_password_hash
     uname = (form_data.username or "").strip().lower()
+    pwd_raw = form_data.password or ""
     
     result = await db.execute(
         select(User).where(
-            (func.lower(User.email) == uname) | 
-            (func.lower(User.username) == uname) | 
-            (func.lower(User.account_code) == uname) |
-            (User.iin_bin == uname)
+            (func.trim(func.lower(User.email)) == uname) | 
+            (func.trim(func.lower(User.username)) == uname) | 
+            (func.trim(func.lower(User.account_code)) == uname) |
+            (func.trim(User.iin_bin) == uname)
         )
     )
     user = result.scalars().first()
-
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
@@ -82,7 +82,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     if user.status == UserStatus.BLOCKED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
 
-    is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
+    is_pwd_ok = False
+    if user.hashed_password:
+        is_pwd_ok = verify_password(pwd_raw, user.hashed_password) or verify_password(pwd_raw.strip(), user.hashed_password)
 
     if not is_pwd_ok:
         if user.role != UserRole.ADMIN:
