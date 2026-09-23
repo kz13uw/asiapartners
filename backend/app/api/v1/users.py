@@ -32,7 +32,10 @@ async def get_me(
             current_user.email = current_user.account_code
 
     if current_user.email:
-        await db.commit()
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
 
     return current_user
 

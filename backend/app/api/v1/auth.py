@@ -125,20 +125,26 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     db.add(log)
     await db.commit()
 
-    if not user.email:
-        if uname and '@' in uname:
-            user.email = uname
-        elif user.username and '@' in user.username:
-            user.email = user.username
-        elif user.account_code and '@' in user.account_code:
-            user.email = user.account_code
-        if user.email:
-            await db.commit()
+    try:
+        if not user.email:
+            if uname and '@' in uname:
+                user.email = uname
+            elif user.username and '@' in user.username:
+                user.email = user.username
+            elif user.account_code and '@' in user.account_code:
+                user.email = user.account_code
+            if user.email:
+                await db.commit()
+    except Exception:
+        await db.rollback()
 
-    if not user.account_code or (user.email and user.account_code != user.email):
-        from app.models.models import generate_account_code
-        user.account_code = generate_account_code(user.id, user.role, user.email)
-        await db.commit()
+    try:
+        if not user.account_code or (user.email and user.account_code != user.email):
+            from app.models.models import generate_account_code
+            user.account_code = generate_account_code(user.id, user.role, user.email)
+            await db.commit()
+    except Exception:
+        await db.rollback()
 
     user_email = user.email or (user.username if user.username and '@' in user.username else None) or (user.account_code if user.account_code and '@' in user.account_code else None)
 
