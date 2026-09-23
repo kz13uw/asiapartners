@@ -8,7 +8,8 @@ from app.models.models import UserRole, UserStatus, TenderMethod, TenderStatus, 
 # ===== AUTH =====
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    username: Optional[str] = None
+    email: Optional[str] = None
     password: str
 
 
