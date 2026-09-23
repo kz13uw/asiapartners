@@ -22,21 +22,6 @@ async def get_me(
     if company:
         current_user.company_name = company.full_name
         current_user.company_address = company.address
-        if not current_user.email and getattr(company, 'email', None):
-            current_user.email = company.email
-
-    if not current_user.email:
-        if current_user.username and '@' in current_user.username:
-            current_user.email = current_user.username
-        elif current_user.account_code and '@' in current_user.account_code:
-            current_user.email = current_user.account_code
-
-    if current_user.email:
-        try:
-            await db.commit()
-        except Exception:
-            await db.rollback()
-
     return current_user
 
 

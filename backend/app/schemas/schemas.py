@@ -32,11 +32,6 @@ class TokenResponse(BaseModel):
     account_code: Optional[str] = None
     role: UserRole
     full_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    company_name: Optional[str] = None
-    company_address: Optional[str] = None
-    iin_bin: Optional[str] = None
     is_new_user: bool = False  # True при первом входе через ЭЦП — показать форму доп. данных
 
 

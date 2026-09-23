@@ -60,69 +60,21 @@ async def get_current_user(
 
 
 @router.post("/login", response_model=TokenResponse, summary="Вход по логину/паролю")
-async def login(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    form_data: Optional[OAuth2PasswordRequestForm] = Depends(lambda: None),
-):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db), request: Request = None):
     from sqlalchemy import func
-    username_val = ""
-    password_val = ""
-
-    # 1. Попытка извлечения из OAuth2 Form Data
-    try:
-        if form_data and (form_data.username or form_data.password):
-            username_val = form_data.username or ""
-            password_val = form_data.password or ""
-    except Exception:
-        pass
-
-    # 2. Попытка извлечения из JSON тела или Request Form
-    if not username_val and not password_val:
-        content_type = request.headers.get("content-type", "")
-        if "application/json" in content_type:
-            try:
-                body_data = await request.json()
-                username_val = body_data.get("username") or body_data.get("email") or ""
-                password_val = body_data.get("password") or ""
-            except Exception:
-                pass
-        else:
-            try:
-                parsed_form = await request.form()
-                username_val = parsed_form.get("username") or parsed_form.get("email") or ""
-                password_val = parsed_form.get("password") or ""
-            except Exception:
-                pass
-
-    uname = (username_val or "").strip().lower()
-    pwd_raw = password_val or ""
-
-    if not uname or not pwd_raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Укажите логин и пароль")
-
-    uname_prefix = uname.split('@')[0] if '@' in uname else uname
-
+    from app.core.security import get_password_hash
+    uname = (form_data.username or "").strip().lower()
+    
     result = await db.execute(
         select(User).where(
-            (func.trim(func.lower(User.email)) == uname) | 
-            (func.trim(func.lower(User.username)) == uname) | 
-            (func.trim(func.lower(User.account_code)) == uname) |
-            (func.trim(User.iin_bin) == uname) |
-            (func.trim(func.lower(User.username)) == uname_prefix) |
-            (func.trim(func.lower(User.email)) == uname_prefix)
+            (func.lower(User.email) == uname) | 
+            (func.lower(User.username) == uname) | 
+            (func.lower(User.account_code) == uname) |
+            (User.iin_bin == uname)
         )
     )
     user = result.scalars().first()
 
-    # Поиск по почте компании, если по пользователю не найден
-    if not user and '@' in uname:
-        from app.models.models import Company
-        comp_res = await db.execute(select(Company).where(func.trim(func.lower(Company.email)) == uname))
-        comp = comp_res.scalars().first()
-        if comp and comp.owner_id:
-            u_res = await db.execute(select(User).where(User.id == comp.owner_id))
-            user = u_res.scalar_one_or_none()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
@@ -130,9 +82,7 @@ async def login(
     if user.status == UserStatus.BLOCKED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Ваш аккаунт заблокирован Службой Безопасности")
 
-    is_pwd_ok = False
-    if user.hashed_password:
-        is_pwd_ok = verify_password(pwd_raw, user.hashed_password) or verify_password(pwd_raw.strip(), user.hashed_password)
+    is_pwd_ok = verify_password(form_data.password, user.hashed_password) if user.hashed_password else False
 
     if not is_pwd_ok:
         if user.role != UserRole.ADMIN:
@@ -173,28 +123,10 @@ async def login(
     db.add(log)
     await db.commit()
 
-    try:
-        if not user.email:
-            if uname and '@' in uname:
-                user.email = uname
-            elif user.username and '@' in user.username:
-                user.email = user.username
-            elif user.account_code and '@' in user.account_code:
-                user.email = user.account_code
-            if user.email:
-                await db.commit()
-    except Exception:
-        await db.rollback()
-
-    try:
-        if not user.account_code or (user.email and user.account_code != user.email):
-            from app.models.models import generate_account_code
-            user.account_code = generate_account_code(user.id, user.role, user.email)
-            await db.commit()
-    except Exception:
-        await db.rollback()
-
-    user_email = user.email or (user.username if user.username and '@' in user.username else None) or (user.account_code if user.account_code and '@' in user.account_code else None)
+    if not user.account_code or (user.email and user.account_code != user.email):
+        from app.models.models import generate_account_code
+        user.account_code = generate_account_code(user.id, user.role, user.email)
+        await db.commit()
 
     token_data = {"sub": str(user.id), "role": user.role.value}
     return TokenResponse(
@@ -204,11 +136,6 @@ async def login(
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
-        email=user_email,
-        phone=user.phone,
-        company_name=user.company_name,
-        company_address=user.company_address,
-        iin_bin=user.iin_bin,
     )
 
 

@@ -54,10 +54,6 @@ export const useAuthStore = create(
             full_name: userData.full_name,
             username: username,
             email: userData.email || (username.includes('@') ? username : null),
-            phone: userData.phone,
-            company_name: userData.company_name,
-            company_address: userData.company_address,
-            iin_bin: userData.iin_bin,
             ...userData
           };
           set({ user: normalizedUser, token: access_token, isAuthenticated: true });
@@ -105,19 +101,9 @@ export const useAuthStore = create(
       },
 
       setCompany: (companyData) => set({ company: companyData }),
-      updateUser: (updatedFields) => set((state) => {
-        if (!state.user) return { user: null };
-        const fallbackEmail = state.user.email || 
-          (updatedFields?.username?.includes('@') ? updatedFields.username : null) || 
-          (state.user?.username?.includes('@') ? state.user.username : null);
-        return {
-          user: {
-            ...state.user,
-            ...updatedFields,
-            email: updatedFields?.email || fallbackEmail
-          }
-        };
-      }),
+      updateUser: (updatedFields) => set((state) => ({
+        user: state.user ? { ...state.user, ...updatedFields } : null
+      })),
     }),
     {
       name: 'auth-storage',
