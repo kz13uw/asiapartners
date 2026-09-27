@@ -201,7 +201,7 @@ const TenderDetails = () => {
     toast.success('Файл удален из заявки');
   };
 
-  const handleSubmitClick = (e) => {
+  const handleSubmitClick = async (e) => {
     if (e) e.preventDefault();
 
     if (selectedLotIds.length === 0) {
