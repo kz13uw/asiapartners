@@ -94,6 +94,7 @@ export const tendersAPI = {
 
 // ===== BIDS =====
 export const bidsAPI = {
+  validate: (data) => API.post('/bids/validate', data),
   submit: (data) => API.post('/bids', data),
   myBids: () => API.get('/bids/my'),
   getByTender: (tenderId) => API.get(`/bids/tender/${tenderId}`),

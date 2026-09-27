@@ -172,8 +172,8 @@ const LoginPage = () => {
   // 1. Запрос OTP кода для Регистрации
   const handleSendRegOtp = async (e) => {
     if (e) e.preventDefault();
-    if (!regForm.full_name || !regForm.email || !regForm.password || !regForm.confirm_password) {
-      toast.error('Заполните все обязательные поля');
+    if (!regForm.full_name || !regForm.email || !regForm.password || !regForm.confirm_password || !regForm.company_name || !regForm.iin_bin || !regForm.company_address || !regForm.phone) {
+      toast.error('Не все данные заполнены. Заполните все обязательные поля.');
       return;
     }
     if (isEmailTaken) {
@@ -229,10 +229,10 @@ const LoginPage = () => {
         confirm_password: regForm.confirm_password,
         otp_code: regForm.otp_code.trim(),
         full_name: regForm.full_name.trim(),
-        company_name: regForm.company_name.trim() || null,
-        iin_bin: regForm.iin_bin.trim() || null,
-        company_address: regForm.company_address.trim() || null,
-        phone: regForm.phone.trim() || null
+        company_name: regForm.company_name.trim(),
+        iin_bin: regForm.iin_bin.trim(),
+        company_address: regForm.company_address.trim(),
+        phone: regForm.phone.trim()
       });
 
 

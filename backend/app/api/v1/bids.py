@@ -13,6 +13,56 @@ from datetime import datetime
 router = APIRouter()
 
 
+@router.post("/validate", status_code=200, summary="Валидация заявки перед подписанием ЭЦП")
+async def validate_bid(
+    body: BidCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.SUPPLIER)),
+):
+    # Проверяем тендер
+    result = await db.execute(select(Tender).where(Tender.id == body.tender_id))
+    tender = result.scalar_one_or_none()
+    if not tender:
+        raise HTTPException(status_code=404, detail="Тендер не найден")
+    if tender.status not in [TenderStatus.ACCEPTING, TenderStatus.PUBLISHED]:
+        raise HTTPException(status_code=400, detail="Прием ценовых предложений закрыт")
+
+    dup_result = await db.execute(
+        select(Bid).where(
+            Bid.tender_id == body.tender_id,
+            Bid.supplier_id == current_user.id,
+            Bid.status != BidStatus.REJECTED
+        )
+    )
+    existing_bid = dup_result.scalar_one_or_none()
+
+    # Проверяем шаг цены
+    if body.price >= tender.start_price:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Цена ценового предложения должна быть ниже стартовой суммы ({tender.start_price:,.0f} ₸)"
+        )
+
+    if existing_bid:
+        if body.price >= existing_bid.price:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ваше новое ценовое предложение ({body.price:,.0f} ₸) должно быть строго ниже предыдущего ({existing_bid.price:,.0f} ₸)"
+            )
+
+    # Получаем компанию пользователя
+    from app.models.models import Company
+    comp_result = await db.execute(select(Company).where(Company.owner_id == current_user.id))
+    company = comp_result.scalar_one_or_none()
+    if not company:
+        raise HTTPException(
+            status_code=403,
+            detail="Для подачи заявки необходимо зарегистрировать компанию в разделе 'Профиль'. Заполните реквизиты и сохраните их."
+        )
+
+    return {"valid": True, "message": "Заявка успешно прошла валидацию"}
+
+
 @router.post("", response_model=BidOut, status_code=201, summary="Подать заявку / ставку на понижение")
 async def submit_bid(
     body: BidCreate,

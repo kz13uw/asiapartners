@@ -119,6 +119,10 @@ async def update_user_admin(
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
+    if user.role == UserRole.SUPPLIER:
+        raise HTTPException(status_code=403, detail="Редактирование поставщиков администратором запрещено. Доступен только просмотр.")
+
+
     if body.full_name is not None:
         user.full_name = body.full_name.strip()
     if body.phone is not None:
@@ -143,7 +147,7 @@ async def update_user_admin(
             comp = Company(
                 owner_id=user.id,
                 bin=user.iin_bin or f"99{user.id:010d}",
-                full_name=body.company_name.strip() if body.company_name else (user.company_name or user.full_name or "Компания"),
+                full_name=body.company_name.strip() if body.company_name else (getattr(user, "company_name", None) or user.full_name or "Компания"),
                 address=body.company_address.strip() if body.company_address else "",
                 legal_form="TOO",
                 director_name=user.full_name

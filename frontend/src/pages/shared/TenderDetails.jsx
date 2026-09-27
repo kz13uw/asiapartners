@@ -230,7 +230,23 @@ const TenderDetails = () => {
       return;
     }
 
-    setShowEdsModal(true);
+    const itemsPayload = selectedLotIds.map(lotId => {
+      const lot = effectiveLots.find(l => (l.id || 1) === lotId) || {};
+      const qty = parseFloat(lot.quantity) || 1;
+      const uPrice = parseFloat(lotUnitPrices[lotId]) || 0;
+      return { lot_id: lotId, price: uPrice * qty };
+    });
+
+    try {
+      await bidsAPI.validate({
+        tender_id: tender.id,
+        price: priceNum,
+        items: itemsPayload
+      });
+      setShowEdsModal(true);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Ошибка валидации. Проверьте данные.');
+    }
   };
 
   const processBidSubmission = async (signedCms) => {
@@ -272,7 +288,6 @@ const TenderDetails = () => {
     } finally {
       setIsSubmitting(false);
       setShowEdsModal(false);
-      setShowBidFormModal(false);
     }
   };
 

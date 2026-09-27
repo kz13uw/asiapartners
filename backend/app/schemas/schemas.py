@@ -58,10 +58,10 @@ class RegisterSupplierRequest(BaseModel):
     confirm_password: str
     otp_code: str
     full_name: str
-    company_name: Optional[str] = None
-    iin_bin: Optional[str] = None
-    company_address: Optional[str] = None
-    phone: Optional[str] = None
+    company_name: str
+    iin_bin: str
+    company_address: str
+    phone: str
 
 
 

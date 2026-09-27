@@ -86,9 +86,11 @@ async def update_company(
 
     for field, value in body.model_dump(exclude_unset=True).items():
         if value is not None:
+            if field == "bin" and company.bin and not company.bin.startswith("99"):
+                continue
             setattr(company, field, value)
 
-    if body.bin:
+    if body.bin and (not current_user.iin_bin or current_user.iin_bin.startswith("99")):
         current_user.iin_bin = body.bin
 
     await db.commit()
@@ -121,9 +123,10 @@ async def update_my_profile(
     if body.full_name:
         current_user.full_name = body.full_name.strip()
     if body.email and body.email.strip():
-        email_clean = body.email.strip().lower()
-        current_user.email = email_clean
-        current_user.account_code = email_clean
+        if not current_user.email:
+            email_clean = body.email.strip().lower()
+            current_user.email = email_clean
+            current_user.account_code = email_clean
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)
