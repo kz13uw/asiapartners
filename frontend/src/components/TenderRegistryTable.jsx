@@ -298,7 +298,18 @@ const TenderRegistryTable = ({
                         </button>
                       )}
 
-                      {tnd.status === 'published' && onCancel && (
+                      {tnd.status === 'evaluation' && user?.role === 'organizer' && (
+                        <Link
+                          to={`/organizer/tenders/${tnd.id}/evaluate`}
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem', fontWeight: 700, borderRadius: '6px', textDecoration: 'none' }}
+                          title="Подвести итоги и завершить закупку"
+                        >
+                          <FileText size={13} style={{ marginRight: '0.25rem' }} /> Завершить
+                        </Link>
+                      )}
+
+                      {(tnd.status === 'published' || tnd.status === 'evaluation') && onCancel && (
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
@@ -322,7 +333,7 @@ const TenderRegistryTable = ({
                         </button>
                       )}
 
-                      {onDelete && (
+                      {onDelete && !(tnd.status === 'completed' && user?.role !== 'admin') && (
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"

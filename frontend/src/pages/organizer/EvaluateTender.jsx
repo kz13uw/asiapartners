@@ -76,6 +76,7 @@ const EvaluateTender = () => {
       toast.error('Для формирования протокола итогов необходима минимум 1 активная не отклонённая заявка');
       return;
     }
+    if (!window.confirm('Завершить закупку? После завершения протокол итогов станет виден всем участникам.')) return;
     setShowProtocolModal(true);
   };
 
@@ -302,7 +303,7 @@ const EvaluateTender = () => {
               style={{ width: '100%', padding: '0.85rem', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, borderRadius: '8px' }} 
               onClick={handleGenerateProtocol}
             >
-              <FileSignature size={20} /> Сформировать Протокол
+              <FileSignature size={20} /> Завершить тендер и опубликовать протокол
             </button>
           </div>
         </div>

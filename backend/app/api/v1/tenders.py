@@ -617,6 +617,9 @@ async def delete_tender(
         raise HTTPException(status_code=404, detail="Тендер не найден")
     if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
         raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого тендера")
+    _del_st = str(tender.status.value if hasattr(tender.status, 'value') else tender.status).lower()
+    if current_user.role != UserRole.ADMIN and _del_st == TenderStatus.COMPLETED.value:
+        raise HTTPException(status_code=400, detail="Завершённый тендер нельзя удалить — он хранится в реестре")
     
     # Удаляем каскадно все связанные заявки, элементы заявок, документы, протоколы, контракты и лоты
     from app.models.models import Bid, BidItem, Lot, QualificationRequirement, TenderDocument, Protocol, Contract
@@ -812,7 +815,8 @@ def generate_protocol_bilingual_html(tender_number: str, title: str, start_price
 @router.get("/{tender_id}/protocol/pdf", summary="Скачать официальный протокол в формате PDF / HTML")
 async def get_tender_protocol_pdf(
     tender_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
 ):
     from app.models.models import Protocol, Bid, User
     from sqlalchemy.orm import selectinload
@@ -827,6 +831,16 @@ async def get_tender_protocol_pdf(
     tender = res_t.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
+
+    # До завершения/отмены закупки протокол доступен только организатору тендера и служебным ролям
+    _p_st = str(tender.status.value if hasattr(tender.status, 'value') else tender.status).lower()
+    if _p_st not in (TenderStatus.COMPLETED.value, TenderStatus.CANCELLED.value):
+        allowed = bool(current_user) and (
+            current_user.role in (UserRole.ADMIN, UserRole.COMMISSION, UserRole.MONITORING)
+            or (current_user.role == UserRole.ORGANIZER and tender.organizer_id == current_user.id)
+        )
+        if not allowed:
+            raise HTTPException(status_code=403, detail="Протокол будет опубликован после завершения закупки")
 
     res_p = await db.execute(
         select(Protocol)

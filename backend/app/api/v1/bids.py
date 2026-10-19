@@ -235,7 +235,20 @@ async def my_bids(
         .where(Bid.supplier_id == current_user.id)
         .order_by(Bid.submitted_at.desc())
     )
-    return result.scalars().all()
+    bids = result.scalars().all()
+
+    # Пока закупка на рассмотрении — скрываем результаты ранжирования (только в ответе, БД не меняется)
+    out = []
+    for b in bids:
+        item = BidOut.model_validate(b)
+        t = b.tender
+        t_st = str(t.status.value if (t is not None and hasattr(t.status, 'value')) else (t.status if t is not None else '')).lower()
+        if t_st == TenderStatus.EVALUATION.value and item.status in (BidStatus.WINNER, BidStatus.RUNNER_UP):
+            item = item.model_copy(update={"status": BidStatus.UNDER_REVIEW, "rank": None})
+        elif t_st == TenderStatus.EVALUATION.value:
+            item = item.model_copy(update={"rank": None})
+        out.append(item)
+    return out
 
 
 @router.get("/tender/{tender_id}", response_model=list[BidOut], summary="Заявки по тендеру (для организатора)")
@@ -328,6 +341,14 @@ async def generate_protocol(
     tender = res_t.scalar_one_or_none()
     if not tender:
         raise HTTPException(status_code=404, detail="Тендер не найден")
+    if current_user.role != UserRole.ADMIN and tender.organizer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Завершить закупку может только её организатор")
+    _st = str(tender.status.value if hasattr(tender.status, 'value') else tender.status).lower()
+    if _st == TenderStatus.COMPLETED.value:
+        raise HTTPException(status_code=400, detail="Закупка уже завершена")
+    _deadline_passed = bool(tender.deadline_at and tender.deadline_at <= datetime.utcnow())
+    if not (_st == TenderStatus.EVALUATION.value or (_st in ('published', 'accepting') and _deadline_passed)):
+        raise HTTPException(status_code=400, detail="Завершить можно только закупку в статусе «Рассмотрение»")
 
     # Формируем или проверяем хэш подписи
     if not eds_hash or "demo" in eds_hash:

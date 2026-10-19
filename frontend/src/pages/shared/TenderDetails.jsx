@@ -727,6 +727,46 @@ const TenderDetails = () => {
                       Официальный протокол вскрытия конвертов с заявками формируется и подписывается ЭЦП автоматически после завершения срока приёма заявок.
                     </div>
                   </div>
+                ) : tender.status === 'evaluation' ? (
+                  ((user?.role === 'organizer' && user.id === tender.organizer_id) || ['admin', 'commission', 'monitoring'].includes(user?.role)) ? (
+                    /* Рассмотрение — служебный просмотр протокола (с токеном) */
+                    <div style={{ background: '#fffbeb', padding: '1.25rem', borderRadius: '10px', border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#92400e', fontSize: '0.9rem' }}>Протокол (черновик) № P-{tender.id}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#a16207', marginTop: '0.1rem' }}>Закупка на рассмотрении. Поставщики увидят протокол после завершения.</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                        onClick={async () => {
+                          const win = window.open('', '_blank');
+                          try {
+                            const res = await tendersAPI.protocolPdf(tender.id);
+                            const url = URL.createObjectURL(res.data);
+                            if (win) win.location.href = url; else window.open(url, '_blank');
+                            setTimeout(() => URL.revokeObjectURL(url), 60000);
+                          } catch (err) {
+                            if (win) win.close();
+                            toast.error('Не удалось открыть протокол');
+                          }
+                        }}
+                      >
+                        <FileText size={14} /> Просмотреть протокол
+                      </button>
+                    </div>
+                  ) : (
+                    /* Рассмотрение — для поставщиков и гостей протоколы скрыты */
+                    <div style={{ background: '#f8fafc', padding: '1.75rem 1.25rem', borderRadius: '10px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                      <Clock size={38} color="#d97706" style={{ marginBottom: '0.5rem' }} />
+                      <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                        Закупка на рассмотрении
+                      </div>
+                      <div style={{ fontSize: '0.83rem', color: '#64748b', maxWidth: '520px', margin: '0.35rem auto 0 auto' }}>
+                        Протоколы будут опубликованы после завершения закупки организатором.
+                      </div>
+                    </div>
+                  )
                 ) : (
                   /* Вскрытие или Итоги подведены — Показываем готовый Протокол */
                   <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', width: '100%', boxSizing: 'border-box' }}>

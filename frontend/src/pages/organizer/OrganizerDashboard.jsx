@@ -32,6 +32,11 @@ const OrganizerDashboard = () => {
       toast.success('Тендер успешно удален');
       await refetch();
     } catch (e) {
+      const code = e?.response?.status;
+      if (code === 400 || code === 403) {
+        toast.error(e.response?.data?.detail || 'Удаление запрещено');
+        return;
+      }
       removeLocalDraft(id);
       setLocalTenders(prev => prev.filter(item => item.id !== id));
       toast.success('Тендер успешно удален');

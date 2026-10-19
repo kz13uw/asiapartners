@@ -90,6 +90,7 @@ export const tendersAPI = {
   publish: (id, edsHash) => API.post(`/tenders/${id}/publish`, { eds_hash: edsHash, cms_base64: edsHash }),
   cancel: (id, reason) => API.post(`/tenders/${id}/cancel`, { reason }),
   delete: (id) => API.delete(`/tenders/${id}`),
+  protocolPdf: (id) => API.get(`/tenders/${id}/protocol/pdf`, { responseType: 'blob' }),
 };
 
 // ===== BIDS =====
