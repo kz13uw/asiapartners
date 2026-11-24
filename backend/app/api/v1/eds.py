@@ -124,7 +124,7 @@ async def verify_eds_session(
     if is_demo:
         subject_name = payload.company_name or "ТОО Asia Procurement (Демо)"
     else:
-        subject_name = (parsed.get("company_name") if parsed.get("is_legal_entity") else None) or payload.company_name or "Пользователь НУЦ РК"
+        subject_name = parsed.get("company_name") or parsed.get("common_name") or payload.company_name or "Пользователь НУЦ РК"
 
     sess.cms_base64 = payload.cms_base64
     sess.iin_bin = company_bin or iin
@@ -137,7 +137,10 @@ async def verify_eds_session(
         "connection_id": sess.connection_id,
         "action": sess.action,
         "subject_name": subject_name,
-        "iin_bin": sess.iin_bin
+        "iin_bin": sess.iin_bin,
+        "bin": parsed.get("bin"),
+        "iin": parsed.get("iin"),
+        "is_legal_entity": parsed.get("is_legal_entity", bool(parsed.get("bin"))),
     }
 
     if sess.action == "auth":
@@ -202,21 +205,9 @@ async def verify_eds_session(
             "is_new_user": is_new_user
         })
 
-    elif sess.action == "publish_tender" and sess.target_id:
-        res_t = await db.execute(select(Tender).where(Tender.id == sess.target_id))
-        tender = res_t.scalar_one_or_none()
-        if tender:
-            tender.status = TenderStatus.ACCEPTING
-            tender.eds_hash = payload.cms_base64
-            tender.published_at = datetime.utcnow()
-            response_data["detail"] = f"Тендер #{tender.number} успешно опубликован по ЭЦП"
-
-    elif sess.action == "submit_bid" and sess.target_id:
-        res_b = await db.execute(select(Bid).where(Bid.id == sess.target_id))
-        bid = res_b.scalar_one_or_none()
-        if bid:
-            bid.eds_hash = payload.cms_base64
-            response_data["detail"] = f"Заявка #{bid.id} успешно подписана ЭЦП"
+    elif sess.action in ("publish_tender", "submit_bid", "sign_protocol", "sign"):
+        # Бизнес-операции выполняются авторизованными эндпоинтами после верификации ЭЦП
+        response_data["detail"] = "Подпись ЭЦП успешно верифицирована НУЦ РК"
 
     log = AuditLog(
         user_id=sess.user_id,

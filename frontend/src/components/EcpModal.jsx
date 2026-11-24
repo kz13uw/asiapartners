@@ -44,7 +44,8 @@ const NCALAYER_URLS = [
   'ws://localhost:13579/',
 ];
 
-const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', targetId = null }) => {
+const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth = false, action = null, targetId = null }) => {
+  const effectiveAction = action || (isAuth ? 'auth' : 'sign');
   const { lang, t } = useTranslation();
   const [step, setStep] = useState(1); // 1 - выбор/статус, 2 - загрузка, 3 - успех, 4 - ошибка
   const [ncaStatus, setNcaStatus] = useState('checking'); // checking, connected, not_running
@@ -52,6 +53,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
   const [signedData, setSignedData] = useState(null);
   const [parsedInfo, setParsedInfo] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
+  const activeSessionRef = useRef(null);
   const ws = useRef(null);
   const currentUrlIdx = useRef(0);
   const connTimeout = useRef(null);
@@ -65,6 +67,7 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
       setSignedData(null);
       setParsedInfo(null);
       setActiveSession(null);
+      activeSessionRef.current = null;
       currentUrlIdx.current = 0;
       connectNCALayer();
     } else {
@@ -114,8 +117,11 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
         console.log(`[NCALayer] Connected successfully via ${targetUrl}`);
 
         // 🚀 Фоновое создание сессии бэкенда без блокировки WebSocket
-        edsAPI.createSession(action, targetId).then((sessRes) => {
-          if (sessRes?.data) setActiveSession(sessRes.data);
+        edsAPI.createSession(effectiveAction, targetId).then((sessRes) => {
+          if (sessRes?.data) {
+            activeSessionRef.current = sessRes.data;
+            setActiveSession(sessRes.data);
+          }
         }).catch((e) => console.warn('[EDS] Session creation local fallback:', e));
 
         // 🚀 Мгновенная отправка запроса в NCALayer (0 мс задержки для Windows)
@@ -136,65 +142,66 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
           const response = JSON.parse(event.data);
           console.log('[NCALayer] response:', response);
 
+          const isValidCmsString = (s) => {
+            if (typeof s !== 'string') return false;
+            const trimmed = s.trim();
+            if (trimmed.length < 100) return false;
+            if (/no such provider|KalkanProvider|exception|canceled|cancelled/i.test(trimmed)) return false;
+            return true;
+          };
+
           const extractCmsString = (val) => {
             if (!val) return null;
-            if (typeof val === 'string' && val.trim().length > 10) return val.trim();
+            if (typeof val === 'string') return isValidCmsString(val) ? val.trim() : null;
             if (Array.isArray(val) && val.length > 0) return extractCmsString(val[0]);
             if (typeof val === 'object' && val !== null) {
               if (val.signatures && Array.isArray(val.signatures) && val.signatures.length > 0) {
                 return extractCmsString(val.signatures[0]);
               }
-              if (typeof val.cms === 'string') return val.cms.trim();
+              if (typeof val.cms === 'string' && isValidCmsString(val.cms)) return val.cms.trim();
               if (val.result) return extractCmsString(val.result);
               if (val.responseObject) return extractCmsString(val.responseObject);
             }
             return null;
           };
 
-          const signedCms = extractCmsString(response.body?.result)
-            || extractCmsString(response.responseObject)
-            || extractCmsString(response.result)
-            || extractCmsString(response);
-
           // Проверка ошибок и отмены подписи
+          const rawErrText = String(response.message || response.result || response.responseObject?.errorCode || '');
           const isExplicitError = response.status === false 
             || response.code === '500' 
             || response.code === '400' 
             || response.result === 'NONE'
-            || (typeof response.message === 'string' && (response.message.includes('exception') || response.message.includes('invoked') || response.message.includes('module')));
+            || /exception|invoked|module|no such provider|KalkanProvider/i.test(rawErrText);
+
+          const signedCms = isExplicitError ? null : (
+            extractCmsString(response.body?.result)
+            || extractCmsString(response.responseObject)
+            || extractCmsString(response.result)
+            || extractCmsString(response)
+          );
 
           if (isExplicitError && !signedCms) {
 
             // 🔄 Многоуровневый каскадный фолбэк для всех версий NCALayer (Mac / Windows):
-            const dataToSign = btoa(unescape(encodeURIComponent(activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
+            const currentSess = activeSessionRef.current || activeSession;
+            const dataToSign = btoa(unescape(encodeURIComponent(currentSess?.nonce || ('AsiaPartners_AuthData_' + Date.now()))));
             const keyType = isAuth ? 'AUTHENTICATION' : 'SIGNATURE';
 
-            // 1. Попытка: commonUtils без ограничения хранилища с явным типом ключа
+            // 1. Попытка (NCALayer 2.0): basics.sign (инициализирует KalkanProvider самостоятельно)
             if (!ws.current._retryCount) {
               ws.current._retryCount = 1;
-              console.log(`[NCALayer] Fallback 1: commonUtils ('', ${keyType})...`);
-              const v1Payload = {
-                module: 'kz.gov.pki.knca.commonUtils',
-                method: 'createCMSSignatureFromBase64',
-                args: ['', keyType, dataToSign, true]
-              };
-              ws.current.send(JSON.stringify(v1Payload));
-              return;
-            }
-
-            // 2. Попытка (NCALayer 2.0): basics.sign без ограничения провайдеров
-            if (ws.current._retryCount === 1) {
-              ws.current._retryCount = 2;
-              console.log('[NCALayer 2.0] Fallback 2: basics.sign...');
+              console.log('[NCALayer 2.0] Fallback 1: basics.sign (PKCS12)...');
               const v2Payload = {
                 module: 'kz.gov.pki.knca.basics',
                 method: 'sign',
                 args: {
-                  allowedStorages: [],
+                  allowedStorages: ['PKCS12'],
                   format: 'cms',
                   data: dataToSign,
                   signingParams: { decode: true, encapsulate: true, digested: false },
-                  signerParams: {},
+                  signerParams: {
+                    extKeyUsageOids: isAuth ? ['1.3.6.1.5.5.7.3.2'] : ['1.3.6.1.5.5.7.3.4']
+                  },
                   locale: 'ru'
                 }
               };
@@ -202,10 +209,23 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
               return;
             }
 
+            // 2. Попытка: commonUtils с явным типом ключа и PKCS12
+            if (ws.current._retryCount === 1) {
+              ws.current._retryCount = 2;
+              console.log(`[NCALayer] Fallback 2: commonUtils ('PKCS12', ${keyType})...`);
+              const v1Payload = {
+                module: 'kz.gov.pki.knca.commonUtils',
+                method: 'createCMSSignatureFromBase64',
+                args: ['PKCS12', keyType, dataToSign, true]
+              };
+              ws.current.send(JSON.stringify(v1Payload));
+              return;
+            }
+
             setStep(4);
-            let rawMsg = response.message || response.responseObject?.errorCode || 'Подписание отменено пользователем или ошибка ключа.';
+            let rawMsg = response.message || response.responseObject?.errorCode || (typeof response.result === 'string' ? response.result : '') || 'Подписание отменено пользователем или ошибка ключа.';
             if (typeof rawMsg === 'string' && rawMsg.includes('KalkanProvider')) {
-              rawMsg = 'Для подписания в NCALayer выберите хранилище «Персональный компьютер» и укажите файл ключа ЭЦП (GOST/RSA).';
+              rawMsg = 'В NCALayer не загружен криптопровайдер Kalkan. Перезапустите NCALayer на компьютере и выберите файл ключа ЭЦП (.p12).';
             }
             setErrorMessage(formatErrorMessage(rawMsg));
             return;
@@ -218,14 +238,23 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
             setSignedData(signedCms);
 
             // Верифицируем подпись на бэкенде KalkanCrypt
+            let currentSess = activeSessionRef.current || activeSession;
             try {
-              if (activeSession?.connection_id) {
-                const res = await edsAPI.verifySession(activeSession.connection_id, signedCms);
+              if (!currentSess?.connection_id) {
+                const sessRes = await edsAPI.createSession(effectiveAction, targetId);
+                if (sessRes?.data) {
+                  currentSess = sessRes.data;
+                  activeSessionRef.current = sessRes.data;
+                  setActiveSession(sessRes.data);
+                }
+              }
+              if (currentSess?.connection_id) {
+                const res = await edsAPI.verifySession(currentSess.connection_id, signedCms);
                 setParsedInfo(res.data);
                 const company = res.data?.subject_name || '';
                 toast.success(`✅ ЭЦП верифицирована! ${company}`);
               } else {
-                toast.success('✅ Подпись ЭЦП верифицирована сервером!');
+                toast.success('✅ Подпись ЭЦП сформирована!');
               }
             } catch (e) {
               const rawDetail = e.response?.data?.detail || e.message;
@@ -262,7 +291,9 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
     }
 
     setStep(2);
-    const nonceToSign = activeSession?.nonce || ('AsiaPartners_AuthData_' + Date.now());
+    ws.current._retryCount = 0;
+    const currentSess = activeSessionRef.current || activeSession;
+    const nonceToSign = currentSess?.nonce || ('AsiaPartners_AuthData_' + Date.now());
     const base64DataToSign = btoa(unescape(encodeURIComponent(nonceToSign)));
     
     // 🌐 Официальный метод NCALayer (хранилище PKCS12, тип ключа '' для вызова файлового диалога)
@@ -450,7 +481,16 @@ const EcpModal = ({ isOpen, onClose, onSign, docTitle, isAuth, action = 'auth', 
                 </div>
                 <p style={{ margin: 0, fontSize: '0.8rem' }}>{formatErrorMessage(errorMessage)}</p>
               </div>
-              <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', padding: '0.7rem' }} onClick={() => setStep(1)}>
+              <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', padding: '0.7rem' }} onClick={() => {
+                setErrorMessage('');
+                if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+                  requestNcaSignature();
+                } else {
+                  setStep(1);
+                  currentUrlIdx.current = 0;
+                  connectNCALayer();
+                }
+              }}>
                 {t('eds_try_again_btn') || 'Попробовать снова'}
               </button>
             </div>

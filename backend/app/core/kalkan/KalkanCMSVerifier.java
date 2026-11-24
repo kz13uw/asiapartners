@@ -22,7 +22,7 @@ public class KalkanCMSVerifier {
 
     static final Pattern BIN = Pattern.compile("BIN(\\d{12})", Pattern.CASE_INSENSITIVE);
     static final Pattern IIN = Pattern.compile("IIN(\\d{12})", Pattern.CASE_INSENSITIVE);
-    static final String PROVIDER = "KalkanProvider";
+    static final String PROVIDER = KalkanProvider.PROVIDER_NAME;
 
     public static void main(String[] args) {
         if (args.length < 1 || args[0].trim().isEmpty()) {
@@ -100,25 +100,30 @@ public class KalkanCMSVerifier {
                     int eq = p.indexOf('=');
                     if (eq < 0) continue;
                     String key = p.substring(0, eq).trim().toUpperCase();
-                    String val = p.substring(eq + 1).trim().replace("\"", "");
+                    String val = p.substring(eq + 1).trim()
+                        .replaceAll("^\"|(?<!\\\\)\"$", "")
+                        .replace("\\\"", "\"");
 
-                    if (key.equals("SERIALNUMBER") || key.equals("2.5.4.5")) {
+                    if (key.equals("SERIALNUMBER") || key.equals("2.5.4.5")
+                            || key.equals("OU") || key.equals("2.5.4.11")) {
                         Matcher mb = BIN.matcher(val);
                         Matcher mi = IIN.matcher(val);
-                        if (mb.find()) binVal = mb.group(1);
-                        if (mi.find()) iinVal = mi.group(1);
-                    } else if (key.equals("O")) {
+                        if (mb.find() && binVal == null) binVal = mb.group(1);
+                        if (mi.find() && iinVal == null) iinVal = mi.group(1);
+                    } else if (key.equals("O") || key.equals("2.5.4.10")) {
                         org = val;
-                    } else if (key.equals("CN")) {
+                    } else if (key.equals("CN") || key.equals("2.5.4.3")) {
                         cn = val;
                     }
                 }
 
-                // Если не нашли — сканируем весь DN
-                if (binVal == null && iinVal == null) {
+                // Если не нашли БИН или ИИН в отдельных полях — сканируем весь DN
+                if (binVal == null) {
                     Matcher mb = BIN.matcher(dn);
-                    Matcher mi = IIN.matcher(dn);
                     if (mb.find()) binVal = mb.group(1);
+                }
+                if (iinVal == null) {
+                    Matcher mi = IIN.matcher(dn);
                     if (mi.find()) iinVal = mi.group(1);
                 }
 

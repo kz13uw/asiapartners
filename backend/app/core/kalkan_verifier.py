@@ -211,29 +211,20 @@ def _try_parse_with_asn1crypto(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
         if ci['content_type'].native != 'signed_data':
             return None
 
-        sd = ci['content'].parsed
+        sd = ci['content']
         if not sd['certificates']:
             return None
 
         cert = sd['certificates'][0].chosen
-        subject_dict = {}
-        for rdn in cert['tbs_certificate']['subject'].chosen:
-            for atv in rdn:
-                try:
-                    val = atv['value'].chosen.native if hasattr(atv['value'], 'chosen') else str(atv['value'].native)
-                    subject_dict[atv['type'].dotted] = val
-                except Exception:
-                    pass
+        subj = cert.subject.native or {}
+        serial_str = str(subj.get('serial_number', ''))
+        ou_str     = str(subj.get('organizational_unit_name', ''))
+        cn_str     = subj.get('common_name')
+        org_str    = subj.get('organization_name')
 
-        serial_str = subject_dict.get('2.5.4.5', '')
-        cn_str     = subject_dict.get('2.5.4.3')
-        org_str    = subject_dict.get('2.5.4.10')
-
-        # Если нет в 2.5.4.5, ищем BIN/IIN по всему Subject
-        if not serial_str:
-            serial_str = str(subject_dict)
-
-        iin, bin_val = _extract_iin_bin_from_serial(serial_str)
+        # Ищем BIN и IIN как в serial_number (2.5.4.5), так и в organizational_unit_name (2.5.4.11) и по всему Subject
+        combined_subject = f"{serial_str} {ou_str} {subj}"
+        iin, bin_val = _extract_iin_bin_from_serial(combined_subject)
         is_legal = bool(bin_val)
 
         # Срок действия
@@ -281,12 +272,23 @@ def _try_parse_with_openssl(cms_bytes: bytes) -> Optional[Dict[str, Any]]:
         if not out:
             return None
 
-        sn_m   = re.search(r'(?:serialNumber|Serial Number)\s*[=:]\s*([^\n,/]+)', out, re.IGNORECASE)
-        cn_m   = re.search(r'(?:CN|commonName)\s*=\s*([^\n,/]+)', out)
-        org_m  = re.search(r'(?:^|\s)O\s*=\s*([^\n,/]+)', out, re.MULTILINE)
+        # Декодируем UTF-8 hex-последовательности вида \xD0\xA2 (LibreSSL / OpenSSL)
+        out = re.sub(
+            r'(?:\\x[0-9A-Fa-f]{2})+',
+            lambda m: bytes.fromhex(m.group(0).replace('\\x', '')).decode('utf-8', errors='ignore'),
+            out
+        )
+
+        subj_line_m = re.search(r'Subject\s*:\s*([^\n]+)', out, re.IGNORECASE)
+        subj_text = subj_line_m.group(1) if subj_line_m else out
+
+        sn_m   = re.search(r'(?:serialNumber|Serial Number)\s*[=:]\s*([^\n,/]+)', subj_text, re.IGNORECASE)
+        ou_m   = re.search(r'(?:OU|organizationalUnitName)\s*[=:]\s*([^\n,/]+)', subj_text, re.IGNORECASE)
+        cn_m   = re.search(r'(?:CN|commonName)\s*=\s*([^\n,/]+)', subj_text)
+        org_m  = re.search(r'(?:^|[,/\s])O\s*=\s*([^\n,/]+)', subj_text)
         date_m = re.search(r'Not After\s*:\s*([^\n]+)', out, re.IGNORECASE)
 
-        serial_str = sn_m.group(1).strip() if sn_m else ''
+        serial_str = f"{sn_m.group(1).strip() if sn_m else ''} {ou_m.group(1).strip() if ou_m else ''} {subj_text}"
         iin, bin_val = _extract_iin_bin_from_serial(serial_str)
         is_legal = bool(bin_val)
 
@@ -471,7 +473,12 @@ def verify_and_parse_cms(cms_base64: str, required_key_usage: Optional[str] = No
     # ── 1. KalkanCrypt Java — локальная обёртка kalkan.jar ────────────────
     result = _try_kalkan_java(clean)
     if result:
-        return result
+        if result.get("valid"):
+            return result
+        err_msg = str(result.get("error") or "")
+        if "expired" in err_msg.lower() or "истёк" in err_msg.lower():
+            return result
+        logger.warning("KalkanCrypt Java returned non-fatal error (%s), trying fallback parsers...", err_msg)
 
     # ── 2. asn1crypto ────────────────────────────────────────────────────
     result = _try_parse_with_asn1crypto(cms_bytes)
