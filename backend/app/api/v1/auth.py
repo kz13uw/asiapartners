@@ -273,11 +273,6 @@ async def refresh_token(body: RefreshRequest, db: AsyncSession = Depends(get_db)
         account_code=user.computed_account_code,
         role=user.role,
         full_name=user.full_name,
-        email=user.email,
-        phone=user.phone,
-        company_name=user.company_name,
-        company_address=user.company_address,
-        iin_bin=user.iin_bin,
     )
 
 

@@ -1,7 +1,11 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+import re
+import uuid
+import hashlib
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from app.db.session import get_db
 from app.models.models import Bid, BidStatus, Tender, TenderStatus, User, UserRole, AuditLog, Protocol, Lot
@@ -11,6 +15,35 @@ from app.api.v1.tenders import require_role
 from datetime import datetime
 
 router = APIRouter()
+
+
+@router.post("/upload", summary="Загрузить файл документа к заявке")
+async def upload_bid_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    MAX_SIZE = 25 * 1024 * 1024  # 25 MB
+    content = await file.read()
+    if len(content) > MAX_SIZE:
+        raise HTTPException(status_code=400, detail="Размер файла превышает 25 МБ")
+
+    orig_name = os.path.basename(file.filename or "document.pdf")
+    safe_name = re.sub(r"[^\w.\-()а-яА-ЯёЁәіңғүұқөһӘІҢҒҮҰҚӨҺ ]+", "_", orig_name).strip() or "document.pdf"
+    stored_name = f"{uuid.uuid4().hex[:12]}_{safe_name}"
+
+    uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../uploads/bids"))
+    os.makedirs(uploads_dir, exist_ok=True)
+    full_path = os.path.join(uploads_dir, stored_name)
+    with open(full_path, "wb") as f:
+        f.write(content)
+
+    sha256 = hashlib.sha256(content).hexdigest()
+    return {
+        "file_name": orig_name[:255],
+        "file_path": f"/uploads/bids/{stored_name}",
+        "file_size": len(content),
+        "hash_sha256": sha256,
+    }
 
 
 @router.post("/validate", status_code=200, summary="Валидация заявки перед подписанием ЭЦП")
@@ -157,6 +190,8 @@ async def submit_bid(
 
     from app.models.models import BidItem, BidDocument
     if body.items:
+        if existing_bid:
+            await db.execute(delete(BidItem).where(BidItem.bid_id == bid.id))
         for item in body.items:
             db.add(BidItem(
                 bid_id=bid.id,
@@ -361,7 +396,7 @@ async def generate_protocol(
     result = await db.execute(
         select(Bid)
         .options(selectinload(Bid.supplier), selectinload(Bid.company), selectinload(Bid.items))
-        .where(Bid.tender_id == tender_id)
+        .where(Bid.tender_id == tender_id, Bid.status != BidStatus.REJECTED)
     )
     bids = result.scalars().all()
 

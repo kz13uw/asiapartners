@@ -180,20 +180,33 @@ const TenderDetails = () => {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    const newDocs = files.map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      category: 'Квалификационные документы',
-      file_path: `/uploads/bids/${tender?.id}/${file.name}`
-    }));
+    const uploadedDocs = [];
+    for (const file of files) {
+      try {
+        const res = await bidsAPI.uploadFile(file);
+        uploadedDocs.push({
+          id: Date.now() + Math.random(),
+          name: res.data?.file_name || file.name,
+          size: res.data?.file_size || file.size,
+          category: 'Квалификационные документы',
+          file_path: res.data?.file_path || `/uploads/bids/${tender?.id}/${file.name}`,
+          hash_sha256: res.data?.hash_sha256 || null,
+        });
+      } catch (err) {
+        console.error('Upload bid file error:', err);
+        toast.error(`Не удалось загрузить файл "${file.name}": ${err.response?.data?.detail || err.message}`);
+      }
+    }
 
-    setSupplierFiles(prev => [...prev, ...newDocs]);
-    toast.success(`Прикреплено файлов: ${files.length}`);
+    if (uploadedDocs.length > 0) {
+      setSupplierFiles(prev => [...prev, ...uploadedDocs]);
+      toast.success(`Загружено файлов: ${uploadedDocs.length}`);
+    }
+    e.target.value = '';
   };
 
   const handleRemoveFile = (fileId) => {
@@ -274,7 +287,7 @@ const TenderDetails = () => {
           doc_type: f.category,
           file_size: f.size,
           file_path: f.file_path,
-          hash_sha256: `sha256_bid_${tender.id}_${f.name}`
+          hash_sha256: f.hash_sha256 || `sha256_bid_${tender.id}_${f.name}`.slice(0, 64)
         }))
       };
 

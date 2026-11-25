@@ -19,7 +19,7 @@ async def check_expired_tenders():
         now = datetime.utcnow()
         result = await db.execute(
             select(Tender).where(
-                Tender.status == TenderStatus.ACCEPTING,
+                Tender.status.in_([TenderStatus.ACCEPTING, TenderStatus.PUBLISHED]),
                 Tender.deadline_at <= now
             )
         )

@@ -95,6 +95,13 @@ export const tendersAPI = {
 
 // ===== BIDS =====
 export const bidsAPI = {
+  uploadFile: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return API.post('/bids/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   validate: (data) => API.post('/bids/validate', data),
   submit: (data) => API.post('/bids', data),
   myBids: () => API.get('/bids/my'),
