@@ -261,7 +261,7 @@ class TenderDocument(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tender_id: Mapped[int] = mapped_column(ForeignKey("tenders.id"), index=True)
-    doc_type: Mapped[str] = mapped_column(String(50))   # specification, contract_template, ...
+    doc_type: Mapped[str] = mapped_column(String(255))   # specification, contract_template, ...
     file_name: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(1024))
     file_size: Mapped[int] = mapped_column(Integer)
@@ -327,7 +327,7 @@ class SupplierDocument(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     supplier_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
-    doc_type: Mapped[str] = mapped_column(String(50))   # license, st_kz, charter, qualification
+    doc_type: Mapped[str] = mapped_column(String(255))   # license, st_kz, charter, qualification
     title: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(1024))
     file_size: Mapped[int] = mapped_column(Integer, default=1024)
@@ -350,7 +350,7 @@ class BidDocument(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     bid_id: Mapped[int] = mapped_column(ForeignKey("bids.id"), index=True)
     qual_req_id: Mapped[Optional[int]] = mapped_column(ForeignKey("qualification_requirements.id"), nullable=True)
-    doc_type: Mapped[str] = mapped_column(String(50))
+    doc_type: Mapped[str] = mapped_column(String(255))
     file_name: Mapped[str] = mapped_column(String(255))
     file_path: Mapped[str] = mapped_column(String(1024))
     hash_sha256: Mapped[str] = mapped_column(String(64))
@@ -369,7 +369,7 @@ class Protocol(Base):
     runner_up_id: Mapped[Optional[int]] = mapped_column(ForeignKey("bids.id"), nullable=True)
     protocol_content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     pdf_path: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
-    eds_hash: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    eds_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     signed_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

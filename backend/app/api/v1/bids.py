@@ -173,10 +173,10 @@ async def submit_bid(
             db.add(BidDocument(
                 bid_id=bid.id,
                 qual_req_id=doc.qual_req_id,
-                doc_type=doc.doc_type or "supplier_doc",
-                file_name=doc.file_name,
-                file_path=doc.file_path or f"/uploads/bids/{bid.id}/{doc.file_name}",
-                hash_sha256=doc.hash_sha256 or f"demo_hash_bid_{bid.id}",
+                doc_type=(doc.doc_type or "supplier_doc")[:255],
+                file_name=(doc.file_name or "document")[:255],
+                file_path=(doc.file_path or f"/uploads/bids/{bid.id}/{doc.file_name}")[:1024],
+                hash_sha256=(doc.hash_sha256 or f"demo_hash_bid_{bid.id}")[:64],
             ))
 
     # [P1-FIX] Обновляем текущую минимальную цену — только если новая цена ниже текущей

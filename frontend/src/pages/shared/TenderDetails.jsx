@@ -188,7 +188,7 @@ const TenderDetails = () => {
       id: Date.now() + Math.random(),
       name: file.name,
       size: file.size,
-      category: 'Квалификационные документы и коммерческое предложение',
+      category: 'Квалификационные документы',
       file_path: `/uploads/bids/${tender?.id}/${file.name}`
     }));
 

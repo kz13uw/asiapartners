@@ -27,6 +27,13 @@ async def init_db(clean_all: bool = False):
             await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS vat_rate DOUBLE PRECISION DEFAULT 16.0"))
             await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS vat_amount DOUBLE PRECISION DEFAULT 0.0"))
             await conn.execute(text("ALTER TABLE lots ADD COLUMN IF NOT EXISTS total_price_without_vat DOUBLE PRECISION DEFAULT 0.0"))
+            await conn.execute(text("ALTER TABLE bid_documents ALTER COLUMN doc_type TYPE VARCHAR(255)"))
+            await conn.execute(text("ALTER TABLE tender_documents ALTER COLUMN doc_type TYPE VARCHAR(255)"))
+            await conn.execute(text("ALTER TABLE supplier_documents ALTER COLUMN doc_type TYPE VARCHAR(255)"))
+            await conn.execute(text("ALTER TABLE protocols ALTER COLUMN eds_hash TYPE TEXT"))
+            await conn.execute(text("ALTER TABLE tenders ALTER COLUMN eds_hash TYPE TEXT"))
+            await conn.execute(text("ALTER TABLE bids ALTER COLUMN eds_hash TYPE TEXT"))
+            await conn.execute(text("ALTER TABLE bids ALTER COLUMN revocation_eds_hash TYPE TEXT"))
     except Exception as e:
         print(f"[DB INIT NOTICE] Skipped auto schema sync: {e}")
 
